@@ -112,7 +112,7 @@ export function createDungeonScreen(root, app) {
     }
     scene.setHero(c.cls, heroColors(c.cls), slotType(c.cls, 'weapon'), c.name, levelOf(c.xp));
     scene.setEnemyLevel('');
-    scene.onTap = (uid) => { const cs = G.state.run?.cs; if (uid != null) G.focusEnemy(cs, uid); G.runInput('tap'); return !!cs?.enemies?.length; };
+    scene.onTap = () => { G.runInput('tap'); return !!G.state.run?.cs?.enemies?.length; };
     refs.dodge = h('button', { class: 'dodge-btn hidden', onpointerdown: (e) => { e.preventDefault(); G.runInput('dodge'); } }, 'TAP TO DODGE');
     scene.host.append(refs.dodge);
     const ab = gearItem(c, 'ability');
@@ -153,7 +153,7 @@ export function createDungeonScreen(root, app) {
     refs.bossWrap.classList.toggle('hidden', !bossOn);
     refs.roomInfo.classList.toggle('hidden', !!bossOn);
     if (bossOn) { refs.bossBar.style.width = `${(e.hp / e.maxHp) * 100}%`; refs.bossPct.textContent = `${Math.ceil((e.hp / e.maxHp) * 100)}%`; }
-    else refs.roomInfo.textContent = r.phase === 'boss' ? 'The boss is coming…' : `Room ${r.room + 1} of ${r.rooms.length} · ${prog.done} / ${prog.total} enemies · tap one to focus`;
+    else refs.roomInfo.textContent = r.phase === 'boss' ? 'The boss is coming…' : `Room ${r.room + 1} of ${r.rooms.length} · ${prog.done} / ${prog.total} enemies`;
     refs.dodge.classList.toggle('hidden', !cs.enemies.some((x) => x.tele));
     const ab = F.ability;
     const cost = ab ? abilityCost(ab) : 1;

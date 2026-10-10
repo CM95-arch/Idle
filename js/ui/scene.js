@@ -210,8 +210,6 @@ export class BattleScene {
         g.fillStyle = hpColor(fr); g.fillRect(bx, y - 8, Math.round(bw * fr), 4);
         if (e.elite) { g.fillStyle = '#ffd34d'; g.font = '700 11px "Pixelify Sans", monospace'; g.textAlign = 'right'; g.fillText('★', bx - 3, y - 2); }
       }
-      if (cs.focus !== e.uid && cs.target === e.uid) { g.fillStyle = 'rgba(255,255,255,.75)'; g.textAlign = 'center'; g.font = '700 11px "Pixelify Sans", monospace'; g.fillText('▽', p.x, y - 12); }
-      if (cs.focus === e.uid) { g.fillStyle = '#ffd34d'; g.textAlign = 'center'; g.font = '700 14px "Pixelify Sans", monospace'; g.fillText('▼', p.x, y - 12 + Math.sin(this.t * 6) * 2); }
       if (e.stunUntil > cs.t) { g.fillStyle = '#ffe08a'; g.font = '700 10px "Pixelify Sans", monospace'; g.textAlign = 'center'; g.fillText('STUN', p.x, y - 14); }
       if (e.tele) {
         g.strokeStyle = `rgba(214,70,61,${0.5 + 0.5 * Math.sin(this.t * 18)})`; g.lineWidth = 3;

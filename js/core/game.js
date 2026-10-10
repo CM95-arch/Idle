@@ -454,12 +454,6 @@ export function farmTap(slot) {
   f.cs.tapShots = Math.min((f.cs.tapShots || 0) + 1, CONFIG.maxQueuedTaps);
   return true;
 }
-/** Tap an enemy to make it the target (tap it again to let the character choose). */
-export function focusEnemy(cs, uid) {
-  if (!cs?.enemies?.some((e) => e.uid === uid && e.hp > 0)) return false;
-  cs.focus = cs.focus === uid ? null : uid;
-  return true;
-}
 export function runInput(kind) {
   const r = state.run; if (!r) return;
   if (kind === 'tap' && r.cs.enemies?.length) r.cs.tapShots = Math.min((r.cs.tapShots || 0) + 1, CONFIG.maxQueuedTaps);
