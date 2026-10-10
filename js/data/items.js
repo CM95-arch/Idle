@@ -5,7 +5,7 @@
 import { STAT_NAME } from './classes.js';
 
 export const MAX_TIER = 14;
-const GROWTH = 1.17; // power multiplier per tier
+const GROWTH = 1.28; // power multiplier per tier
 
 export const WEAPON_TYPES = {
   staff:  { cat: 'Staves',  label: 'Staff',  shots: 2, base: 23, rof: 1.0 },
@@ -16,8 +16,8 @@ export const WEAPON_TYPES = {
 };
 export const ARMOR_TYPES = {
   robe:    { label: 'Robe',          def: (t) => Math.round(1 + 1.5 * t), bonus: (t) => ({ mp: 4 * t, wis: Math.floor(t / 3) }) },
-  leather: { label: 'Leather Armor', def: (t) => Math.round(2 + 1.8 * t), bonus: (t) => ({ dex: Math.floor(t / 3), spd: Math.floor(t / 4) }) },
-  heavy:   { label: 'Heavy Armor',   def: (t) => Math.round(3 + 2.3 * t), bonus: (t) => ({ hp: 6 * t, vit: Math.floor(t / 4) }) },
+  leather: { label: 'Leather Armor', def: (t) => Math.round(1.5 + 1.6 * t), bonus: (t) => ({ dex: Math.floor(t / 3), spd: Math.floor(t / 4) }) },
+  heavy:   { label: 'Heavy Armor',   def: (t) => Math.round(2 + 1.7 * t), bonus: (t) => ({ hp: 3 * t, vit: Math.floor(t / 5) }) },
 };
 export const ABILITY_LABEL = { spell: 'Spell', tome: 'Tome', quiver: 'Quiver', cloak: 'Cloak', helm: 'Helm', shield: 'Shield', seal: 'Seal', trap: 'Trap', scepter: 'Scepter', skull: 'Skull', poison: 'Poison' };
 

@@ -16,15 +16,14 @@ export function createRun(dungeonId, F, seed) {
 export function runSource(run) {
   const d = DUNGEON[run.dungeonId];
   return {
-    restBelow: CONFIG.dungeonRestBelow,
     castDelay: 0,
+    walkHealPct: CONFIG.dungeonWalkHealPct,
     next(rng) {
       if (run.phase === 'room') {
         if (run.killed >= run.rooms[run.room]) {
           run.room++; run.killed = 0;
           if (run.room >= run.rooms.length) run.phase = 'boss';
-          run.cs.resting = true; // catch your breath between rooms
-          run.cs.travel = 1.5;
+          run.cs.travel = CONFIG.roomTransitionSeconds; // walking to the next room heals faster
           return null;
         }
         return dungeonEnemy(d, rng.pick(DUNGEON_MOBS[run.dungeonId]), rng);

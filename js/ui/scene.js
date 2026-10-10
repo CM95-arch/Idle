@@ -15,13 +15,19 @@ export class BattleScene {
     this.bars = h('div', { class: 'hero-bars' },
       h('div', { class: 'bar' }, this.hpI = h('i', { style: { background: 'var(--hpbar)' } })),
       h('div', { class: 'bar', style: { height: '5px' } }, this.mpI = h('i', { style: { background: 'var(--mpbar)' } })));
-    this.restLbl = h('div', { class: 'resting hidden' }, 'Resting');
     this.msg = h('div', { class: 'overlay-msg hidden' });
-    host.replaceChildren(this.cv, this.tag, this.bars, this.restLbl, this.msg);
+    host.replaceChildren(this.cv, this.tag, this.bars, this.msg);
     this.fx = []; this.nums = []; this.shake = 0; this.flash = 0; this.t = 0;
     this.decor = [];
     this.enemyAlpha = 1; this.lastEnemy = null; this.tele = null;
     this.weapon = 'staff';
+    this.hint = h('div', { class: 'tap-hint' }, 'Tap to attack');
+    host.append(this.hint);
+    host.addEventListener('pointerdown', (e) => {
+      if (e.target.closest('button') || !this.onTap) return;
+      const r = host.getBoundingClientRect();
+      if (this.onTap()) this.fx.push({ k: 'ripple', x: e.clientX - r.left, y: e.clientY - r.top, t: 0, life: 0.35 });
+    });
   }
   setTheme({ sky, ground, decor, seed = 1 }) {
     this.sky = sky; this.ground = ground; this.decorMap = decor;
@@ -46,6 +52,7 @@ export class BattleScene {
     const E = this.enemyPos(), P = this.heroPos();
     const jitter = () => (Math.random() - 0.5) * 30;
     if (kind === 'hit') {
+      if (d.tap) this.taps = (this.taps || 0) + 1;
       const melee = this.weapon === 'sword' || this.weapon === 'dagger';
       for (let i = 0; i < Math.min(d.shots, 3); i++) {
         this.fx.push({ k: melee ? 'slash' : 'shot', x0: P.x + (i - (d.shots - 1) / 2) * 8, y0: P.y - 30, x1: E.x + jitter() * 0.6, y1: E.y + 10, t: 0, life: melee ? 0.18 : 0.22, c: PROJ[this.weapon] || '#fff' });
@@ -138,7 +145,7 @@ export class BattleScene {
       const cv = heroCanvas(this.heroCls, this.heroColors, true, 5);
       const invis = cs && cs.invisUntil > cs.t;
       g.globalAlpha = cs?.dead ? 0.25 : invis ? 0.4 : 1;
-      const step = cs?.enemy || cs?.resting ? 0 : Math.abs(Math.sin(this.t * 8)) * 3;
+      const step = cs?.enemy ? 0 : Math.abs(Math.sin(this.t * 8)) * 3;
       g.drawImage(cv, P.x - cv.width / 2, P.y - cv.height + 8 - step);
       g.globalAlpha = 1;
     }
@@ -165,6 +172,9 @@ export class BattleScene {
         const yy = f.y + Math.min(p * 3, 1) * 30 - Math.sin(Math.min(p * 3, 1) * Math.PI) * 18;
         g.globalAlpha = p > 0.75 ? (1 - p) * 4 : 1;
         g.drawImage(cv, f.x - cv.width / 2, yy - cv.height / 2); g.globalAlpha = 1;
+      } else if (f.k === 'ripple') {
+        g.strokeStyle = '#ffe08a'; g.globalAlpha = 1 - p; g.lineWidth = 2;
+        g.beginPath(); g.arc(f.x, f.y, 6 + p * 26, 0, Math.PI * 2); g.stroke(); g.globalAlpha = 1;
       } else if (f.k === 'timer' && p >= 1 && !f.done) { f.done = true; f.fn(); }
     }
     this.fx = this.fx.filter((f) => f.t < f.life || (f.k === 'timer' && !f.done));
@@ -183,13 +193,13 @@ export class BattleScene {
     this.nums = this.nums.filter((n) => n.t < 1.1);
     g.restore();
 
+    this.hint.classList.toggle('hidden', !this.onTap || (this.taps || 0) >= 12 || !cs?.enemy);
     // hero bars (DOM)
     if (cs && F) {
       this.hpI.style.width = `${(cs.hp / F.maxHp) * 100}%`;
       this.mpI.style.width = `${(cs.mp / F.maxMp) * 100}%`;
       this.bars.classList.remove('hidden');
-      this.restLbl.classList.toggle('hidden', !cs.resting || !!cs.enemy);
-    } else { this.bars.classList.add('hidden'); this.restLbl.classList.add('hidden'); }
+    } else this.bars.classList.add('hidden');
   }
 }
 

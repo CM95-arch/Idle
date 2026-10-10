@@ -39,6 +39,7 @@ export function createCharacterScreen(root) {
   function settings() {
     showDialog((close) => [
       h('h2', {}, 'Settings & save'),
+      h('button', { class: 'btn ghost sm', onclick: () => { G.setAutoEquip(!G.state.settings.autoEquip); close(); settings(); } }, `Auto-equip upgrades: ${G.state.settings.autoEquip ? 'On' : 'Off'}`),
       h('p', { class: 'small muted', style: { margin: 0 } }, 'Your game saves on this device. Copy the save code to move it to another device or keep a backup.'),
       h('button', { class: 'btn ghost sm', onclick: async () => {
         const code = G.exportSave();

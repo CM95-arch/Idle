@@ -1,7 +1,7 @@
 // Balance report: `node tools/balance.mjs`
 // Simulates reference builds in every biome and prints time-to-death and kills per hour.
 import { CLASS, STATS } from '../js/data/classes.js';
-import { BIOMES } from '../js/data/world.js';
+import { BIOMES, ENEMY_CURVE } from '../js/data/world.js';
 import { newCharacter, fighterOf, dpsOf } from '../js/core/character.js';
 import { estimateSurvival } from '../js/core/survival.js';
 
@@ -22,17 +22,18 @@ function main() {
 const classes = process.argv[2] ? process.argv[2].split(',') : ['wizard', 'warrior', 'priest', 'rogue'];
 const hours = Number(process.argv[3] || 8);
 for (const cls of classes) {
-  console.log(`\n== ${cls} ==   (gear tier g, maxed fraction m)   columns: rec-2 | rec-1 | rec | rec+1`);
+  console.log(`\n== ${cls} ==   (gear tier g, maxed fraction m)   columns: fresh T1 | rec-2 | rec-1 | rec | rec+1`);
   for (const b of BIOMES) {
     const [g, m] = REC[b.id];
-    const cells = [[g - 2, m], [g - 1, m], [g, m], [g + 1, m]].map(([gg, mm]) => {
+    const cells = [[1, 0], [g - 2, m], [g - 1, m], [g, m], [g + 1, m]].map(([gg, mm]) => {
       if (gg < 1) return '   —          ';
       const F = build(cls, gg, mm);
       const r = estimateSurvival(F, b, { hours, runs: 3 });
       return `${fmt(r.hours)}${String(r.kph).padStart(5)}/h`;
     });
     const F = build(cls, g, m);
-    console.log(`${b.name.padEnd(15)} g${String(g).padStart(2)} m${m}  dps${String(dpsOf(F)).padStart(5)} hp${String(F.maxHp).padStart(4)} | ${cells.join(' | ')}`);
+    const fight = ENEMY_CURVE.hp(b.L) / Math.max(1, dpsOf(F) - ENEMY_CURVE.def(b.L) * F.shots * F.aps);
+    console.log(`${b.name.padEnd(15)} g${String(g).padStart(2)} m${m}  dps${String(dpsOf(F)).padStart(5)} fight${fight.toFixed(1).padStart(5)}s | ${cells.join(' | ')}`);
   }
 }
 }

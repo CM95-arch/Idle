@@ -1,3 +1,4 @@
+import { CONFIG } from '../config.js';
 // Screen 1: idle farming.
 import { BIOMES, BIOME, DUNGEON } from '../data/world.js';
 import { ITEMS, tierLabel } from '../data/items.js';
@@ -38,6 +39,26 @@ export function createFarmScreen(root, nav) {
     const off = G.on('estimates', () => (sh.isOpen() ? sh.render() : off()));
   }
 
+  /** Suggest moving up when the next biome is safe, or back down when this one is deadly. */
+  function nudgeCard(slot) {
+    const f = G.state.farms[slot];
+    if (f.status !== 'farming' && f.status !== 'fallen') return null;
+    const i = BIOMES.findIndex((b) => b.id === f.biome);
+    const here = biomeEstimate(slot, f.biome);
+    const next = BIOMES[i + 1], prev = BIOMES[i - 1];
+    if (here?.level === 'low' && prev) {
+      return h('button', { class: 'card row between nudge warn', style: { textAlign: 'left' }, onclick: () => { G.startFarming(slot, prev.id); render(); } },
+        h('div', {}, h('div', { class: 'label', style: { color: 'var(--low)' } }, 'Too dangerous'), h('div', { class: 'small' }, `${BIOMES[i].name} will likely kill this character soon.`)),
+        h('span', { class: 'btn ghost sm' }, `← ${prev.name}`));
+    }
+    if (!next) return null;
+    const est = biomeEstimate(slot, next.id);
+    if (!est || est.hours < CONFIG.nudgeHours) return null;
+    return h('button', { class: 'card row between nudge', style: { textAlign: 'left' }, onclick: () => { G.startFarming(slot, next.id); render(); } },
+      h('div', {}, h('div', { class: 'label', style: { color: 'var(--high)' } }, `Ready for ${next.name}`), h('div', { class: 'small' }, `Survival ${LEVEL_TEXT[est.level]} · loot T${next.tiers[0]}–T${next.tiers[1]}${next.potionRate ? ' · potions' : ''}`)),
+      h('span', { class: 'btn sm' }, 'Move →'));
+  }
+
   function render() {
     const s = G.state, slot = s.view, c = s.chars[slot], f = s.farms[slot];
     refs = {};
@@ -62,8 +83,12 @@ export function createFarmScreen(root, nav) {
       scene = new BattleScene(h('div', { class: 'scene' })); sceneSlot = slot; sceneKey = key;
     }
     kids.push(scene.host);
+    scene.onTap = () => G.farmTap(slot);
     scene.setTheme({ sky: b.sky, ground: b.ground, decor: b.decor, seed: BIOMES.indexOf(b) + 3 });
     scene.setHero(c.cls, heroColors(c.cls), ITEMS[c.equip.weapon]?.type);
+
+    const nudge = nudgeCard(slot);
+    if (nudge) kids.push(nudge);
 
     const li = levelInfo(c.xp);
     kids.push(h('div', { class: 'row' },

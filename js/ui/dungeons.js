@@ -103,6 +103,7 @@ export function createDungeonScreen(root) {
       scene.setTheme({ sky: [d.pal.bg, '#0b090e'], ground: '#111', decor: null, seed: 7 });
     }
     scene.setHero(c.cls, heroColors(c.cls), ITEMS[c.equip.weapon]?.type);
+    scene.onTap = () => { G.runInput('tap'); return !!G.state.run?.cs.enemy; };
     refs.dodge = h('button', { class: 'dodge-btn hidden', onpointerdown: (e) => { e.preventDefault(); G.runInput('dodge'); } }, 'TAP TO DODGE');
     scene.host.append(refs.dodge);
     const ab = c.equip.ability ? ITEMS[c.equip.ability] : null;
@@ -177,6 +178,7 @@ export function showRunResult(res, showDialog) {
       h('div', { class: 'rw' }, h('b', { style: { color: 'var(--mp)' } }, res.potions.length), h('span', {}, 'Potions'))),
     h('div', { class: 'drops', style: { flexWrap: 'wrap', justifyContent: 'center' } }, [...res.items, ...res.potions].map((id) => h('button', { class: `d${res.newIds.includes(id) ? ' new' : ''}`, onclick: () => openItemSheet(id) }, itemIcon(id, 24)))),
     res.items.some((id) => ITEMS[id].tier === 'UT') ? h('p', { style: { margin: 0, textAlign: 'center', color: 'var(--ut)' } }, 'A unique item dropped!') : null,
+    res.upgrades?.length ? h('p', { style: { margin: 0, textAlign: 'center', color: 'var(--high)' } }, `Equipped ${res.upgrades.length} upgrade${res.upgrades.length > 1 ? 's' : ''}.`) : null,
     res.slotEarned ? h('p', { style: { margin: 0, textAlign: 'center', color: 'var(--ember)' } }, 'First clear: you earned a free character slot.') : null,
     h('button', { class: 'btn', onclick: close }, 'Collect'),
   ] : [

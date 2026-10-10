@@ -3,22 +3,22 @@
 import { CONFIG } from '../config.js';
 
 const ABILITY = {
-  spell:   { dmg: 1.0 },
-  scepter: { dmg: 0.8, costMult: 0.7 },
-  skull:   { dmg: 0.7, lifesteal: 0.5 },
-  poison:  { dot: 1.4, dotSec: 4 },
-  quiver:  { dmg: 0.8, stun: 1.5 },
-  shield:  { dmg: 0.5, stun: 3 },
-  trap:    { dmg: 0.6, slow: 5 },
-  tome:    { heal: 2.0, healer: true },
-  seal:    { heal: 0.8, dmgBuff: 1.35, buffSec: 6, healer: true },
-  helm:    { haste: 1.6, buffSec: 6 },
+  spell:   { dmg: 3.0 },
+  scepter: { dmg: 2.3, costMult: 0.7 },
+  skull:   { dmg: 1.8, lifesteal: 0.5 },
+  poison:  { dot: 4.0, dotSec: 4 },
+  quiver:  { dmg: 2.2, stun: 1.5 },
+  shield:  { dmg: 1.2, stun: 3 },
+  trap:    { dmg: 1.8, slow: 5 },
+  tome:    { healPct: 0.28, healer: true },
+  seal:    { healPct: 0.25, dmgBuff: 1.3, buffSec: 5, healer: true },
+  helm:    { haste: 1.35, buffSec: 5 },
   cloak:   { invis: 4, healer: true },
 };
 export const abilityCost = (ab) => Math.round(ab.cost * (ABILITY[ab.type]?.costMult || 1));
 
 export function newCombat(F) {
-  return { t: 0, hp: F.maxHp, mp: F.maxMp, enemy: null, pT: 0, eT: 0, travel: 0.6, resting: false, dead: false,
+  return { t: 0, hp: F.maxHp, mp: F.maxMp, enemy: null, pT: 0, eT: 0, travel: 0.5, dead: false, tapShots: 0,
     hasteUntil: 0, dmgUntil: 0, dmgMult: 1, invisUntil: 0, castInput: false, dodgeInput: -1, mpReadySince: -1 };
 }
 
@@ -51,12 +51,13 @@ function castAbility(cs, F, e, rng, emit) {
   if (A.dot) { e.dotDps = (P * A.dot) / A.dotSec; e.dotUntil = cs.t + A.dotSec; }
   if (A.stun) e.stunUntil = Math.max(e.stunUntil, cs.t + A.stun * (e.boss ? 0.5 : 1));
   if (A.slow) e.slowUntil = cs.t + A.slow;
-  if (A.heal) cs.hp = Math.min(F.maxHp, cs.hp + P * A.heal);
+  const healed = A.healPct ? F.maxHp * A.healPct * (1 + (P / 70 - 1) * 0.03) : 0; // max-HP based, tier adds a little
+  if (healed) cs.hp = Math.min(F.maxHp, cs.hp + healed);
   if (A.lifesteal) cs.hp = Math.min(F.maxHp, cs.hp + dealt * A.lifesteal);
   if (A.dmgBuff) { cs.dmgMult = A.dmgBuff; cs.dmgUntil = cs.t + A.buffSec; }
   if (A.haste) cs.hasteUntil = cs.t + A.buffSec;
   if (A.invis) cs.invisUntil = cs.t + A.invis;
-  emit?.('ability', { type: ab.type, dmg: Math.round(dealt), heal: A.heal ? Math.round(P * A.heal) : 0 });
+  emit?.('ability', { type: ab.type, dmg: Math.round(dealt), heal: Math.round(healed) });
 }
 
 function hitPlayer(cs, F, e, mult, rng, emit, big) {
@@ -78,16 +79,15 @@ export function step(cs, F, src, rng, emit, mode = 'auto') {
   const dt = CONFIG.tickSeconds;
   if (cs.dead) return;
   cs.t += dt;
-  const regen = cs.resting ? CONFIG.restRegenMult : 1;
-  cs.hp = Math.min(F.maxHp, cs.hp + F.hpRegen * regen * dt);
+  const regen = cs.enemy ? 1 : CONFIG.outOfCombatRegenMult;
+  const walkHeal = cs.enemy ? 0 : F.maxHp * (src.walkHealPct ?? CONFIG.walkHealPct);
+  cs.hp = Math.min(F.maxHp, cs.hp + (F.hpRegen * regen + walkHeal) * dt);
   cs.mp = Math.min(F.maxMp, cs.mp + F.mpRegen * regen * dt);
 
   let e = cs.enemy;
   if (!e) {
-    if (cs.resting) { if (cs.hp >= F.maxHp * CONFIG.restUntil) cs.resting = false; return; }
     cs.travel -= dt;
     if (cs.travel > 0) return;
-    if (cs.hp < F.maxHp * (src.restBelow ?? CONFIG.restBelow)) { cs.resting = true; emit?.('rest', {}); return; }
     const tpl = src.next(rng);
     if (!tpl) return;
     e = cs.enemy = spawnEnemy(tpl);
@@ -122,6 +122,16 @@ export function step(cs, F, src, rng, emit, mode = 'auto') {
     if (e.vulnUntil > cs.t) total *= CONFIG.bossStunDamageMult;
     e.hp -= total;
     emit?.('hit', { dmg: Math.round(total), crit, shots: F.shots });
+  }
+  if (cs.tapShots > 0 && e.hp > 0) {
+    cs.tapShots--;
+    let total = 0;
+    for (let i = 0; i < F.shots; i++) {
+      const raw = rng.range(F.dmgMin, F.dmgMax) * F.attMult * CONFIG.tapDamage;
+      total += Math.max(raw - e.def, raw * CONFIG.minDamageAfterDef);
+    }
+    e.hp -= total;
+    emit?.('hit', { dmg: Math.round(total), crit: false, shots: F.shots, tap: true });
   }
   if (e.dotUntil > cs.t) e.hp -= e.dotDps * dt;
 

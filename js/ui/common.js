@@ -16,7 +16,7 @@ export function slotStatus(slot) {
   if (G.state.run?.slot === slot) return { text: `● ${DUNGEON[G.state.run.dungeonId].name}`, cls: 'st-dungeon' };
   if (f.status === 'farming') return { text: `● ${BIOME[f.biome].name}`, cls: 'st-farming' };
   if (f.status === 'fallen') return { text: '✕ Fell · tap to restart', cls: 'st-fallen' };
-  return { text: 'Resting in town', cls: '' };
+  return { text: 'Not farming', cls: '' };
 }
 
 export function chips(onPick, { showAdd = true } = {}) {

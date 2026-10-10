@@ -51,11 +51,16 @@ G.on('levelup', ({ name, level }) => { if (!catching) toast({ title: `${name} re
 G.on('fallen', ({ slot }) => { if (!catching) toast({ title: `${G.state.chars[slot].name} has fallen`, body: 'Farming stopped. Nothing was lost.', kind: 'bad' }); });
 G.on('runEnd', (res) => { if (catching) pendingResults.push(res); else showRunResult(res, showDialog); renderTabs(); });
 G.on('changed', () => showTab());
+G.on('upgrade', ({ slot, id }) => {
+  if (catching) return;
+  toast({ title: 'Upgrade equipped', body: `${ITEMS[id].name} on ${G.state.chars[slot].name}`, icon: itemIcon(id, 28), kind: 'gold' });
+  if (tab === 'farm' || tab === 'character') screens[tab].render();
+});
 G.on('estimates', () => { if (tab === 'farm' || (tab === 'dungeons' && !G.state.run)) screens[tab].render(); });
 
 // ---------- catch-up after time away ----------
 function snapshot() {
-  return G.state.farms.map((f, i) => ({ status: f.status, kills: f.session?.kills || 0, xp: f.session?.xp || 0, items: f.session?.items || 0, potions: f.session?.potions || 0, finds: f.session?.newFinds || 0, start: f.session?.startMs, name: G.state.chars[i]?.name }));
+  return G.state.farms.map((f, i) => ({ status: f.status, kills: f.session?.kills || 0, xp: f.session?.xp || 0, items: f.session?.items || 0, potions: f.session?.potions || 0, finds: f.session?.newFinds || 0, ups: f.session?.upgrades || 0, start: f.session?.startMs, name: G.state.chars[i]?.name }));
 }
 async function catchUp() {
   const total = G.ticksBehind();
@@ -83,12 +88,13 @@ async function catchUp() {
     const b = before[i];
     if (!a.name) return;
     const same = a.start === b.start;
-    const kills = a.kills - (same ? b.kills : 0), items = a.items - (same ? b.items : 0), potions = a.potions - (same ? b.potions : 0), xp = a.xp - (same ? b.xp : 0), finds = a.finds - (same ? b.finds : 0);
+    const kills = a.kills - (same ? b.kills : 0), items = a.items - (same ? b.items : 0), potions = a.potions - (same ? b.potions : 0), xp = a.xp - (same ? b.xp : 0), finds = a.finds - (same ? b.finds : 0), ups = a.ups - (same ? b.ups : 0);
     if (kills <= 0 && a.status === b.status) return;
     const f = G.state.farms[i];
     lines.push(h('div', { class: 'card small' },
       h('div', { class: 'row between' }, h('b', {}, a.name), h('span', { class: a.status === 'fallen' ? 'st-fallen' : 'st-farming' }, a.status === 'fallen' ? '✕ Fell' : `● ${BIOME[f.biome].name}`)),
       h('div', { class: 'muted tnum' }, `${fmtNum(kills)} kills · +${fmtXp(xp)} XP · ${fmtNum(items)} items${potions ? ` · ${fmtNum(potions)} potions` : ''}${finds ? ` · ${finds} new` : ''}`),
+      ups > 0 ? h('div', { style: { color: 'var(--high)' } }, `Equipped ${ups} upgrade${ups > 1 ? 's' : ''}.`) : null,
       a.status === 'fallen' && f.session?.endMs ? h('div', { style: { color: 'var(--low)' } }, `Fell after ${fmtDur(f.session.endMs - f.session.startMs)} in ${BIOME[f.biome].name}.`) : null));
   });
   if (lines.length && awayMs > 60000) showDialog((close) => [h('h2', {}, `Away for ${fmtDur(awayMs)}`), ...lines, h('button', { class: 'btn', onclick: close }, 'Nice')]);

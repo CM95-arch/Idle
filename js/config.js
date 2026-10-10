@@ -11,19 +11,20 @@ export const CONFIG = {
   // Level 1 is 0–10 XP, level 2 is 10–25, each level needs 5 more XP than the last.
   xpFirstLevel: 10,
   xpStep: 5,
-  classUnlockLevel: 10,        // reach this level on the parent class to unlock the next class
+  classUnlockLevel: 20,        // reach this level on the parent class to unlock the next class
 
   // ---- player stat formulas (ROTMG meanings, tuned for idle) ----
   attMult: (att) => 0.5 + att / 50,               // damage multiplier
   attacksPerSec: (dex) => 0.8 + 1.7 * (dex / 75), // before weapon rate of fire
-  hpRegen: (vit) => 1 + 0.12 * vit,               // HP per second
+  hpRegen: (vit) => 1 + 0.08 * vit,               // HP per second
   mpRegen: (wis) => 0.5 + 0.06 * wis,             // MP per second
   dodgeChance: (spd) => spd / (spd + 200),        // chance an enemy hit misses
-  travelSeconds: (spd) => 1.6 - spd / 100,        // walk time to the next enemy
+  travelSeconds: (spd) => 0.9 - spd / 200,        // walk time to the next enemy
   minDamageAfterDef: 0.15,     // DEF can never block more than 85% of a hit
-  restBelow: 0.65,             // between fights, rest if HP is under this fraction...
-  restUntil: 0.95,             // ...until HP is back to this fraction
-  restRegenMult: 4,            // regen is this many times faster while resting
+  outOfCombatRegenMult: 5,     // HP/MP regen is this many times faster while walking between enemies
+  walkHealPct: 0.04,           // plus this share of max HP per second while walking
+  tapDamage: 0.6,              // tapping the battle fires an extra volley at this fraction of a normal attack
+  maxQueuedTaps: 3,
   startStatFraction: 0.5,      // new characters start halfway between class base and class max
 
   // ---- potions ----
@@ -33,14 +34,16 @@ export const CONFIG = {
   exaltGain: { hp: 5, mp: 5, att: 1, def: 1, spd: 1, dex: 1, vit: 1, wis: 1 },
 
   // ---- loot while farming ----
-  itemDropChance: 0.03,        // per kill
+  itemDropChance: (L) => 0.32 - 0.028 * (L - 1),  // per kill, by biome level: 32% in the Forest, about 12% in the Godlands
   eliteDropMult: 3,
-  classBias: 0.5,              // share of drops picked from gear the farming class can use
-  tierWeights: [50, 28, 14, 6, 2],   // lowest tier in the range first
+  classBias: 0.7,              // share of drops picked from gear the farming class can use
+  tierWeights: [35, 30, 22, 13],     // lowest tier in the range first
+  autoEquipDefault: true,      // equip strict upgrades as they drop (can be turned off in Settings)
 
   // ---- dungeons ----
-  dungeonEnemiesPerRoom: [6, 9],
-  dungeonRestBelow: 0.4,      // in dungeons you only stop to rest when HP drops under this
+  dungeonEnemiesPerRoom: [5, 7], 
+  dungeonWalkHealPct: 0.025,   // dungeons heal less between enemies than farming does
+  roomTransitionSeconds: 3,  // walk between dungeon rooms (fast regen while walking)
   dungeonLootRolls: [3, 5],
   dungeonUtChance: 0.08,       // per unique item, per clear
   telegraphEvery: [9, 13],     // seconds between boss telegraphs
@@ -61,7 +64,8 @@ export const CONFIG = {
 
   // ---- survival estimate ----
   survivalSimHours: 8,
-  survivalRuns: 3,
+  survivalRuns: 5,
   survivalHighHours: 8,        // no death within this many hours = HIGH
   survivalMedHours: 1,         // dies after this many hours = MEDIUM, sooner = LOW
+  nudgeHours: 4,               // suggest the next biome once it's estimated to last this long
 };

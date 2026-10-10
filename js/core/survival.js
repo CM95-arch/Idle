@@ -4,7 +4,7 @@ import { makeRng } from './rng.js';
 import { newCombat, step } from './combat.js';
 import { biomeEnemy } from './loot.js';
 
-/** Returns { hours (median time to death, Infinity if it survived), kph (kills per hour), level: 'high'|'med'|'low' } */
+/** Returns { hours (cautious time to death, Infinity if it survived), kph (kills per hour), level: 'high'|'med'|'low' } */
 export function estimateSurvival(F, biome, opts = {}) {
   const hours = opts.hours ?? CONFIG.survivalSimHours;
   const runs = opts.runs ?? CONFIG.survivalRuns;
@@ -22,7 +22,8 @@ export function estimateSurvival(F, biome, opts = {}) {
     kills += k; simulated += (i * CONFIG.tickSeconds) / 3600;
   }
   deaths.sort((a, b) => a - b);
-  const med = deaths[Math.floor(deaths.length / 2)];
+  // a cautious pick: the second-worst run (survival times vary a lot between runs)
+  const med = deaths[Math.min(1, deaths.length - 1)];
   const level = med >= CONFIG.survivalHighHours ? 'high' : med >= CONFIG.survivalMedHours ? 'med' : 'low';
   return { hours: med, kph: Math.round(kills / Math.max(simulated, 1e-6)), level };
 }

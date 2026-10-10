@@ -1,7 +1,7 @@
 // Game state and every action the UI can take. No DOM in here.
 import { CONFIG } from '../config.js';
 import { CLASS, CLASSES, STATS, STAT_LABEL } from '../data/classes.js';
-import { ITEMS, tierLabel } from '../data/items.js';
+import { ITEMS, tierLabel, tierValue } from '../data/items.js';
 import { BIOME, DUNGEON } from '../data/world.js';
 import { makeRng } from './rng.js';
 import { newCombat, step } from './combat.js';
@@ -30,7 +30,7 @@ export function newGame() {
     chars: Array(CONFIG.startSlots).fill(null), farms: Array.from({ length: CONFIG.startSlots }, freshFarm),
     vault: {}, found: {}, newIds: {}, exalt: {}, classBest: {}, clears: {}, run: null, lastRun: null,
     stats: { kills: 0, deaths: 0, clears: 0, potionsDrunk: 0, itemsFound: 0 },
-    view: 0, nextCharId: 1,
+    view: 0, nextCharId: 1, settings: { autoEquip: CONFIG.autoEquipDefault },
   };
   return s;
 }
@@ -50,6 +50,7 @@ export function load() {
     void c;
   }
   for (let i = 0; i < state.slots; i++) state.farms[i] ||= freshFarm();
+  state.settings ||= { autoEquip: CONFIG.autoEquipDefault };
   return state;
 }
 export function save() {
@@ -104,16 +105,36 @@ export function canUse(cls, id) {
   if (it.slot === 'ring') return true;
   return (it.slot === 'weapon' && it.type === C.weapon) || (it.slot === 'ability' && it.type === C.ability) || (it.slot === 'armor' && it.type === C.armor);
 }
-export function equip(slot, id) {
+function equipQuiet(slot, id) {
   const c = state.chars[slot]; const it = ITEMS[id];
   if (!c || !canUse(c.cls, id) || owned(id) < 1) return false;
   const old = c.equip[it.slot];
   state.vault[id]--;
   if (old) state.vault[old] = (state.vault[old] || 0) + 1;
   c.equip[it.slot] = id;
-  refreshCombatCaps(slot); save();
+  refreshCombatCaps(slot);
   return true;
 }
+export function equip(slot, id) {
+  const ok = equipQuiet(slot, id);
+  if (ok) save();
+  return ok;
+}
+/** True when id is a higher tier than what the character wears in that slot. */
+export function isUpgrade(slot, id) {
+  const c = state.chars[slot], it = ITEMS[id];
+  if (!c || !it || !['weapon', 'ability', 'armor', 'ring'].includes(it.slot) || !canUse(c.cls, id)) return false;
+  const cur = c.equip[it.slot];
+  return !cur || tierValue(it) > tierValue(ITEMS[cur]);
+}
+/** Equip a fresh drop if it's an upgrade and auto-equip is on. */
+function autoEquip(slot, id) {
+  if (!state.settings?.autoEquip || !isUpgrade(slot, id)) return false;
+  if (!equipQuiet(slot, id)) return false;
+  emitUi('upgrade', { slot, id });
+  return true;
+}
+export function setAutoEquip(on) { state.settings.autoEquip = !!on; save(); }
 export function unequip(slot, kind) {
   const c = state.chars[slot]; const old = c?.equip[kind];
   if (!old) return;
@@ -254,7 +275,7 @@ export function startFarming(slot, biomeId, atMs = Date.now()) {
   if (!F || state.run?.slot === slot) return;
   f.biome = biomeId; f.status = 'farming'; f.simMs = atMs;
   f.cs = newCombat(F);
-  f.session = { startMs: atMs, kills: 0, xp: 0, items: 0, potions: 0, drops: [], newFinds: 0, endMs: null };
+  f.session = { startMs: atMs, kills: 0, xp: 0, items: 0, potions: 0, drops: [], newFinds: 0, upgrades: 0, endMs: null };
   save();
 }
 export function stopFarming(slot) {
@@ -265,7 +286,7 @@ export function stopFarming(slot) {
 
 function farmSource(slot, emit) {
   const f = state.farms[slot], c = state.chars[slot], biome = BIOME[f.biome];
-  return {
+  const src = {
     next: (rng) => biomeEnemy(biome, rng),
     onKill: (e, rng) => {
       const before = levelOf(c.xp);
@@ -273,9 +294,10 @@ function farmSource(slot, emit) {
       f.session.kills++; f.session.xp += e.xp;
       noteLevel(c, before);
       const mult = e.elite ? CONFIG.eliteDropMult : 1;
-      if (rng.next() < CONFIG.itemDropChance * mult) {
+      if (rng.next() < CONFIG.itemDropChance(biome.L) * mult) {
         const id = rollItem(biome.tiers, c.cls, rng);
         if (grant(id)) f.session.newFinds++;
+        if (autoEquip(slot, id)) { f.session.upgrades = (f.session.upgrades || 0) + 1; src.dirty = true; }
         f.session.items++; f.session.drops.unshift(id); f.session.drops.length = Math.min(f.session.drops.length, 12);
         emit?.('drop', { id });
       }
@@ -286,13 +308,14 @@ function farmSource(slot, emit) {
       }
     },
   };
+  return src;
 }
 
 /** Advance one farming slot up to `toMs`, at most maxTicks. Returns ticks done. */
 export function advanceFarm(slot, toMs, maxTicks = Infinity, emit = null) {
   const f = state.farms[slot];
   if (f.status !== 'farming') return 0;
-  const F = fighter(slot);
+  let F = fighter(slot);
   const dtMs = CONFIG.tickSeconds * 1000;
   const due = Math.min(Math.floor((toMs - f.simMs) / dtMs), maxTicks);
   if (due <= 0) return 0;
@@ -300,6 +323,7 @@ export function advanceFarm(slot, toMs, maxTicks = Infinity, emit = null) {
   const src = farmSource(slot, emit);
   let i = 0;
   for (; i < due; i++) {
+    if (src.dirty) { F = fighter(slot); src.dirty = false; }
     step(f.cs, F, src, rng, emit, 'auto');
     if (f.cs.dead) {
       i++;
@@ -349,6 +373,7 @@ function finishRun() {
     const before = levelOf(c.xp);
     c.xp += rw.xp; c.clears++; result.xp = rw.xp; noteLevel(c, before);
     for (const id of [...rw.items, ...rw.potions]) if (grant(id)) result.newIds.push(id);
+    result.upgrades = rw.items.filter((id) => autoEquip(slot, id));
     result.items = rw.items; result.potions = rw.potions;
     state.clears[r.dungeonId] = (state.clears[r.dungeonId] || 0) + 1; state.stats.clears++;
     if (d.slotReward && state.clears[r.dungeonId] === 1 && addSlot(`clear:${r.dungeonId}`)) result.slotEarned = true;
@@ -381,8 +406,16 @@ export function advanceRunTo(toMs, maxTicks = Infinity, emit = null, mode = 'aut
   if (r.phase === 'won' || r.phase === 'lost') finishRun();
   return done;
 }
+/** Tapping the battle fires an extra volley (watching speeds things up a little). */
+export function farmTap(slot) {
+  const f = state.farms[slot];
+  if (f?.status !== 'farming' || !f.cs?.enemy) return false;
+  f.cs.tapShots = Math.min((f.cs.tapShots || 0) + 1, CONFIG.maxQueuedTaps);
+  return true;
+}
 export function runInput(kind) {
   const r = state.run; if (!r) return;
+  if (kind === 'tap' && r.cs.enemy) r.cs.tapShots = Math.min((r.cs.tapShots || 0) + 1, CONFIG.maxQueuedTaps);
   if (kind === 'cast') r.cs.castInput = true;
   if (kind === 'dodge') r.cs.dodgeInput = r.cs.t;
 }

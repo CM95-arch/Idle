@@ -87,8 +87,11 @@ body { font-variant-numeric: lining-nums; }
 .scene .enemy-tag .nm.elite { color: var(--ember-hi); }
 .scene .enemy-tag .bar { width: 130px; }
 .scene .hero-bars { position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%); display: grid; gap: 3px; width: 100px; pointer-events: none; }
-.scene .resting { position: absolute; left: 50%; bottom: 62px; transform: translateX(-50%); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--high); text-shadow: 0 1px 0 #000; }
 
+.scene .tap-hint { position: absolute; right: 10px; bottom: 10px; font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: rgba(255,224,138,.75); pointer-events: none; animation: pulse-o 1.4s ease-in-out infinite alternate; }
+@keyframes pulse-o { from { opacity: .45; } to { opacity: 1; } }
+.nudge { border-color: var(--high); background: linear-gradient(135deg, rgba(88,192,111,.14), var(--slate) 70%); }
+.nudge.warn { border-color: var(--low); background: linear-gradient(135deg, rgba(224,80,63,.14), var(--slate) 70%); }
 /* rewards */
 .rewards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
 .rw { display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 6px 4px; border-radius: 10px; background: var(--well); border: 1px solid var(--seam); }

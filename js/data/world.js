@@ -2,11 +2,11 @@
 // Enemy strength comes from one curve by "level" L, so biomes and dungeons scale together.
 
 export const ENEMY_CURVE = {
-  hp: (L) => 330 * Math.pow(1.34, L - 1),
-  dmg: (L) => 45 * Math.pow(1.085, L - 1),   // per hit, before the player's DEF
+  hp: (L) => 650 * Math.pow(1.5, L - 1),
+  dmg: (L) => 22 * Math.pow(1.095, L - 1),   // per hit, before the player's DEF
   def: (L) => Math.round(1.6 * (L - 1)),
   rate: 0.75,                                // attacks per second
-  xp: (L) => 0.2 * Math.pow(1.4, L - 1),
+  xp: (L) => 0.22 * Math.pow(1.4, L - 1),
 };
 
 // sprite: enemy art template (see sprites.js). pal: a/b/c/d colors.
@@ -25,7 +25,7 @@ export const BIOMES = [
   { id: 'sprite', name: 'Sprite Forest', L: 4, tiers: [4, 7], potionRate: 0, sky: ['#2c4a3a', '#0b120e'], ground: '#16261c', decor: 'tree',
     enemies: [E('Forest Wisp', 'wisp', { a: '#5de0ff', b: '#bff3d8', c: '#ffffff', d: '#1d6b5a' }), E('Sprite', 'wisp', { a: '#ff8ae0', b: '#ffd0f4', c: '#ffffff', d: '#7a2a6a' }, { hp: 0.85, dmg: 1.15 }), E('Treant Sapling', 'golem', { a: '#4a6a2a', b: '#7a9a4a', c: '#c0ff60' }, { hp: 1.3 }), E('Moss Golem', 'golem', { a: '#3a5a3a', b: '#6a8a5a', c: '#e0ff90' }, { hp: 1.4, dmg: 0.9 })],
     elite: E('Elder Treant', 'golem', { a: '#2a4a1a', b: '#5a8a3a', c: '#ffd34d' }) },
-  { id: 'city', name: 'Abandoned City', L: 5, tiers: [5, 8], potionRate: 1 / 200, sky: ['#3a3a4a', '#121218'], ground: '#24242c', decor: 'ruin',
+  { id: 'city', name: 'Abandoned City', L: 4.7, tiers: [5, 8], potionRate: 1 / 200, sky: ['#3a3a4a', '#121218'], ground: '#24242c', decor: 'ruin',
     enemies: [E('Ghoul', 'humanoid', { a: '#5a6a5a', b: '#9aaa9a', c: '#ff4040' }), E('Skeleton Archer', 'skeleton', { a: '#d8d0c0', b: '#ffffff', c: '#ff5040' }, { dmg: 1.2, hp: 0.85 }), E('Cursed Knight', 'humanoid', { a: '#3a3a4a', b: '#7a7a8a', c: '#a040ff' }, { hp: 1.35 }), E('Plague Rat', 'beast', { a: '#4a5a3a', b: '#7a9a5a', c: '#c0ff40' })],
     elite: E('Wraith Lord', 'ghost', { a: '#4a3a6a', b: '#8a7ab0', c: '#ffd34d' }) },
   { id: 'hell', name: 'Hell', L: 6, tiers: [6, 9], potionRate: 1 / 100, sky: ['#6a1a10', '#1a0505'], ground: '#3a0e08', decor: 'flame',
@@ -39,7 +39,7 @@ export const BIOMES = [
     elite: E('Ghost God', 'ghost', { a: '#d0d0e0', b: '#ffffff', c: '#ff4040' }) },
 ];
 export const BIOME = Object.fromEntries(BIOMES.map((b) => [b.id, b]));
-export const ELITE = { chance: 0.06, hp: 2.2, dmg: 1.35, xp: 4 };
+export const ELITE = { chance: 0.06, hp: 2.3, dmg: 1.4, xp: 4 };
 
 // Dungeons in increasing difficulty. L sets enemy strength; tiers is the loot range on a clear.
 // sig: the potion this dungeon is known for (half of its potions are this kind).
@@ -68,8 +68,8 @@ export const DUNGEONS = [
   D('oryx', 'Oryx’s Castle', 10.3, 4, [12, 14], [4, 6], null, 'Oryx the Mad God', 'demon', { a: '#3a2a4a', b: '#8a6ab0', c: '#ffd34d', bg: '#2a1d0c' }, ['ut_mad_wrath', 'ut_oryx_crown', 'ut_mad_ring', 'ut_final_night'], { needsRunes: ['rune_sword', 'rune_shield', 'rune_helm'], final: true }),
 ];
 export const DUNGEON = Object.fromEntries(DUNGEONS.map((d) => [d.id, d]));
-export const BOSS = { hp: 12, dmg: 0.7, rate: 0.9 };       // multiples of a room enemy at the same L
-export const ROOM = { hp: 1.1, dmg: 1.0 };                // dungeon rooms are a bit tougher than biomes at the same L
+export const BOSS = { hp: 9, dmg: 0.9, rate: 0.9 };       // multiples of a room enemy at the same L
+export const ROOM = { hp: 1.15, dmg: 1.2 };                // dungeon rooms are a bit tougher than biomes at the same L
 
 // Room enemies per dungeon: [name, sprite template]
 export const DUNGEON_MOBS = {
