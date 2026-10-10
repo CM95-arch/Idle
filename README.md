@@ -35,7 +35,7 @@ This works exactly like Mystic Coin:
 | **Potions** | Drop in Abandoned City (1 in 200 kills), Hell (1 in 100), Abyss (1 in 45), Godlands (1 in 20), and dungeons. Stored in the vault and drunk on any character. |
 | **Exaltation** | Potions drunk past a stat's max count toward +1 for every character of that class: 25 potions, then 50 more, then 75… up to +5. |
 | **Essence** | The only currency. Made by dismantling spare copies and potions. Spent on Forge (copy any discovered item, deliberately expensive) and on one rune. |
-| **Classes** | Wizard, Priest, Archer, Rogue and Warrior from the start. Knight (Warrior), Paladin (Knight), Huntress (Archer), Sorcerer (Wizard), Necromancer (Priest) and Assassin (Rogue) unlock at level 20 of the class in brackets, roughly 1.5–2 hours of farming. |
+| **Classes** | Wizard, Priest, Archer, Rogue and Warrior from the start. Knight (Warrior), Paladin (Knight), Huntress (Archer), Sorcerer (Wizard), Necromancer (Priest) and Assassin (Rogue) unlock at level 20 of the class in brackets, about 2–2.5 hours of farming. Early levels come every minute or two. |
 | **Slots** | 2 to start. +1 for the first clear of Abyss of Demons and of Lost Halls. More cost $2.99 each (a stand-in in the test build; no payment is taken). |
 
 ## Changing the balance

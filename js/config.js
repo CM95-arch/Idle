@@ -1,6 +1,8 @@
 // ★ All balance numbers live here. Change a value, reload, and the game uses it.
 // `node tools/balance.mjs` prints survival times and kill rates for reference builds.
 
+export const BUILD = '2026-10-10 · 3';
+
 export const CONFIG = {
   tickSeconds: 0.1,            // combat simulation step (same step online and offline)
   startSlots: 2,               // character slots every account starts with
@@ -8,9 +10,9 @@ export const CONFIG = {
   slotPriceLabel: '$2.99',
 
   // ---- XP / levels (score only, levels give no power) ----
-  // Level 1 is 0–10 XP, level 2 is 10–25, each level needs 5 more XP than the last.
-  xpFirstLevel: 10,
-  xpStep: 5,
+  // XP needed to go from level n to n+1. Small at first so early levels come every minute or two.
+  // Level 2 at 8 XP, level 5 at ~170, level 10 at ~900, level 20 at ~4,600.
+  xpToNext: (n) => Math.round(6 * Math.pow(n, 1.9)),
   classUnlockLevel: 20,        // reach this level on the parent class to unlock the next class
 
   // ---- player stat formulas (ROTMG meanings, tuned for idle) ----

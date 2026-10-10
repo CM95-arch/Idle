@@ -14,8 +14,8 @@ export function newCharacter(id, cls, name) {
 }
 
 export function levelInfo(xp) {
-  let level = 1, start = 0, need = CONFIG.xpFirstLevel;
-  while (xp >= start + need) { start += need; need += CONFIG.xpStep; level++; }
+  let level = 1, start = 0, need = CONFIG.xpToNext(1);
+  while (xp >= start + need) { start += need; level++; need = CONFIG.xpToNext(level); }
   return { level, into: xp - start, need, start };
 }
 export const levelOf = (xp) => levelInfo(xp).level;

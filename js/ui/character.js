@@ -1,5 +1,5 @@
 // Screen 4: character stats, potions, gear, classes and settings.
-import { CONFIG } from '../config.js';
+import { CONFIG, BUILD } from '../config.js';
 import { CLASS, CLASSES, STATS, STAT_LABEL, STAT_NAME, ABILITY_TYPES } from '../data/classes.js';
 import { ITEMS, tierLabel } from '../data/items.js';
 import { levelInfo, statBreakdown, maxedCount, dpsOf } from '../core/character.js';
@@ -52,7 +52,7 @@ export function createCharacterScreen(root) {
           h('button', { class: 'btn', onclick: () => { try { G.importSave(text); c2(); location.reload(); } catch (e) { toast({ title: 'Could not load that save', body: e.message, kind: 'bad' }); } } }, 'Load save')]);
       } }, 'Load a save code'),
       h('button', { class: 'btn stop sm', onclick: async () => { if (await confirmDialog({ title: 'Erase everything?', body: 'This deletes all characters, items and progress on this device.', ok: 'Erase', danger: true })) { G.resetGame(); location.reload(); } } }, 'Erase save'),
-      h('p', { class: 'small muted', style: { margin: 0, textAlign: 'center' } }, `Test build · ${G.state.stats.kills.toLocaleString()} kills · ${G.state.stats.clears} clears`),
+      h('p', { class: 'small muted', style: { margin: 0, textAlign: 'center' } }, `Build ${BUILD} · ${G.state.stats.kills.toLocaleString()} kills · ${G.state.stats.clears} clears`),
       h('button', { class: 'btn', onclick: close }, 'Done'),
     ]);
   }

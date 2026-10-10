@@ -6,7 +6,7 @@ export const ENEMY_CURVE = {
   dmg: (L) => 22 * Math.pow(1.095, L - 1),   // per hit, before the player's DEF
   def: (L) => Math.round(1.6 * (L - 1)),
   rate: 0.75,                                // attacks per second
-  xp: (L) => 0.22 * Math.pow(1.4, L - 1),
+  xp: (L) => 2 * Math.pow(1.4, L - 1),        // 2 XP per kill in the Forest, ~21 in the Godlands
 };
 
 // sprite: enemy art template (see sprites.js). pal: a/b/c/d colors.
@@ -44,7 +44,7 @@ export const ELITE = { chance: 0.06, hp: 2.3, dmg: 1.4, xp: 4 };
 // Dungeons in increasing difficulty. L sets enemy strength; tiers is the loot range on a clear.
 // sig: the potion this dungeon is known for (half of its potions are this kind).
 const D = (id, name, L, rooms, tiers, potions, sig, boss, bossSprite, pal, uts, extra = {}) =>
-  ({ id, name, L, rooms, tiers, potions, sig, boss, bossSprite, pal, uts, xp: Math.round(6 * Math.pow(1.32, L)), ...extra });
+  ({ id, name, L, rooms, tiers, potions, sig, boss, bossSprite, pal, uts, xp: Math.round(45 * Math.pow(1.5, L - 1)), ...extra });
 
 export const DUNGEONS = [
   D('snake_pit', 'Snake Pit', 2.2, 3, [2, 4], [0, 1], 'spd', 'Stheno, the Snake Queen', 'snake', { a: '#5c8f2a', b: '#c6d96a', c: '#ffde3d', bg: '#3c4223' }, ['ut_pit_fang', 'ut_coiled_scale', 'ut_viper_eye']),
