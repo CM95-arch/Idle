@@ -69,12 +69,17 @@ export class BattleScene {
   event(kind, d) {
     const P = this.heroPos();
     const from = { x: P.x + 18, y: P.y - this.sc * 9 };
-    if (kind === 'shot') {
-      if (MELEE.has(d.weapon)) {
-        d.path.forEach((uid, i) => this.later(i * 0.04, () => { const p = this.aim(uid); if (p) this.fx.push({ k: 'slash', x: p.x, y: p.y, t: 0, life: 0.16, c: PROJ[d.weapon], dir: d.k % 2 ? -1 : 1, small: d.weapon === 'dagger' }); }));
-      } else this.fx.push({ k: 'proj', weapon: d.weapon, path: d.path, from, t: 0, life: SEG * d.path.length + 0.03, k: d.k, c: PROJ[d.weapon] || '#fff', tap: d.tap });
+    if (kind === 'attack') {
+      if (MELEE.has(this.weapon)) this.lungeHero = { t: 0, life: this.weapon === 'dagger' ? 0.16 : 0.26 };
+    } else if (kind === 'shot') {
+      const pts = d.path.map((uid) => this.aim(uid)).filter(Boolean);
+      if (!pts.length) return;
+      if (d.weapon === 'sword') this.fx.push({ k: 'sweep', pts, t: 0, life: 0.24, c: PROJ.sword, dir: d.k % 2 ? -1 : 1 });
+      else if (d.weapon === 'dagger') this.fx.push({ k: 'stab', x: pts[0].x, y: pts[0].y, t: 0, life: 0.2, c: PROJ.dagger, from });
+      else if (d.weapon === 'wand') this.fx.push({ k: 'pierce', from, pts, t: 0, life: 0.16, c: PROJ.wand });
+      else this.fx.push({ k: 'proj', weapon: d.weapon, path: d.path, from, t: 0, life: SEG * d.path.length + 0.04, k: d.k, c: PROJ[d.weapon] || '#fff', tap: d.tap, trail: [] });
     } else if (kind === 'hit') {
-      const delay = MELEE.has(this.weapon) ? d.seq * 0.04 + 0.05 : SEG * (d.seq + 1);
+      const delay = MELEE.has(this.weapon) ? 0.1 + d.seq * 0.04 : this.weapon === 'wand' ? 0.03 + d.seq * 0.03 : SEG * (d.seq + 1);
       this.later(delay, () => {
         const p = this.aim(d.uid); if (!p) return;
         this.num(p.x + (Math.random() - 0.5) * 22, p.y - this.sc * 6 - Math.random() * 8, `${d.dmg}`, d.crit ? '#ffd34d' : '#ffffff', d.crit ? 16 : 12);
@@ -205,6 +210,7 @@ export class BattleScene {
         g.fillStyle = hpColor(fr); g.fillRect(bx, y - 8, Math.round(bw * fr), 4);
         if (e.elite) { g.fillStyle = '#ffd34d'; g.font = '700 11px "Pixelify Sans", monospace'; g.textAlign = 'right'; g.fillText('★', bx - 3, y - 2); }
       }
+      if (cs.focus !== e.uid && cs.target === e.uid) { g.fillStyle = 'rgba(255,255,255,.75)'; g.textAlign = 'center'; g.font = '700 11px "Pixelify Sans", monospace'; g.fillText('▽', p.x, y - 12); }
       if (cs.focus === e.uid) { g.fillStyle = '#ffd34d'; g.textAlign = 'center'; g.font = '700 14px "Pixelify Sans", monospace'; g.fillText('▼', p.x, y - 12 + Math.sin(this.t * 6) * 2); }
       if (e.stunUntil > cs.t) { g.fillStyle = '#ffe08a'; g.font = '700 10px "Pixelify Sans", monospace'; g.textAlign = 'center'; g.fillText('STUN', p.x, y - 14); }
       if (e.tele) {
@@ -231,7 +237,15 @@ export class BattleScene {
       const invis = cs && cs.invisUntil > cs.t;
       g.globalAlpha = cs?.dead ? 0.25 : invis ? 0.4 : 1;
       const stepY = list.length ? 0 : Math.abs(Math.sin(this.t * 9)) * 3;
-      g.drawImage(cv, Math.round(P.x - cv.width / 2), Math.round(P.y - cv.height + hs * 2 - stepY));
+      // melee heroes lunge toward the enemy on every swing
+      let lx = 0, ly = 0;
+      if (this.lungeHero) {
+        const L = this.lungeHero; L.t += dt;
+        const q = Math.sin(Math.min(1, L.t / L.life) * Math.PI), tgt = this.slot('f', 1);
+        lx = (tgt.x - P.x) * 0.22 * q; ly = (tgt.y - P.y) * 0.22 * q;
+        if (L.t >= L.life) this.lungeHero = null;
+      }
+      g.drawImage(cv, Math.round(P.x - cv.width / 2 + lx), Math.round(P.y - cv.height + hs * 2 - stepY + ly));
       if (this.hurtFlash > 0) this.hurtFlash -= dt;
       g.globalAlpha = 1;
       if (cs && (cs.hasteUntil > cs.t || cs.dmgUntil > cs.t)) {
@@ -249,6 +263,26 @@ export class BattleScene {
       else if (f.k === 'eproj') {
         const x = f.x0 + (f.x1 - f.x0) * p, y = f.y0 + (f.y1 - f.y0) * p, r = f.big ? 6 : 3;
         g.fillStyle = f.c; g.shadowColor = f.c; g.shadowBlur = 6; g.fillRect(x - r, y - r, r * 2, r * 2); g.shadowBlur = 0;
+      } else if (f.k === 'sweep') {
+        // one wide arc through every enemy in the row
+        const xs = f.pts.map((q) => q.x), x0 = Math.min(...xs) - 26, x1 = Math.max(...xs) + 26, yy = f.pts.reduce((n, q) => n + q.y, 0) / f.pts.length;
+        const cx = (x0 + x1) / 2, rx = (x1 - x0) / 2, prog = Math.min(1, p * 1.6);
+        g.strokeStyle = f.c; g.lineWidth = 5; g.globalAlpha = 1 - p * p; g.shadowColor = f.c; g.shadowBlur = 8;
+        const a0 = f.dir > 0 ? Math.PI * 1.05 : Math.PI * 1.95, a1 = a0 + (f.dir > 0 ? 1 : -1) * Math.PI * 0.9 * prog;
+        g.beginPath(); g.ellipse(cx, yy + 8, rx, 22, 0, Math.min(a0, a1), Math.max(a0, a1)); g.stroke(); g.shadowBlur = 0; g.globalAlpha = 1;
+      } else if (f.k === 'stab') {
+        // a quick dash streak, then crossed cuts on the target
+        g.strokeStyle = f.c; g.globalAlpha = 1 - p;
+        if (p < 0.4) { g.lineWidth = 2; g.beginPath(); g.moveTo(f.from.x, f.from.y); g.lineTo(f.from.x + (f.x - f.from.x) * (p / 0.4), f.from.y + (f.y - f.from.y) * (p / 0.4)); g.stroke(); }
+        else { g.lineWidth = 3; const r = 10 + (p - 0.4) * 10; g.beginPath(); g.moveTo(f.x - r, f.y - r); g.lineTo(f.x + r, f.y + r); g.moveTo(f.x + r, f.y - r); g.lineTo(f.x - r, f.y + r); g.stroke(); }
+        g.globalAlpha = 1;
+      } else if (f.k === 'pierce') {
+        // a bright beam from the hero straight through every target and out the back
+        const last = f.pts[f.pts.length - 1], dx = last.x - f.from.x, dy = last.y - f.from.y;
+        g.strokeStyle = f.c; g.globalAlpha = 1 - p; g.lineWidth = 4 - p * 2; g.shadowColor = f.c; g.shadowBlur = 12;
+        g.beginPath(); g.moveTo(f.from.x, f.from.y); g.lineTo(last.x + dx * 0.15, last.y + dy * 0.15); g.stroke();
+        g.fillStyle = '#ffffff'; for (const q of f.pts) g.fillRect(q.x - 4, q.y - 4, 8, 8);
+        g.shadowBlur = 0; g.globalAlpha = 1;
       } else if (f.k === 'slash') {
         g.strokeStyle = f.c; g.globalAlpha = 1 - p; g.lineWidth = f.small ? 2 : 3;
         const r = f.small ? 12 : 22, a0 = f.dir > 0 ? -0.9 : 2.2;
@@ -323,18 +357,21 @@ export class BattleScene {
     let x = a.x + (b.x - a.x) * q, y = a.y + (b.y - a.y) * q;
     g.fillStyle = f.c; g.strokeStyle = f.c;
     if (f.tap) g.globalAlpha = 0.7;
-    if (f.weapon === 'wand') {
-      // piercing: a bright streak that runs through its targets
-      g.lineWidth = 3; g.shadowColor = f.c; g.shadowBlur = 10;
-      const tx = x - (b.x - a.x) * 0.25, ty = y - (b.y - a.y) * 0.25;
-      g.beginPath(); g.moveTo(tx, ty); g.lineTo(x, y); g.stroke(); g.fillRect(x - 3, y - 3, 6, 6); g.shadowBlur = 0;
-    } else if (f.weapon === 'bow') {
-      g.save(); g.translate(x, y); g.rotate(Math.atan2(b.y - a.y, b.x - a.x)); g.fillRect(-8, -1, 14, 2); g.fillRect(4, -2, 4, 4); g.restore();
+    if (f.weapon === 'bow') {
+      // arrows fan out: the outer ones curve wide on their way to their lane
+      const bend = (f.k - 1) * 34 * Math.sin(q * Math.PI) * (i === 0 ? 1 : 0);
+      const nx = -(b.y - a.y), ny = b.x - a.x, len = Math.hypot(nx, ny) || 1;
+      x += (nx / len) * bend; y += (ny / len) * bend;
+      g.save(); g.translate(x, y); g.rotate(Math.atan2(b.y - a.y, b.x - a.x) + (f.k - 1) * 0.35 * (1 - q));
+      g.fillRect(-11, -1, 18, 2); g.fillRect(5, -3, 5, 6); g.fillStyle = '#c9a36a'; g.fillRect(-12, -3, 4, 6); g.restore();
     } else {
-      // staff: weaving bolts
-      y += Math.sin(p * Math.PI * 3 + (f.k ? Math.PI : 0)) * 9;
-      x += Math.cos(p * Math.PI * 3 + (f.k ? Math.PI : 0)) * 3;
-      g.shadowColor = f.c; g.shadowBlur = 8; g.fillRect(x - 4, y - 4, 8, 8); g.shadowBlur = 0;
+      // staff: two big orbs that spiral around each other, leaving a trail
+      const ph = p * Math.PI * 4 + (f.k ? Math.PI : 0);
+      x += Math.cos(ph) * 8; y += Math.sin(ph) * 8;
+      f.trail.push({ x, y }); if (f.trail.length > 7) f.trail.shift();
+      f.trail.forEach((tp, j) => { g.globalAlpha = (j / f.trail.length) * 0.5; g.fillRect(tp.x - 2, tp.y - 2, 4, 4); });
+      g.globalAlpha = f.tap ? 0.7 : 1;
+      g.shadowColor = f.c; g.shadowBlur = 12; g.fillRect(x - 5, y - 5, 10, 10); g.fillStyle = '#ffffff'; g.fillRect(x - 2, y - 2, 4, 4); g.shadowBlur = 0;
     }
     g.globalAlpha = 1;
   }

@@ -9,6 +9,10 @@ export const LANES = 3;
 const LANE_ORDER = [1, 0, 2]; // center first
 
 /** Weapon type → pattern. Patterns: which enemies each shot of an attack hits, and how hard (m). */
+/** How often each weapon type attacks, as a share of the DEX attack rate. Fewer, bigger hits make each weapon readable;
+ *  damage per attack is scaled up to match, so DPS is unchanged. */
+export const CADENCE = { sword: 0.4, staff: 0.45, bow: 0.5, wand: 0.55, dagger: 0.75 };
+
 export const PATTERN = {
   staff:  { name: 'Weaving bolts', desc: 'Two bolts that weave into a neighboring enemy in the same row.' },
   wand:   { name: 'Piercing bolt', desc: 'Pierces through its target into the enemy behind it.' },
@@ -36,7 +40,7 @@ export function newCombat(F) {
   return { t: 0, hp: F.maxHp, mp: F.maxMp, enemies: [], uid: 1, focus: null, pT: 0, travel: 0.5, dead: false, tapShots: 0,
     hasteUntil: 0, dmgUntil: 0, dmgMult: 1, invisUntil: 0, castInput: false, dodgeInput: -1, mpReadySince: -1,
     fightStart: 0, fightHits: 0, attacks: 0, critReady: false, killHasteUntil: 0, shieldUntil: 0, cheatReadyAt: 0,
-    carry: 0, reinforceAt: 0, casts: 0 };
+    carry: 0, reinforceAt: 0, casts: 0, target: null };
 }
 
 // ---------- formation helpers ----------
@@ -195,49 +199,64 @@ function hitPlayer(cs, F, e, mult, rng, emit, big) {
 
 // ---------- the hero attacking ----------
 /** Which enemies one shot hits: [[enemy, m]]. k = index of the shot within the attack. */
-function shotTargets(cs, F, k) {
+/**
+ * The enemy a character is working on. It sticks until that enemy falls (or you tap another), so each class
+ * reads as a plan rather than random hits. How a new one is chosen depends on the weapon.
+ */
+function lockTarget(cs, F) {
   const live = alive(cs);
-  if (!live.length) return [];
   const foc = focused(cs);
-  const boss = live.find((e) => e.boss);
+  if (foc) return (cs.target = foc.uid, foc);
+  const cur = live.find((e) => e.uid === cs.target);
   const front = rowOf(cs, 'f');
+  // a sword fights whoever stands in front of it; anything else keeps its target until it falls
+  if (cur && !(F.weaponType === 'sword' && cur.row === 'b' && front.length)) return cur;
+  const boss = live.find((e) => e.boss);
+  let pick;
+  switch (F.weaponType) {
+    case 'wand': { // a lane it can pierce: front with someone behind it
+      const lane = LANE_ORDER.find((l) => at(cs, 'f', l) && at(cs, 'b', l));
+      pick = boss || (lane != null ? at(cs, 'f', lane) : weakest(front.length ? front : live)); break;
+    }
+    case 'bow': pick = boss || first(cs, laneFor(cs)); break; // the middle of the group
+    case 'sword': pick = (front.length ? front : live).find((e) => e.boss) || weakest(front.length ? front : live); break;
+    case 'dagger': pick = boss || live.slice().sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp)[0]; break; // the most wounded
+    default: pick = boss || weakest(front.length ? front : live); // staff: the weakest in front
+  }
+  cs.target = pick?.uid ?? null;
+  return pick;
+}
+
+/** Which enemies one shot hits: [[enemy, m]]. k = index of the shot within the attack. */
+function shotTargets(cs, F, k) {
+  const main = lockTarget(cs, F);
+  if (!main) return [];
   switch (F.weaponType) {
     case 'staff': {
       // weaving bolt: the target plus a neighbor in the same row, alternating sides
-      const main = foc || boss || weakest(front.length ? front : live);
       const side = k % 2 ? -1 : 1;
       const nb = at(cs, main.row, main.lane + side) || at(cs, main.row, main.lane - side);
       return nb ? [[main, 0.75], [nb, 0.48]] : [[main, 0.75]];
     }
     case 'wand': {
-      // piercing bolt: prefer a lane with two enemies in it
-      let main = foc || boss;
-      if (!main) {
-        const lane = LANE_ORDER.find((l) => at(cs, 'f', l) && at(cs, 'b', l));
-        main = lane != null ? at(cs, 'f', lane) : weakest(front.length ? front : live);
-      }
+      // piercing bolt: through the target into whoever stands behind it
       const back = main.row === 'f' ? at(cs, 'b', main.lane) : null;
       return back ? [[main, 0.8], [back, 0.48]] : [[main, 0.8]];
     }
     case 'bow': {
       // spread: one arrow per lane around the target; an arrow with an empty lane bends back to the target
-      const main = foc || boss || first(cs, laneFor(cs));
       const lane = main.lane + (k - 1);
       const e = lane >= 0 && lane < LANES ? first(cs, lane) : null;
       return e && e !== main ? [[e, 1.28]] : [[main, k === 1 ? 1.28 : 0.45]];
     }
     case 'sword': {
-      // sweep: the whole front row (the back row once the front is clear)
-      const row = front.length ? front : rowOf(cs, 'b');
-      const main = (foc && row.includes(foc) && foc) || row.find((e) => e.boss) || weakest(row);
-      return row.map((e) => [e, e === main ? 0.75 : 0.33]);
+      // sweep: the target's whole row
+      return rowOf(cs, main.row).map((e) => [e, e === main ? 0.75 : 0.33]);
     }
     case 'dagger':
-    default: {
-      // quick stab: the most wounded enemy anywhere
-      const main = foc || boss || live.slice().sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp)[0];
+    default:
+      // quick stab, extra damage to wounded enemies
       return [[main, main.hp < main.maxHp * 0.5 ? 1.1 : 0.9]];
-    }
   }
 }
 
@@ -285,7 +304,7 @@ function attack(cs, F, rng, scale, emit, tap) {
       emit?.('hit', { uid: e.uid, dmg: Math.round(d), crit, seq: i, k });
     });
   }
-  if (fx.mpOnHit) cs.mp = Math.min(F.maxMp, cs.mp + fx.mpOnHit);
+  if (fx.mpOnHit) cs.mp = Math.min(F.maxMp, cs.mp + fx.mpOnHit * scale); // bigger, rarer attacks give more each
   return total;
 }
 
@@ -366,14 +385,15 @@ export function step(cs, F, src, rng, emit, mode = 'auto') {
   // player attacks
   const haste = (cs.hasteUntil > cs.t ? ABILITY.helm.haste : 1) * (cs.killHasteUntil > cs.t ? 1.3 : 1);
   // frac = where inside this tick each attack lands, so the view can play them at a steady rhythm
-  const pRate = dt * F.aps * haste, pStart = cs.pT;
+  const cad = CADENCE[F.weaponType] || 1;
+  const pRate = dt * F.aps * haste * cad, pStart = cs.pT;
   cs.pT += pRate;
   for (let k = 1; cs.pT >= 1 && anyAlive(cs); k++) {
     cs.pT -= 1;
     const frac = Math.min(0.99, Math.max(0, (k - pStart) / pRate));
-    attack(cs, F, rng, 1, emit && ((kind, d) => emit(kind, { ...d, frac })), false);
+    attack(cs, F, rng, 1 / cad, emit && ((kind, d) => emit(kind, { ...d, frac })), false);
   }
-  if (cs.tapShots > 0 && anyAlive(cs)) { cs.tapShots--; attack(cs, F, rng, CONFIG.tapDamage, emit, true); }
+  if (cs.tapShots > 0 && anyAlive(cs)) { cs.tapShots--; attack(cs, F, rng, CONFIG.tapDamage / cad, emit, true); }
   for (const e of cs.enemies) {
     if (e.dotUntil > cs.t) e.hp -= e.dotDps * dt;
     if (e.poison > 0) { const p = e.poison * (dt / 3); e.poison -= p; e.hp -= p; }
