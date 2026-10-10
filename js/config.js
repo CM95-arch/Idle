@@ -1,11 +1,11 @@
 // ★ All balance numbers live here. Change a value, reload, and the game uses it.
 // `node tools/balance.mjs` prints survival times and kill rates for reference builds.
 
-export const BUILD = '2026-10-10 · 9';
+export const BUILD = '2026-10-10 · 10';
 
 export const CONFIG = {
   tickSeconds: 0.1,            // combat simulation step (same step online and offline)
-  startSlots: 2,               // character slots every account starts with
+  startSlots: 1,               // character slots every account starts with (+1 from Lost Halls, the rest are purchases)
   maxSlots: 12,
   slotPriceLabel: '$2.99',
 

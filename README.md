@@ -39,7 +39,7 @@ This works exactly like Mystic Coin:
 | **Rings** | Rings use the same tier ladder. Pick the ring's stat in its slot for free, any time: ATT/DEX for damage, SPD for tempo (shorter walks and dodging), WIS/MP for abilities, HP/DEF/VIT for survival. |
 | **First Steps** | 14 early milestones (flag button in the top bar). Rewards are potions or gear upgrades for the character you're viewing. |
 | **Classes** | Wizard, Priest, Archer, Rogue and Warrior from the start. Knight (Warrior), Paladin (Knight), Huntress (Archer), Sorcerer (Wizard), Necromancer (Priest) and Assassin (Rogue) unlock at level 20 of the class in brackets, about 2–2.5 hours of farming. Early levels come every minute or two. |
-| **Slots** | 2 to start. +1 for the first clear of Abyss of Demons and of Lost Halls. More cost $2.99 each (a stand-in in the test build; no payment is taken). |
+| **Slots** | 1 to start. +1 for the first clear of Lost Halls (T17, late game). More cost $2.99 each (a stand-in in the test build; no payment is taken). |
 
 ## Changing the balance
 

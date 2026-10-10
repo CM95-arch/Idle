@@ -63,7 +63,7 @@ export const DUNGEONS = [
   D('snake_pit', 'Snake Pit', 1.2, 3, [0, 1], 'spd', 'Stheno, the Snake Queen', 'snake', { a: '#5c8f2a', b: '#c6d96a', c: '#ffde3d', bg: '#3c4223' }, ['ut_pit_fang', 'ut_coiled_scale', 'ut_viper_eye']),
   D('sprite_world', 'Sprite World', 1.7, 3, [0, 1], 'dex', 'Limon the Sprite God', 'wisp', { a: '#5de0ff', b: '#bff3d8', c: '#ffffff', d: '#1d6b5a', bg: '#1f3a4a' }, ['ut_wild_whimsy', 'ut_flicker_cloak']),
   D('undead_lair', 'Undead Lair', 2.4, 3, [1, 1], 'wis', 'Septavius the Ghost God', 'ghost', { a: '#8a8ab0', b: '#d0d0f0', c: '#40ffe0', bg: '#2a2a3a' }, ['ut_gravewarden', 'ut_lantern_skull']),
-  D('abyss_demons', 'Abyss of Demons', 2.9, 4, [1, 1], 'vit', 'Archdemon Malphas', 'demon', { a: '#a02010', b: '#e06030', c: '#ffd040', bg: '#4a1a14' }, ['ut_demonfire', 'ut_molten_helm'], { slotReward: true }),
+  D('abyss_demons', 'Abyss of Demons', 2.9, 4, [1, 1], 'vit', 'Archdemon Malphas', 'demon', { a: '#a02010', b: '#e06030', c: '#ffd040', bg: '#4a1a14' }, ['ut_demonfire', 'ut_molten_helm']),
   D('manor', 'Manor of the Immortals', 3.4, 4, [1, 2], 'att', 'Lord Ruthven', 'humanoid', { a: '#3a0a1a', b: '#8a2a3a', c: '#ffd34d', bg: '#2a1630' }, ['ut_thirst', 'ut_bloodsilk']),
   D('davy', 'Davy Jones’ Locker', 4, 4, [1, 2], 'def', 'Davy Jones', 'ghost', { a: '#2a6a7a', b: '#6ab0c0', c: '#ffd34d', bg: '#123040' }, ['ut_drowned_saber', 'ut_ghostship']),
   D('labyrinth', 'Woodland Labyrinth', 4.9, 4, [1, 2], 'dex', 'Murderous Megamoth', 'bug', { a: '#4a6a2a', b: '#8ab050', c: '#ffef80', bg: '#1f3a1a' }, ['ut_thornheart', 'ut_mossback']),
