@@ -1,0 +1,10 @@
+// Cloudflare hosting: serves this folder as a static site. No build step.
+// The Worker name must match the project name in the Cloudflare dashboard.
+{
+  "name": "idle-realm",
+  "compatibility_date": "2026-10-01",
+  // a public address for the live game, plus a test link for every branch
+  "workers_dev": true,
+  "preview_urls": true,
+  "assets": { "directory": "./" }
+}

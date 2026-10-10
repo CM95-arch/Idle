@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <meta name="theme-color" content="#0e0c12" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Idle Realm" />
+  <meta name="description" content="An idle fantasy RPG: farm biomes, clear dungeons, max your stats." />
+  <title>Idle Realm</title>
+  <link rel="icon" href="assets/icons/icon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="preload" href="assets/fonts/Cinzel-Variable.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="assets/fonts/AlegreyaSans-400.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="assets/fonts/PixelifySans.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="css/main.css" />
+</head>
+<body>
+  <div id="app" class="shell">
+    <main id="screens">
+      <section class="screen" id="scr-farm"></section>
+      <section class="screen hidden" id="scr-dungeons"></section>
+      <section class="screen hidden" id="scr-vault"></section>
+      <section class="screen hidden" id="scr-character"></section>
+    </main>
+    <nav class="tabs" id="tabs"></nav>
+    <div id="sheet-root"></div>
+    <div id="toast-root"></div>
+    <div id="overlay-root"></div>
+  </div>
+  <noscript>Idle Realm needs JavaScript.</noscript>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
