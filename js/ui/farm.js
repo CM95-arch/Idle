@@ -79,7 +79,7 @@ export function createFarmScreen(root, app) {
     scene.setHero(c.cls, heroColors(c.cls), ITEMS[c.equip.weapon]?.type, c.name, li.level);
 
     const action = inRun ? h('button', { class: 'btn gold sm', onclick: () => app.nav('dungeons') }, 'In dungeon')
-      : f.status === 'farming' ? h('button', { class: 'btn red sm', onclick: () => { G.stopFarming(slot); render(); } }, 'Stop')
+      : f.status === 'farming' ? null
         : h('button', { class: 'btn sm', onclick: () => { G.startFarming(slot, f.biome); render(); } }, f.status === 'fallen' ? 'Restart' : 'Start');
 
     const kids = [

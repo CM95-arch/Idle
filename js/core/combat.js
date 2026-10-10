@@ -168,8 +168,14 @@ export function step(cs, F, src, rng, emit, mode = 'auto') {
 
   // player attacks
   const haste = (cs.hasteUntil > cs.t ? ABILITY.helm.haste : 1) * (cs.killHasteUntil > cs.t ? 1.3 : 1);
-  cs.pT += dt * F.aps * haste;
-  while (cs.pT >= 1 && e.hp > 0) { cs.pT -= 1; attack(cs, F, e, rng, 1, emit, false); }
+  // frac = where inside this tick each attack lands, so the view can play them at a steady rhythm
+  const pRate = dt * F.aps * haste, pStart = cs.pT;
+  cs.pT += pRate;
+  for (let k = 1; cs.pT >= 1 && e.hp > 0; k++) {
+    cs.pT -= 1;
+    const frac = Math.min(0.99, Math.max(0, (k - pStart) / pRate));
+    attack(cs, F, e, rng, 1, emit && ((kind, d) => emit(kind, { ...d, frac })), false);
+  }
   if (cs.tapShots > 0 && e.hp > 0) { cs.tapShots--; attack(cs, F, e, rng, CONFIG.tapDamage, emit, true); }
   if (e.dotUntil > cs.t) e.hp -= e.dotDps * dt;
   if (e.poison > 0) { const p = e.poison * (dt / 3); e.poison -= p; e.hp -= p; }
@@ -210,9 +216,12 @@ export function step(cs, F, src, rng, emit, mode = 'auto') {
   // enemy attacks
   if (e.stunUntil > cs.t) return;
   const phase = e.boss ? 1 + 0.15 * (e.hp < e.maxHp * 0.66) + 0.15 * (e.hp < e.maxHp * 0.33) : 1;
-  cs.eT += dt * e.rate * (e.slowUntil > cs.t ? 0.5 : 1) * phase;
-  while (cs.eT >= 1 && !cs.dead) {
+  const eRate = dt * e.rate * (e.slowUntil > cs.t ? 0.5 : 1) * phase, eStart = cs.eT;
+  cs.eT += eRate;
+  for (let k = 1; cs.eT >= 1 && !cs.dead; k++) {
+    const frac = Math.min(0.99, Math.max(0, (k - eStart) / eRate));
+    const emitE = emit && ((kind, d) => emit(kind, { ...d, frac }));
     cs.eT -= 1;
-    hitPlayer(cs, F, e, 1, rng, emit, false);
+    hitPlayer(cs, F, e, 1, rng, emitE, false);
   }
 }

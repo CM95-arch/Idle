@@ -77,7 +77,7 @@ function settings() {
 // ---------- events from the game ----------
 const weaponOf = (slot) => ITEMS[G.state.chars[slot]?.equip.weapon]?.type || 'staff';
 function withSound(screen, slotOf) {
-  return (kind, d) => {
+  const show = (kind, d) => {
     screen.emit(kind, d);
     if (kind === 'hit') play(weaponOf(slotOf()));
     else if (kind === 'hurt' && d.big) play('hurt');
@@ -86,6 +86,8 @@ function withSound(screen, slotOf) {
     else if (kind === 'dodged') play('dodge');
     else if (kind === 'telegraph') play('tele');
   };
+  // Events carry `frac`, their position inside the 0.1s combat step; play them at that moment for a steady rhythm.
+  return (kind, d) => { if (d?.frac > 0.02) setTimeout(() => show(kind, d), d.frac * 100); else show(kind, d); };
 }
 const farmEmit = withSound(screens.farm, () => G.state.view);
 const runEmit = withSound(screens.dungeons, () => G.state.run?.slot);
