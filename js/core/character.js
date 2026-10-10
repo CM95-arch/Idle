@@ -48,19 +48,30 @@ export function fighterOf(char, state) {
   const t = (k) => Math.max(0, sb[k].total);
   const w = ITEMS[char.equip.weapon]?.weapon || { dmgMin: 5, dmgMax: 8, shots: 1, rof: 1 };
   const ab = ITEMS[char.equip.ability];
+  // UT effects from everything equipped. Numbers add up; cooldown-style effects take the best one.
+  const fx = {};
+  for (const id of Object.values(char.equip)) {
+    for (const [k, v] of Object.entries(ITEMS[id]?.fx || {})) {
+      fx[k] = ['cheatDeath'].includes(k) ? Math.min(fx[k] ?? Infinity, v) : ['burstEvery', 'openerHits', 'rofMult', 'openerMult', 'burstMult', 'buffDur', 'critAfterDodge', 'ignoreDef', 'rampCap'].includes(k) ? Math.max(fx[k] || 0, v) : (fx[k] || 0) + v;
+    }
+  }
   return {
+    fx,
     cls: char.cls,
     maxHp: t('hp'), maxMp: t('mp'), def: t('def'),
     attMult: CONFIG.attMult(t('att')),
-    aps: CONFIG.attacksPerSec(t('dex')) * w.rof,
+    aps: CONFIG.attacksPerSec(t('dex')) * w.rof * (fx.rofMult || 1),
     dmgMin: w.dmgMin, dmgMax: w.dmgMax, shots: w.shots,
     hpRegen: CONFIG.hpRegen(t('vit')), mpRegen: CONFIG.mpRegen(t('wis')),
-    dodge: CONFIG.dodgeChance(t('spd')), travel: Math.max(0.4, CONFIG.travelSeconds(t('spd'))),
-    ability: ab ? { type: ab.type, power: ab.ability.power, cost: ab.ability.cost } : null,
+    dodge: CONFIG.dodgeChance(t('spd')) + (fx.dodge || 0), travel: Math.max(0.25, CONFIG.travelSeconds(t('spd'))),
+    ability: ab ? { type: ab.type, power: Math.round(ab.ability.power * (1 + (fx.abilityPower || 0))), cost: Math.round(ab.ability.cost * (1 + (fx.abilityCostMult || 0))) } : null,
   };
 }
 
 /** Rough damage per second against a 0-DEF target, for the UI. */
 export function dpsOf(F) {
-  return Math.round(((F.dmgMin + F.dmgMax) / 2) * F.shots * F.attMult * F.aps);
+  const fx = F.fx || {};
+  const crit = 1 + (0.08 + (fx.critChance || 0)) * (0.6 + (fx.critMult || 0));
+  const extra = (1 + (fx.doubleChance || 0)) * (1 + (fx.dmg || 0)) * (fx.burstEvery ? 1 + (fx.burstMult - 1) / fx.burstEvery : 1);
+  return Math.round(((F.dmgMin + F.dmgMax) / 2) * F.shots * F.attMult * F.aps * crit * extra);
 }

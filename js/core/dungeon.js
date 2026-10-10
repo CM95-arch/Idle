@@ -68,6 +68,5 @@ export function rollRewards(run, cls) {
   const potions = [];
   const pc = rng.int(...d.potions);
   for (let i = 0; i < pc; i++) potions.push(rollPotion(rng, d.sig));
-  if (d.rune) items.push(d.rune);
   return { xp: d.xp, items, potions };
 }

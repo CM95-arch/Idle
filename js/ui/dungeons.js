@@ -5,7 +5,7 @@ import { ITEMS, tierLabel, typeLabel } from '../data/items.js';
 import { abilityCost } from '../core/combat.js';
 import { runProgress } from '../core/dungeon.js';
 import * as G from '../core/game.js';
-import { h, openSheet, confirmDialog, toast, fmtNum, fmtDur } from './dom.js';
+import { h, openSheet, confirmDialog, toast, fmtDur } from './dom.js';
 import { draw, itemIcon } from './sprites.js';
 import { BattleScene } from './scene.js';
 import { heroColors, newCharacterSheet, diffPill } from './common.js';
@@ -43,7 +43,7 @@ export function createDungeonScreen(root, app) {
           h('div', {}, h('span', {}, 'Difficulty'), c ? diffPill(est) : '—')),
         h('div', { class: 'label' }, 'Unique items'),
         h('div', { class: 'vgrid' }, d.uts.map((id) => h('button', { class: `tile${G.discovered(id) ? '' : ' unk'} ut`, onclick: () => openItemSheet(id) }, itemIcon(id, 30, !G.discovered(id))))),
-        d.rune ? h('div', { class: 'small', style: { color: 'var(--gold-dark)', fontWeight: 800 } }, `Drops the ${ITEMS[d.rune].name}`) : null,
+        d.rune ? h('div', { class: 'small', style: { color: 'var(--gold-dark)', fontWeight: 800 } }, `Can drop the ${ITEMS[d.rune].name}`) : null,
         d.slotReward && !G.state.clears[d.id] ? h('div', { class: 'small', style: { color: 'var(--gold-dark)', fontWeight: 800 } }, 'First clear: +1 character slot') : null,
         h('button', { class: 'btn', disabled: !c || !!busy || !ok, onclick: () => {
           if (G.enterDungeon(slot, d.id)) { close(); render(); }
@@ -65,14 +65,11 @@ export function createDungeonScreen(root, app) {
     kids.push(h('div', { class: 'panel dark feature', style: { display: 'grid', gap: '8px' } },
       h('button', { class: 'row between', style: { textAlign: 'left' }, onclick: () => detailSheet(oryx) },
         h('div', {}, h('div', { class: 'label', style: { color: 'var(--gold)' } }, 'Final boss'), h('div', { class: 'h2' }, oryx.name),
-          h('div', { class: 'small', style: { color: '#a9b4c0' } }, `Loot T${oryx.tiers[0]}–T${oryx.tiers[1]} · needs 3 runes`)), thumb(oryx, 74)),
+          h('div', { class: 'small', style: { color: '#a9b4c0' } }, `Loot T${oryx.tiers[0]}–T${oryx.tiers[1]} · needs all 3 runes`)), thumb(oryx, 74)),
       h('div', { class: 'row between' },
         h('div', { class: 'runes' }, RUNES.map(([r]) => h('div', { class: `rune${have.includes(r) ? '' : ' miss'}`, title: ITEMS[r].name }, itemIcon(r, 22, !have.includes(r))))),
         missing.length === 0 ? h('button', { class: 'btn sm', disabled: !c || !!s.run, onclick: () => detailSheet(oryx) }, 'Enter')
-          : missing.length === 1 ? h('button', { class: 'btn gray sm', disabled: s.essence < CONFIG.runeEssenceCost, onclick: async () => {
-            if (await confirmDialog({ title: `Buy the ${ITEMS[missing[0][0]].name}?`, body: `Costs ${fmtNum(CONFIG.runeEssenceCost)} Essence. You can only buy a rune when you hold the other two.`, ok: 'Buy' })) { G.buyRune(); render(); }
-          } }, 'Buy rune ', h('span', { class: 'ess' }, `◆${fmtNum(CONFIG.runeEssenceCost)}`))
-            : h('div', { class: 'small', style: { textAlign: 'right', color: '#a9b4c0' } }, `${have.length}/3 runes`))));
+          : h('div', { class: 'small', style: { textAlign: 'right', color: '#a9b4c0' } }, `${have.length}/3 runes`))));
 
     for (const [name, a, b] of GROUPS) {
       kids.push(h('div', { class: 'dgroup' }, name));
@@ -186,7 +183,8 @@ export function showRunResult(res, showDialog, onChange) {
         h('button', { class: 'ic', onclick: () => openItemSheet(id, onChange) }, itemIcon(id, 34)),
         h('button', { style: { textAlign: 'left', minWidth: 0 }, onclick: () => openItemSheet(id, onChange) },
           h('b', { style: { color: it.tier === 'UT' ? 'var(--ut)' : '' } }, it.name, isNew ? h('span', { class: 'tag' }, 'NEW') : null, up ? h('span', { class: 'tag up' }, '▲') : null),
-          h('span', { class: 'small muted', style: { fontWeight: 700 } }, `${tierLabel(it)} ${typeLabel(it)}`)),
+          h('span', { class: 'small muted', style: { fontWeight: 700 } }, `${tierLabel(it)} ${typeLabel(it)}`),
+          it.special ? h('span', { class: 'small', style: { display: 'block', color: 'var(--ut)', fontWeight: 800 } }, it.special) : null),
         canEq ? h('button', { class: `btn sm${up ? '' : ' gray'}`, onclick: () => { G.state.view = res.slot; G.equip(res.slot, id); toast({ title: 'Equipped', body: it.name, icon: itemIcon(id, 26) }); rerender(); onChange?.(); } }, 'Equip') : h('span'));
     });
     return [

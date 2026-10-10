@@ -4,8 +4,9 @@ import { CLASS, CLASSES } from '../data/classes.js';
 import { BIOME, DUNGEON } from '../data/world.js';
 import { levelOf } from '../core/character.js';
 import * as G from '../core/game.js';
-import { h, openSheet, showDialog, toast, confirmDialog, fmtNum } from './dom.js';
-import { heroIcon } from './sprites.js';
+import { h, openSheet, showDialog, toast, confirmDialog } from './dom.js';
+import { heroIcon, itemIcon } from './sprites.js';
+import { ITEMS, tierLabel } from '../data/items.js';
 
 export const heroColors = (cls) => CLASS[cls].colors;
 
@@ -28,7 +29,7 @@ export function slotStatus(slot) {
 
 const GEAR_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3h0a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8v0a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>';
 
-/** The top bar: character button (opens the character list), Essence, settings. */
+/** The top bar: character button (opens the character list) and settings. */
 export function renderTopBar(el, { onChange, onSettings }) {
   const s = G.state, c = s.chars[s.view];
   const st = slotStatus(s.view);
@@ -42,8 +43,37 @@ export function renderTopBar(el, { onChange, onSettings }) {
         h('span', {}, c ? `Lv ${levelOf(c.xp)} ${CLASS[c.cls].name} · ` : '', h('span', { style: { color: st.color === 'var(--ink-3)' ? 'var(--bar-dim)' : st.color } }, st.text))),
       h('span', { class: 'chev' }, '▼')),
     h('div', { class: 'spacer' }),
-    h('div', { class: 'res', title: 'Essence' }, h('span', { style: { color: '#5cc8f2' } }, '◆'), fmtNum(s.essence)),
+    G.goalsFinished() ? null : goalButton(onChange),
     gear);
+}
+
+const FLAG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"/><path d="M5 4h11l-2 4 2 4H5"/></svg>';
+function goalButton(onChange) {
+  const n = G.goalsClaimable();
+  const b = h('button', { class: `iconbtn${n ? ' ready' : ''}`, 'aria-label': 'First Steps', onclick: () => goalsSheet(onChange) });
+  b.innerHTML = FLAG + (n ? `<i class="dot">${n}</i>` : '');
+  return b;
+}
+function rewardText(g) {
+  if (g.reward.potions) return `${g.reward.potions} potions`;
+  return g.reward.gear === 'ring' ? `T${g.reward.tier} ring` : `T${g.reward.tier} ${g.reward.gear}`;
+}
+export function goalsSheet(onChange) {
+  openSheet((close, rerender) => {
+    const list = G.goalList();
+    const done = list.filter((g) => g.claimed).length;
+    return [
+      h('div', { class: 'row between' }, h('div', { class: 'h2' }, 'First Steps'), h('span', { class: 'small muted', style: { fontWeight: 800 } }, `${done} / ${list.length}`)),
+      h('div', { class: 'list' }, list.map((g) => h('div', { class: `goal${g.claimed ? ' done' : ''}` },
+        h('span', { class: 'chk' }, g.claimed ? '✓' : g.ready ? '!' : ''),
+        h('div', { class: 'grow' }, h('b', {}, g.text), h('div', { class: 'small muted' }, rewardText(g))),
+        g.ready ? h('button', { class: 'btn sm', onclick: () => {
+          const ids = G.claimGoal(g.id);
+          for (const id of ids.slice(0, 3)) toast({ title: 'Reward', body: `${ITEMS[id].name} ${tierLabel(ITEMS[id])}`.trim(), icon: itemIcon(id, 26), kind: 'gold' });
+          rerender(); onChange?.();
+        } }, 'Claim') : null))),
+    ];
+  });
 }
 
 export function characterList(onChange) {

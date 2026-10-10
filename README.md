@@ -31,10 +31,13 @@ This works exactly like Mystic Coin:
 | **Early game** | Drops are frequent in low biomes (about 1 in 3 kills in the Forest). Tap a gear slot to pick gear in the Vault; ▲ marks upgrades. When the next biome is safe enough, a "Ready for …" button appears. Each biome is a big step up: an undergeared character dies within minutes. |
 | **Difficulty** | Estimated by running the real combat engine ahead: Low = survives 8h+, Moderate = 1–8h, High = under 1h. |
 | **Dungeons** | 3–4 rooms, then a boss (about 3–6 minutes). Combat is automatic, but in dungeons you tap the ability yourself and tap to dodge boss attacks (which stuns the boss). Dungeons are harder than the biome with the same loot. Rewards are only given on a clear. If you close the app mid-run, it plays on with worse timing. |
-| **Oryx's Castle** | Needs the Sword, Shield and Helm runes (Lost Halls, The Void, The Shatters). Entering uses them up. If you hold two, the third can be bought with Essence. |
+| **Oryx's Castle** | Needs the Sword, Shield and Helm runes. Each drops from its dungeon (Lost Halls, The Void, The Shatters) on about 40% of clears, guaranteed by the third. Entering uses them up. |
 | **Potions** | Drop in Abandoned City (1 in 200 kills), Hell (1 in 100), Abyss (1 in 45), Godlands (1 in 20), and dungeons. Stored in the vault and drunk on any character. |
 | **Exaltation** | Potions drunk past a stat's max count toward +1 for every character of that class: 25 potions, then 50 more, then 75… up to +5. |
-| **Essence** | The only currency. Made by dismantling spare copies and potions. Spent on Forge (copy any discovered item, deliberately expensive) and on one rune. |
+| **Fusion** | 3 copies of an item fuse into 1 copy of the next tier, up to T11 (T12+ only drops in dungeons). 3 potions of one kind convert into 1 of your choice. "Fuse extras" in the Vault fuses everything while keeping one copy of each item. |
+| **UT items** | Every unique has a special effect (poison, exploding hits, cheat death, ramping damage, double casts…), shown in pink on the item. |
+| **Rings** | Each ring has a main and a second stat: ATT/DEX for damage, SPD for tempo (shorter walks and dodging), WIS/MP for abilities, HP/DEF/VIT for survival. |
+| **First Steps** | 14 early milestones (flag button in the top bar), each with a guaranteed reward made for the character you're viewing. |
 | **Classes** | Wizard, Priest, Archer, Rogue and Warrior from the start. Knight (Warrior), Paladin (Knight), Huntress (Archer), Sorcerer (Wizard), Necromancer (Priest) and Assassin (Rogue) unlock at level 20 of the class in brackets, about 2–2.5 hours of farming. Early levels come every minute or two. |
 | **Slots** | 2 to start. +1 for the first clear of Abyss of Demons and of Lost Halls. More cost $2.99 each (a stand-in in the test build; no payment is taken). |
 
@@ -50,6 +53,7 @@ After a change, run the balance report to see what it did:
 ```bash
 npm run balance                     # survival time and kills/hour per biome for reference builds
 npm run balance:dungeons -- wizard  # clear rate per dungeon (closed app)
+node tools/classes.mjs              # every class side by side: kills/hour and survival
 ```
 
 ## Adding your own art

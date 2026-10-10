@@ -84,6 +84,9 @@ export class BattleScene {
     } else if (kind === 'dodged') {
       this.tele = null; this.num(P.x + 30, P.y - 90, 'DODGED!', '#58c06f', 18);
       this.fx.push({ k: 'burst', x: E.x, y: E.y, t: 0, life: 0.4, c: '#ffffff' });
+    } else if (kind === 'cheat') {
+      this.num(P.x + 30, P.y - 96, 'UNDYING!', '#ffd34d', 18);
+      this.fx.push({ k: 'burst', x: P.x, y: P.y - 30, t: 0, life: 0.6, c: '#ffd34d' });
     } else if (kind === 'death') {
       this.fx.push({ k: 'puff', x: P.x, y: P.y - 30, t: 0, life: 0.6, c: '#ff4030' });
     }

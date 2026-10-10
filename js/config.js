@@ -1,7 +1,7 @@
 // ★ All balance numbers live here. Change a value, reload, and the game uses it.
 // `node tools/balance.mjs` prints survival times and kill rates for reference builds.
 
-export const BUILD = '2026-10-10 · 4';
+export const BUILD = '2026-10-10 · 5';
 
 export const CONFIG = {
   tickSeconds: 0.1,            // combat simulation step (same step online and offline)
@@ -21,7 +21,7 @@ export const CONFIG = {
   hpRegen: (vit) => 1 + 0.24 * vit,               // HP per second
   mpRegen: (wis) => 0.5 + 0.12 * wis,             // MP per second
   dodgeChance: (spd) => spd / (spd + 200),        // chance an enemy hit misses
-  travelSeconds: (spd) => 0.9 - spd / 200,        // walk time to the next enemy
+  travelSeconds: (spd) => 1.3 - spd / 70,         // walk time to the next enemy: SPD means more kills per hour
   minDamageAfterDef: 0.15,     // DEF can never block more than 85% of a hit
   outOfCombatRegenMult: 5,     // HP/MP regen is this many times faster while walking between enemies
   walkHealPct: 0.04,           // plus this share of max HP per second while walking
@@ -55,13 +55,12 @@ export const CONFIG = {
   closedAppDodgeChance: 0.35,  // telegraphs dodged automatically while the app is closed
   closedAppAbilityDelay: 4,    // seconds the auto-cast waits while the app is closed
 
-  // ---- Essence ----
-  essenceValue: (tier) => Math.round(2 * Math.pow(1.45, tier)),
-  utEssenceValue: 250,
-  potionEssenceValue: 6,
-  forgeCostMult: 30,           // forging costs this many times the dismantle value
-  utForgeCost: 20000,
-  runeEssenceCost: 6000,
+  // ---- fusion ----
+  fuseCost: 3,                 // 3 copies of an item fuse into 1 copy of the next tier
+  fuseMaxTier: 11,             // fusion can't create anything above this (T12+ stays dungeon-only)
+  potionConvertCost: 3,        // 3 potions of one kind → 1 potion of your choice
+  runeChance: 0.4,             // chance a rune dungeon drops its rune; guaranteed after 2 misses in a row
+  runePityMisses: 2,
 
   // ---- survival estimate ----
   survivalSimHours: 8,

@@ -2,7 +2,7 @@
 import { CLASS, STATS, STAT_NAME, STAT_LABEL } from '../data/classes.js';
 import { ITEM_LIST, ITEMS, ARMOR_TYPES, ABILITY_LABEL, WEAPON_TYPES, MAX_TIER, tierLabel, typeLabel } from '../data/items.js';
 import * as G from '../core/game.js';
-import { h, toast, confirmDialog, fmtNum } from './dom.js';
+import { h, toast, confirmDialog } from './dom.js';
 import { itemIcon } from './sprites.js';
 import { openItemSheet } from './itemSheet.js';
 
@@ -41,6 +41,7 @@ export function createVaultScreen(root, app) {
     return h('button', { class: cls, 'aria-label': known ? it.name : 'Undiscovered', onclick: () => tap(id) },
       itemIcon(id, 34, !known),
       up ? h('span', { class: 'up' }, '▲') : null,
+      known && G.canFuse(id) ? h('span', { class: 'fz' }, '⇧') : null,
       isEq ? h('span', { class: 'eq' }) : null,
       known && !s.newIds[id] ? h('span', { class: 'tl' }, potion ? `×${own}` : tierLabel(it)) : null);
   }
@@ -87,13 +88,13 @@ export function createVaultScreen(root, app) {
     const title = cat === 'ring' && sub !== 'ut' ? `Rings of ${STAT_NAME[sub]}` : (CATS[cat].subs.find(([k]) => k === sub) || [, ''])[1];
     kids.push(h('div', { class: 'vsec' }, h('span', {}, title), h('small', {}, cat === 'potion' ? '' : `${n} / ${ids.length}`)));
     kids.push(h('div', { class: 'vgrid' }, ids.map(tile)));
-    if (!mode) {
-      const prev = G.dismantleAllPreview();
-      if (prev.copies) kids.push(h('button', { class: 'btn gray sm', style: { marginTop: '6px' }, onclick: async () => {
-        if (await confirmDialog({ title: 'Dismantle duplicates?', body: `${fmtNum(prev.copies)} spare copies become ${fmtNum(prev.essence)} Essence. One copy of each item is kept.`, ok: 'Dismantle', danger: true })) {
-          toast({ title: `+${fmtNum(G.dismantleAll())} Essence` }); render(); app.refreshTop();
+    if (!mode && cat !== 'potion') {
+      const fusable = ids.filter((id) => G.fuseTarget(id) && G.owned(id) >= 4).length;
+      if (fusable) kids.push(h('button', { class: 'btn gray sm', style: { marginTop: '6px' }, onclick: async () => {
+        if (await confirmDialog({ title: 'Fuse extras?', body: 'Every 3 spare copies here become 1 copy of the next tier. One copy of each item is kept.', ok: 'Fuse' })) {
+          const n = G.fuseAll(ids); toast({ title: `Fused ${n} item${n === 1 ? '' : 's'}`, kind: 'gold' }); render();
         }
-      } }, `Dismantle ${fmtNum(prev.copies)} duplicates`));
+      } }, 'Fuse extras ↑'));
     }
     root.replaceChildren(...kids);
   }

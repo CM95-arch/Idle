@@ -1,12 +1,12 @@
 // Item detail sheet: stats, a comparison against what the current character wears, and actions.
 import { CONFIG } from '../config.js';
-import { CLASSES, STAT_LABEL, ABILITY_TYPES } from '../data/classes.js';
+import { CLASSES, STATS, STAT_LABEL, ABILITY_TYPES } from '../data/classes.js';
 import { ITEMS, tierLabel, typeLabel } from '../data/items.js';
 import { sourcesOf } from '../core/loot.js';
 import { fighterOf, dpsOf } from '../core/character.js';
 import { abilityCost } from '../core/combat.js';
 import * as G from '../core/game.js';
-import { h, openSheet, toast, confirmDialog, fmtNum } from './dom.js';
+import { h, openSheet, toast, fmtNum } from './dom.js';
 import { itemIcon } from './sprites.js';
 
 const usableBy = (id) => CLASSES.filter((c) => G.canUse(c.id, id)).map((c) => c.name);
@@ -68,8 +68,9 @@ export function openItemSheet(id, onChange) {
       h('div', { class: 'ihead' }, h('div', { class: 'ibig' }, itemIcon(id, 54, true)),
         h('div', {}, h('div', { class: 'h2' }, '???'), h('div', { class: 'small muted' }, `${tierLabel(it)} ${typeLabel(it)}`))),
       h('p', { class: 'flav' }, hintText(it)),
+      it.special ? h('div', { class: 'special' }, it.special) : null,
     ];
-    const own = G.owned(id), eq = G.equippedCount(id), spare = G.spareCopies(id), cost = G.forgeCost(id);
+    const own = G.owned(id), eq = G.equippedCount(id), to = G.fuseTarget(id);
     const kids = [
       h('div', { class: 'ihead' }, h('div', { class: 'ibig' }, itemIcon(id, 54)),
         h('div', {},
@@ -79,14 +80,16 @@ export function openItemSheet(id, onChange) {
     ];
     const rows = statLines(it);
     if (rows.length) kids.push(h('div', { class: 'kv tnum' }, rows.map(([k, v]) => h('div', {}, h('span', {}, k), String(v)))));
+    if (it.special) kids.push(h('div', { class: 'special' }, it.special));
     if (it.ability) kids.push(h('div', { class: 'small muted' }, ABILITY_TYPES[it.type].effect));
     const cmp = c && compareText(slot, id);
     if (cmp) kids.push(h('div', { class: 'cmp' }, h('span', { class: 'muted' }, `vs ${c.name}'s gear: `), cmp));
     kids.push(h('p', { class: 'flav' }, it.desc));
     kids.push(h('div', { class: 'small muted' }, 'Found in ', h('b', { style: { color: 'var(--ink)' } }, sourceText(it))));
     if (it.slot === 'potion') {
-      kids.push(h('div', { class: 'row' },
-        h('button', { class: 'btn gray sm grow', disabled: own < 1, onclick: async () => { if (await confirmDialog({ title: `Dismantle ${own} potions?`, body: `For ${fmtNum(own * CONFIG.potionEssenceValue)} Essence.`, ok: 'Dismantle', danger: true })) { G.dismantle(id, own); rerender(); onChange?.(); } } }, 'Dismantle all')));
+      kids.push(h('div', { class: 'label' }, `Convert ${CONFIG.potionConvertCost} → 1`));
+      kids.push(h('div', { class: 'classes' }, STATS.filter((k) => k !== it.potStat).map((k) => h('button', { class: 'cls', disabled: own < CONFIG.potionConvertCost, style: { opacity: own < CONFIG.potionConvertCost ? 0.45 : 1 }, onclick: () => { if (G.convertPotions(it.potStat, k)) { toast({ title: `+1 ${ITEMS[`pot_${k}`].name}`, icon: itemIcon(`pot_${k}`, 24) }); rerender(); onChange?.(); } } },
+        itemIcon(`pot_${k}`, 26), h('span', {}, STAT_LABEL[k])))));
       return kids;
     }
     if (it.slot === 'rune') return kids;
@@ -95,13 +98,9 @@ export function openItemSheet(id, onChange) {
       const isOn = c.equip[it.slot] === id;
       actions.push(h('button', { class: 'btn sm grow', disabled: isOn || own < 1, onclick: () => { G.equip(slot, id); toast({ title: 'Equipped', body: it.name, icon: itemIcon(id, 26) }); close(); onChange?.(); } }, isOn ? 'Equipped' : own < 1 ? 'None spare' : 'Equip'));
     }
-    actions.push(h('button', { class: 'btn gray sm grow', disabled: cost == null || G.state.essence < cost, onclick: async () => {
-      if (await confirmDialog({ title: `Forge ${it.name}?`, body: `Costs ${fmtNum(cost)} Essence.`, ok: 'Forge' })) { G.forge(id); rerender(); onChange?.(); }
-    } }, 'Forge ', h('span', { class: 'ess' }, `◆${fmtNum(cost)}`)));
-    if (spare) actions.push(h('button', { class: 'btn gray sm grow', onclick: async () => {
-      if (await confirmDialog({ title: `Dismantle ${spare}?`, body: `Keeps one copy. +${fmtNum(G.essenceValue(id) * spare)} Essence.`, ok: 'Dismantle', danger: true })) { G.dismantle(id); rerender(); onChange?.(); }
-    } }, `Dismantle ${spare}`));
-    kids.push(h('div', { class: 'row', style: { flexWrap: 'wrap' } }, actions));
+    if (to) actions.push(h('button', { class: 'btn gray sm grow', disabled: own < CONFIG.fuseCost, onclick: () => { const made = G.fuse(id); if (made) { toast({ title: 'Fused', body: ITEMS[made].name, icon: itemIcon(made, 26), kind: 'gold' }); rerender(); onChange?.(); } } },
+      `Fuse ${Math.min(own, CONFIG.fuseCost)}/${CONFIG.fuseCost} →`, itemIcon(to, 22, !G.discovered(to)), tierLabel(ITEMS[to])));
+    if (actions.length) kids.push(h('div', { class: 'row', style: { flexWrap: 'wrap' } }, actions));
     return kids;
   });
 }

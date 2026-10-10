@@ -36,6 +36,14 @@ canvas.spr, img.spr { image-rendering: pixelated; display: block; }
 .res { display: flex; align-items: center; gap: 5px; padding: 4px 9px; border-radius: 999px; background: rgba(0,0,0,.28); font-weight: 800; font-size: 13px; }
 .iconbtn { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12); color: var(--bar-ink); }
 .iconbtn svg { width: 20px; height: 20px; }
+.iconbtn { position: relative; }
+.iconbtn.ready { border-color: var(--gold); color: var(--gold); }
+.iconbtn .dot { position: absolute; top: -5px; right: -5px; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 9px; background: var(--gold); color: #3a2604; font-style: normal; font-size: 11px; font-weight: 900; display: grid; place-items: center; border: 2px solid var(--bar); }
+.goal { display: grid; grid-template-columns: 26px 1fr auto; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 11px; background: #fff; border: 1px solid var(--edge); }
+.goal.done { opacity: .55; }
+.goal .chk { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-weight: 900; color: #fff; background: #c3c9d0; }
+.goal.done .chk { background: var(--green); }
+.goal:not(.done) .chk:not(:empty) { background: var(--gold); }
 #screens { position: relative; flex: 1; min-height: 0; }
 .screen { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; padding: 10px 10px 12px; display: flex; flex-direction: column; gap: 8px; scrollbar-width: none; }
 .screen::-webkit-scrollbar { display: none; }
@@ -153,6 +161,7 @@ canvas.spr, img.spr { image-rendering: pixelated; display: block; }
 .tile.ut { border-color: var(--ut); }
 .tile.none { opacity: .55; }
 .tile .up { position: absolute; left: 3px; top: 1px; color: #6fe07f; font-size: 12px; font-weight: 900; text-shadow: 0 1px 0 #000; }
+.tile .fz { position: absolute; left: 4px; bottom: 1px; font-size: 11px; font-weight: 900; color: #c79bff; text-shadow: 0 1px 0 #000; }
 .tile .eq { position: absolute; right: 3px; top: 2px; width: 8px; height: 8px; border-radius: 50%; background: var(--gold); border: 1px solid #000; }
 .tile.new::after { content: 'NEW'; position: absolute; bottom: 1px; left: 0; right: 0; text-align: center; font-size: 8px; font-weight: 900; color: var(--gold); text-shadow: 0 1px 0 #000; }
 .tile .tl { position: absolute; right: 3px; bottom: 1px; font-size: 9.5px; font-weight: 900; color: #b8c2cd; text-shadow: 0 1px 0 #000; }
@@ -195,6 +204,7 @@ canvas.spr, img.spr { image-rendering: pixelated; display: block; }
 .kv span { color: var(--ink-3); font-weight: 700; }
 .cmp { font-size: 13px; font-weight: 800; }
 .better { color: var(--green-dark); } .worse { color: var(--red); }
+.special { padding: 8px 10px; border-radius: 10px; background: #fbe9f6; border: 1px solid var(--ut); color: #7a1f63; font-weight: 800; font-size: 13.5px; }
 .flav { font-style: italic; color: var(--ink-3); font-size: 13px; margin: 0; }
 .list { display: grid; gap: 6px; }
 .pick { display: grid; grid-template-columns: 42px 1fr auto; gap: 10px; align-items: center; padding: 7px 9px; border-radius: 11px; background: #fff; border: 1px solid var(--edge); text-align: left; }
