@@ -1,13 +1,12 @@
 // Screen 4: character stats, one-tap potions, gear and classes.
 import { CLASS, CLASSES, STATS, STAT_LABEL, ABILITY_TYPES } from '../data/classes.js';
-import { ITEMS } from '../data/items.js';
-import { levelInfo, statBreakdown, maxedCount, dpsOf } from '../core/character.js';
+import { levelInfo, statBreakdown, maxedCount, dpsOf, gearItem } from '../core/character.js';
 import { abilityCost } from '../core/combat.js';
 import * as G from '../core/game.js';
 import { h, showDialog, fmtNum, fmtXp } from './dom.js';
 import { heroCanvas, itemIcon } from './sprites.js';
 import { heroColors, newCharacterSheet, unlockText } from './common.js';
-import { gearSlots } from './farm.js';
+import { gearSlots, slotSheet, upgradeChooser } from './gear.js';
 
 export function createCharacterScreen(root, app) {
   function drink(slot, k) {
@@ -32,6 +31,8 @@ export function createCharacterScreen(root, app) {
         h('div', { class: 'xprow' }, h('span', {}, `Lv ${li.level}`), h('div', { class: 'bar xpbar' }, h('i', { style: { width: `${(li.into / li.need) * 100}%` } })), h('span', { class: 'muted tnum' }, `${fmtXp(li.into)}/${li.need}`)),
         h('div', { class: 'small muted tnum', style: { fontWeight: 700 } }, `DPS ${fmtNum(dpsOf(F))} · ${fmtNum(c.kills)} kills · ${c.clears} clears`)))];
 
+    const up = upgradeChooser(slot, render);
+    if (up) kids.push(up);
     const st = h('div', { class: 'panel' });
     for (const k of STATS) {
       const b = sb[k], max = C.max[k], atMax = b.base >= max, ex = G.exaltInfo(c.cls, k), have = G.owned(`pot_${k}`);
@@ -44,8 +45,8 @@ export function createCharacterScreen(root, app) {
           itemIcon(`pot_${k}`, 18), fmtNum(have), atMax && !ex.maxed ? h('span', { class: 'ex' }, `${ex.drunk}/${ex.need}`) : null)));
     }
     kids.push(st);
-    kids.push(gearSlots(slot, (k) => app.equip(slot, k, 'character')));
-    const ab = c.equip.ability ? ITEMS[c.equip.ability] : null;
+    kids.push(gearSlots(slot, (k) => slotSheet(slot, k, render)));
+    const ab = gearItem(c, 'ability');
     kids.push(h('div', { class: 'panel row' }, ab ? itemIcon(ab.id, 34) : null,
       h('div', { class: 'small' }, h('b', {}, ab ? ab.name : ABILITY_TYPES[C.ability].name), ` · ${ABILITY_TYPES[C.ability].effect}`, ab ? h('span', { class: 'muted' }, ` ${abilityCost({ type: ab.type, cost: ab.ability.cost })} MP`) : null)));
     kids.push(h('div', { class: 'panel', style: { display: 'grid', gap: '8px' } },

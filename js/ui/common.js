@@ -6,7 +6,7 @@ import { levelOf } from '../core/character.js';
 import * as G from '../core/game.js';
 import { h, openSheet, showDialog, toast, confirmDialog } from './dom.js';
 import { heroIcon, itemIcon } from './sprites.js';
-import { ITEMS, tierLabel } from '../data/items.js';
+import { upgradeChooser } from './gear.js';
 
 export const heroColors = (cls) => CLASS[cls].colors;
 
@@ -41,7 +41,8 @@ export function renderTopBar(el, { onChange, onSettings }) {
       h('div', { style: { minWidth: 0 } },
         h('b', {}, c ? c.name : `Slot ${s.view + 1}`),
         h('span', {}, c ? `Lv ${levelOf(c.xp)} ${CLASS[c.cls].name} · ` : '', h('span', { style: { color: st.color === 'var(--ink-3)' ? 'var(--bar-dim)' : st.color } }, st.text))),
-      h('span', { class: 'chev' }, '▼')),
+      h('span', { class: 'chev' }, '▼'),
+      s.chars.some((ch) => ch?.pending?.length) ? h('i', { class: 'dot' }, '▲') : null),
     h('div', { class: 'spacer' }),
     G.goalsFinished() ? null : goalButton(onChange),
     gear);
@@ -55,8 +56,7 @@ function goalButton(onChange) {
   return b;
 }
 function rewardText(g) {
-  if (g.reward.potions) return `${g.reward.potions} potions`;
-  return g.reward.gear === 'ring' ? `T${g.reward.tier} ring` : `T${g.reward.tier} ${g.reward.gear}`;
+  return g.reward.potions ? `${g.reward.potions} potions` : `T${g.reward.upgrade} gear upgrade (you pick the slot)`;
 }
 export function goalsSheet(onChange) {
   openSheet((close, rerender) => {
@@ -68,11 +68,21 @@ export function goalsSheet(onChange) {
         h('span', { class: 'chk' }, g.claimed ? '✓' : g.ready ? '!' : ''),
         h('div', { class: 'grow' }, h('b', {}, g.text), h('div', { class: 'small muted' }, rewardText(g))),
         g.ready ? h('button', { class: 'btn sm', onclick: () => {
-          const ids = G.claimGoal(g.id);
-          for (const id of ids.slice(0, 3)) toast({ title: 'Reward', body: `${ITEMS[id].name} ${tierLabel(ITEMS[id])}`.trim(), icon: itemIcon(id, 26), kind: 'gold' });
+          const got = G.claimGoal(g.id);
+          if (!got) return;
+          if (got.potions.length) toast({ title: 'Reward', body: `${got.potions.length} potions`, icon: itemIcon(got.potions[0], 26), kind: 'gold' });
           rerender(); onChange?.();
+          if (got.upgrade) upgradeSheet(G.state.view, onChange);
         } }, 'Claim') : null))),
     ];
+  });
+}
+
+/** A sheet with just the upgrade chooser; closes once nothing is pending. */
+export function upgradeSheet(slot, onChange) {
+  openSheet((close, rerender) => {
+    const box = upgradeChooser(slot, () => { onChange?.(); if (G.pendingUpgrade(slot)) rerender(); else close(); });
+    return box ? [box, h('button', { class: 'btn gray', onclick: close }, 'Decide later')] : [h('button', { class: 'btn', onclick: close }, 'Done')];
   });
 }
 
@@ -83,7 +93,8 @@ export function characterList(onChange) {
       const st = slotStatus(i);
       return h('button', { class: `pick${G.state.view === i ? ' on' : ''}`, onclick: () => { G.state.view = i; close(); if (!c) newCharacterSheet(i, onChange); onChange(); } },
         h('div', { class: 'ic' }, c ? heroIcon(c.cls, heroColors(c.cls), 30) : h('b', { class: 'muted' }, '+')),
-        h('div', {}, h('b', {}, c ? c.name : `Slot ${i + 1}`), h('div', { class: 'small muted' }, c ? `${CLASS[c.cls].name} · Lv ${levelOf(c.xp)}` : 'Create a character')),
+        h('div', {}, h('b', {}, c ? c.name : `Slot ${i + 1}`), h('div', { class: 'small muted' }, c ? `${CLASS[c.cls].name} · Lv ${levelOf(c.xp)} · T${Object.values(c.tiers).join('/')}` : 'Create a character'),
+          c?.pending?.length ? h('div', { class: 'small', style: { color: 'var(--gold-dark)', fontWeight: 900 } }, `▲ T${c.pending[0]} upgrade to choose`) : null),
         h('span', { class: 'small', style: { fontWeight: 900, color: st.color } }, c ? st.text : ''));
     })),
     G.state.slots < CONFIG.maxSlots ? h('button', { class: 'btn gray', onclick: () => { close(); buySlot(onChange); } }, `+ Add a slot · ${CONFIG.slotPriceLabel}`) : null,
@@ -122,7 +133,7 @@ export function newCharacterSheet(slot, after) {
       h('input', { id: 'new-name', maxlength: 16, placeholder: 'Name (optional)', value: name, oninput: (e) => { name = e.target.value; } }),
       h('button', { class: 'btn', onclick: async () => {
         const old = G.state.chars[slot];
-        if (old && !(await confirmDialog({ title: `Retire ${old.name}?`, body: 'Their gear goes back to the vault. Potions they drank and their level are lost.', ok: 'Retire', danger: true }))) return;
+        if (old && !(await confirmDialog({ title: `Retire ${old.name}?`, body: 'Their gear tiers, the potions they drank and their level are lost. Unique items stay unlocked.', ok: 'Retire', danger: true }))) return;
         const c = G.createCharacterIn(slot, pick, name);
         G.startFarming(slot, 'forest');
         G.state.view = slot; close();

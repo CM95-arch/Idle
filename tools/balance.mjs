@@ -10,8 +10,9 @@ export function build(cls, g, m) {
   const c = newCharacter('x', cls, 'x');
   const C = CLASS[cls];
   for (const k of STATS) c.stats[k] = Math.round(c.stats[k] + (C.max[k] - c.stats[k]) * m);
-  const t = Math.max(1, Math.min(14, g));
-  c.equip = { weapon: `${C.weapon}_t${t}`, ability: `${C.ability}_t${t}`, armor: `${C.armor}_t${t}`, ring: g >= 2 ? `ring_hp_t${Math.max(1, t - 1)}` : null };
+  const t = Math.max(1, Math.min(20, g));
+  c.tiers = { weapon: t, ability: t, armor: t, ring: t };
+  c.ringStat = 'hp';
   return fighterOf(c, state);
 }
 // recommended build per biome: [gear tier, maxed fraction]
@@ -41,13 +42,12 @@ for (const cls of classes) {
 // ---- dungeons: `node tools/balance.mjs dungeons [class]` ----
 import { DUNGEONS } from '../js/data/world.js';
 import { createRun, advanceRun } from '../js/core/dungeon.js';
-const RECG = [1, 3, 4, 6, 7, 8, 9, 10, 11.5, 12.5, 13.5];
-const RECM = [0, 0, 0, 0, 0.1, 0.3, 0.6, 0.9, 1, 1, 1];
-const lerp = (arr, L) => { const i = Math.min(Math.floor(L) - 1, arr.length - 2); const f = L - 1 - i; return arr[i] + (arr[i + 1] - arr[i]) * f; };
+// A dungeon of tier T is tuned for every slot at T-1. Potions: maxed share grows from T7 gear to fully maxed at T10.
+export const recM = (g) => Math.round(Math.max(0, Math.min(1, (g - 6.6) / 3.7)) * 10) / 10;
 export function dungeonReport(cls = 'wizard', runs = 12) {
-  console.log(`\n== dungeons · ${cls} ==   success rate over ${runs} closed-app runs (and minutes per clear)   rec-1 | rec | rec+1`);
+  console.log(`\n== dungeons · ${cls} ==   success rate over ${runs} closed-app runs (and minutes per clear)   all slots T-2 | T-1 (rec) | T`);
   for (const d of DUNGEONS) {
-    const g = Math.round(lerp(RECG, d.L)), m = Math.round(lerp(RECM, d.L) * 10) / 10;
+    const g = d.tier - 1, m = recM(g);
     const cells = [g - 1, g, g + 1].map((gg) => {
       const F = build(cls, gg, m);
       let wins = 0, mins = 0;

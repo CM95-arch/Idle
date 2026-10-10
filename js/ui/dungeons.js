@@ -1,7 +1,7 @@
 // Screen 2: dungeon list, plus the live run view.
 import { CONFIG } from '../config.js';
 import { DUNGEONS, DUNGEON } from '../data/world.js';
-import { ITEMS, tierLabel, typeLabel } from '../data/items.js';
+import { ITEMS, typeLabel } from '../data/items.js';
 import { abilityCost } from '../core/combat.js';
 import { runProgress } from '../core/dungeon.js';
 import * as G from '../core/game.js';
@@ -10,7 +10,8 @@ import { draw, itemIcon } from './sprites.js';
 import { BattleScene } from './scene.js';
 import { heroColors, newCharacterSheet, diffPill } from './common.js';
 import { dungeonEstimate } from './estimates.js';
-import { levelOf } from '../core/character.js';
+import { levelOf, slotType, gearItem } from '../core/character.js';
+import { upgradeChooser } from './gear.js';
 import { openItemSheet } from './itemSheet.js';
 
 const GROUPS = [['Early', 0, 5], ['Mid', 5, 11], ['Late', 11, 15], ['Endgame · runes', 15, 18]];
@@ -25,6 +26,16 @@ function thumb(d, size = 74) {
 }
 const skulls = (i) => { const n = Math.min(5, 1 + Math.floor((i / DUNGEONS.length) * 5)); return h('span', { class: 'skulls' }, h('i', {}, '☠'.repeat(n)), '☠'.repeat(5 - n)); };
 
+/** "T5 ✓" once every slot of the viewed character is at or above the dungeon's tier. */
+function tierBadge(slot, d) {
+  const done = G.state.chars[slot] && !G.upgradeSlots(slot, d.tier).length;
+  return h('b', { class: `tbadge${done ? ' done' : ''}` }, `T${d.tier}${done ? ' ✓' : ''}`);
+}
+function upgradeText(slot, d) {
+  const n = G.upgradeSlots(slot, d.tier).length;
+  return n ? `T${d.tier} · ${n} slot${n === 1 ? '' : 's'} below` : `T${d.tier} · all slots done ✓`;
+}
+
 export function createDungeonScreen(root, app) {
   let scene = null, refs = {}, mode = '';
 
@@ -37,10 +48,12 @@ export function createDungeonScreen(root, app) {
       return [
         h('div', { class: 'row' }, thumb(d, 74), h('div', { class: 'grow' }, h('div', { class: 'h2' }, d.name), h('div', { class: 'small muted' }, `Boss: ${d.boss}`), h('div', { class: 'small muted' }, `${d.rooms} rooms, then the boss · cleared ${G.state.clears[d.id] || 0}×`))),
         h('div', { class: 'kv' },
-          h('div', {}, h('span', {}, 'Loot'), `T${d.tiers[0]}–T${d.tiers[1]} · ${CONFIG.dungeonLootRolls.join('–')} items`),
+          h('div', {}, h('span', {}, 'Upgrade'), c ? upgradeText(slot, d) : `T${d.tier}`),
+          h('div', {}, h('span', {}, 'Unique'), `1 in ${Math.round(1 / CONFIG.dungeonUtChance)} · ${d.uts.filter((id) => G.discovered(id)).length}/${d.uts.length} found`),
           h('div', {}, h('span', {}, 'XP'), `+${d.xp}`),
           h('div', {}, h('span', {}, 'Potions'), d.potions[1] ? `${range(d.potions)}${d.sig ? ` · often ${d.sig.toUpperCase()}` : ''}` : '—'),
           h('div', {}, h('span', {}, 'Danger'), c ? diffPill(est, '') : '—')),
+        h('div', { class: 'small muted' }, `Each clear has a 1 in ${Math.round(1 / CONFIG.upgradeChance)} chance to raise one gear slot of your choice to T${d.tier}.`),
         h('div', { class: 'label' }, 'Unique items'),
         h('div', { class: 'vgrid' }, d.uts.map((id) => h('button', { class: `tile${G.discovered(id) ? '' : ' unk'} ut`, onclick: () => openItemSheet(id) }, itemIcon(id, 30, !G.discovered(id))))),
         d.rune ? h('div', { class: 'small', style: { color: 'var(--gold-dark)', fontWeight: 800 } }, `Can drop the ${ITEMS[d.rune].name}`) : null,
@@ -65,7 +78,7 @@ export function createDungeonScreen(root, app) {
     kids.push(h('div', { class: 'panel dark feature', style: { display: 'grid', gap: '8px' } },
       h('button', { class: 'row between', style: { textAlign: 'left' }, onclick: () => detailSheet(oryx) },
         h('div', {}, h('div', { class: 'label', style: { color: 'var(--gold)' } }, 'Final boss'), h('div', { class: 'h2' }, oryx.name),
-          h('div', { class: 'small', style: { color: '#a9b4c0' } }, `Loot T${oryx.tiers[0]}–T${oryx.tiers[1]} · needs all 3 runes`)), thumb(oryx, 74)),
+          h('div', { class: 'small', style: { color: '#a9b4c0' } }, `T${oryx.tier} upgrades · needs all 3 runes`)), thumb(oryx, 74)),
       h('div', { class: 'row between' },
         h('div', { class: 'runes' }, RUNES.map(([r]) => h('div', { class: `rune${have.includes(r) ? '' : ' miss'}`, title: ITEMS[r].name }, itemIcon(r, 22, !have.includes(r))))),
         missing.length === 0 ? h('button', { class: 'btn sm', disabled: !c || !!s.run, onclick: () => detailSheet(oryx) }, 'Enter')
@@ -82,7 +95,7 @@ export function createDungeonScreen(root, app) {
           h('button', { style: { minWidth: 0, textAlign: 'left' }, onclick: () => detailSheet(d) },
             h('div', { class: 'nm' }, d.name),
             h('div', { class: 'meta' }, skulls(i), c ? diffPill(est) : null),
-            h('div', { class: 'meta' }, `T${d.tiers[0]}–T${d.tiers[1]} · UT ${found}/${d.uts.length}`, G.state.clears[d.id] ? ` · ${G.state.clears[d.id]}× cleared` : '')),
+            h('div', { class: 'meta' }, h('span', {}, tierBadge(slot, d), ` · UT ${found}/${d.uts.length}`, G.state.clears[d.id] ? ` · ${G.state.clears[d.id]}× cleared` : ''))),
           h('button', { class: `btn sm${est?.level === 'low' ? ' gray' : ''}`, disabled: !c || !!s.run, onclick: () => detailSheet(d) }, 'Enter')));
       });
     }
@@ -97,12 +110,12 @@ export function createDungeonScreen(root, app) {
       scene.dungeon = r.dungeonId;
       scene.setTheme({ sky: [d.pal.bg, d.pal.a], ground: d.pal.bg, decor: null, seed: 7 });
     }
-    scene.setHero(c.cls, heroColors(c.cls), ITEMS[c.equip.weapon]?.type, c.name, levelOf(c.xp));
+    scene.setHero(c.cls, heroColors(c.cls), slotType(c.cls, 'weapon'), c.name, levelOf(c.xp));
     scene.setEnemyLevel('');
     scene.onTap = () => { G.runInput('tap'); return !!G.state.run?.cs.enemy; };
     refs.dodge = h('button', { class: 'dodge-btn hidden', onpointerdown: (e) => { e.preventDefault(); G.runInput('dodge'); } }, 'TAP TO DODGE');
     scene.host.append(refs.dodge);
-    const ab = c.equip.ability ? ITEMS[c.equip.ability] : null;
+    const ab = gearItem(c, 'ability');
     return [
       h('div', { class: 'panel row between' },
         h('div', {}, h('div', { class: 'h2' }, d.name), refs.rooms = h('div', { class: 'rooms', style: { marginTop: '5px' } })),
@@ -117,7 +130,7 @@ export function createDungeonScreen(root, app) {
       h('div', { class: 'abil panel' },
         refs.abtn = h('button', { class: 'abtn', disabled: !ab, onpointerdown: (e) => { e.preventDefault(); G.runInput('cast'); } }, refs.ring = h('div', { class: 'ring' }), ab ? itemIcon(ab.id, 36) : h('span', { class: 'muted' }, '—')),
         h('div', {}, h('div', { style: { fontWeight: 900 } }, ab ? `${ab.name} · ${abilityCost({ type: ab.type, cost: ab.ability.cost })} MP` : 'No ability equipped'),
-          h('div', { class: 'small muted', style: { fontWeight: 700 } }, `Clear: +${d.xp} XP · ${CONFIG.dungeonLootRolls.join('–')} items T${d.tiers[0]}–T${d.tiers[1]}${d.potions[1] ? ` · ${range(d.potions)} potions` : ''}`),
+          h('div', { class: 'small muted', style: { fontWeight: 700 } }, `Clear: +${d.xp} XP · 1 in ${Math.round(1 / CONFIG.upgradeChance)} T${d.tier} upgrade${d.potions[1] ? ` · ${range(d.potions)} potions` : ''}`),
           refs.elapsed = h('div', { class: 'small muted tnum' }))),
     ];
   }
@@ -177,25 +190,28 @@ export function showRunResult(res, showDialog, onChange) {
   showDialog((close, rerender) => {
     const rows = res.items.map((id) => {
       const it = ITEMS[id], isNew = res.newIds.includes(id);
-      const canEq = c && G.canUse(c.cls, id) && G.owned(id) > 0 && c.equip[it.slot] !== id;
-      const up = canEq && G.isUpgrade(res.slot, id);
+      const fits = c && it.tier === 'UT' && G.canUse(c.cls, id);
+      const on = fits && c.ut[it.slot] === id;
       return h('div', { class: 'loot' },
         h('button', { class: 'ic', onclick: () => openItemSheet(id, onChange) }, itemIcon(id, 34)),
         h('button', { style: { textAlign: 'left', minWidth: 0 }, onclick: () => openItemSheet(id, onChange) },
-          h('b', { style: { color: it.tier === 'UT' ? 'var(--ut)' : '' } }, it.name, isNew ? h('span', { class: 'tag' }, 'NEW') : null, up ? h('span', { class: 'tag up' }, '▲') : null),
-          h('span', { class: 'small muted', style: { fontWeight: 700 } }, `${tierLabel(it)} ${typeLabel(it)}`),
+          h('b', { style: { color: it.tier === 'UT' ? 'var(--ut)' : '' } }, it.name, isNew ? h('span', { class: 'tag' }, 'NEW') : null),
+          h('span', { class: 'small muted', style: { fontWeight: 700 } }, typeLabel(it)),
           it.special ? h('span', { class: 'small', style: { display: 'block', color: 'var(--ut)', fontWeight: 800 } }, it.special) : null),
-        canEq ? h('button', { class: `btn sm${up ? '' : ' gray'}`, onclick: () => { G.state.view = res.slot; G.equip(res.slot, id); toast({ title: 'Equipped', body: it.name, icon: itemIcon(id, 26) }); rerender(); onChange?.(); } }, 'Equip') : h('span'));
+        fits ? h('button', { class: `btn sm${on ? ' gray' : ''}`, disabled: on, onclick: () => { G.setUt(res.slot, it.slot, id); toast({ title: `${c.name} wears it`, body: it.name, icon: itemIcon(id, 26), kind: 'gold' }); rerender(); onChange?.(); } }, on ? 'Worn' : 'Wear') : h('span'));
     });
+    const pending = res.upgrade && G.pendingUpgrade(res.slot) ? upgradeChooser(res.slot, () => { rerender(); onChange?.(); }) : null;
     return [
       h('div', { class: 'banner' }, h('h2', {}, `${d.name} cleared!`), h('div', { class: 'small', style: { color: '#b8c2cd', fontWeight: 700 } }, `${c?.name} beat ${d.boss} in ${fmtDur(res.durationMs)}`)),
       h('div', { class: 'row', style: { justifyContent: 'center', gap: '18px', fontWeight: 900 } },
         h('span', { style: { color: '#7a4fc0' } }, `+${res.xp} XP`),
         Object.entries(pots).map(([id, n]) => h('span', { class: 'row', style: { gap: '3px' } }, itemIcon(id, 22), `×${n}`))),
+      pending || (res.upgrade ? h('div', { style: { textAlign: 'center', fontWeight: 900, color: 'var(--gold-dark)' } }, `T${res.upgrade} upgrade applied`) : null),
+      !res.upgrade && c && G.upgradeSlots(res.slot, d.tier).length ? h('div', { class: 'small muted', style: { textAlign: 'center', fontWeight: 700 } }, `No upgrade this time (1 in ${Math.round(1 / CONFIG.upgradeChance)} per clear).`) : null,
       res.items.some((id) => ITEMS[id].tier === 'UT') ? h('div', { style: { textAlign: 'center', fontWeight: 900, color: 'var(--ut)' } }, 'A unique item dropped!') : null,
       res.slotEarned ? h('div', { style: { textAlign: 'center', fontWeight: 900, color: 'var(--gold-dark)' } }, '+1 character slot') : null,
-      h('div', { class: 'lootlist' }, rows),
-      h('button', { class: 'btn', onclick: close }, 'Collect'),
+      rows.length ? h('div', { class: 'lootlist' }, rows) : null,
+      h('button', { class: 'btn', onclick: close }, pending ? 'Decide later' : 'Collect'),
     ];
   });
 }

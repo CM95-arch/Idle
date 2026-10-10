@@ -1,26 +1,8 @@
-// What drops. Tier rolls favor the low end of a range; half of drops are gear the farming class can use.
-import { CONFIG } from '../config.js';
-import { CLASS, STATS } from '../data/classes.js';
-import { ITEMS, WEAPON_TYPES, ARMOR_TYPES, ABILITY_LABEL } from '../data/items.js';
+// Enemies and drops. Gear tiers only come from dungeon upgrades; loot here is potions, UTs and runes.
+import { STATS } from '../data/classes.js';
+import { ITEMS } from '../data/items.js';
 import { BIOMES, DUNGEONS, ENEMY_CURVE, ELITE, EVENT_BOSS, BOSS, ROOM } from '../data/world.js';
 
-const ALL_KINDS = [...Object.keys(WEAPON_TYPES), ...Object.keys(ARMOR_TYPES), ...Object.keys(ABILITY_LABEL), 'ring'];
-
-export function rollTier([lo, hi], rng) {
-  const tiers = []; for (let t = lo; t <= hi; t++) tiers.push(t);
-  const w = CONFIG.tierWeights;
-  return rng.weighted(tiers, (t) => w[t - lo] ?? w[w.length - 1]);
-}
-
-export function rollItem(range, cls, rng) {
-  const t = rollTier(range, rng);
-  let kind;
-  if (cls && rng.next() < CONFIG.classBias) {
-    const C = CLASS[cls];
-    kind = rng.pick([C.weapon, C.ability, C.armor, 'ring']);
-  } else kind = rng.pick(ALL_KINDS);
-  return kind === 'ring' ? `ring_${rng.pick(STATS)}_t${t}` : `${kind}_t${t}`;
-}
 export const rollPotion = (rng, sig) => `pot_${sig && rng.next() < 0.5 ? sig : rng.pick(STATS)}`;
 
 /** Enemy template for a biome kill */
@@ -61,14 +43,7 @@ export function dungeonBoss(d) {
 export function sourcesOf(it) {
   if (it.slot === 'potion') return { biomes: BIOMES.filter((b) => b.potionRate > 0).map((b) => b.name), dungeons: DUNGEONS.filter((d) => d.potions[1] > 0).map((d) => d.name) };
   if (it.slot === 'rune') return { biomes: [], dungeons: DUNGEONS.filter((d) => d.rune === it.id).map((d) => d.name) };
-  if (it.tier === 'UT') {
-    const ev = BIOMES.flatMap((b) => (b.events || []).filter((e) => e.ut === it.id).map((e) => `${e.name} (${b.name} event)`));
-    return { biomes: ev, dungeons: DUNGEONS.filter((d) => d.uts.includes(it.id)).map((d) => d.name) };
-  }
-  const t = it.tier;
-  return {
-    biomes: BIOMES.filter((b) => t >= b.tiers[0] && t <= b.tiers[1]).map((b) => b.name),
-    dungeons: DUNGEONS.filter((d) => t >= d.tiers[0] && t <= d.tiers[1]).map((d) => d.name),
-  };
+  const ev = BIOMES.flatMap((b) => [...(b.ut === it.id ? [b.name] : []), ...(b.events || []).filter((e) => e.ut === it.id).map((e) => `${e.name} (${b.name} event)`)]);
+  return { biomes: ev, dungeons: DUNGEONS.filter((d) => d.uts.includes(it.id)).map((d) => d.name) };
 }
 export const ALL_ITEM_IDS = Object.keys(ITEMS);

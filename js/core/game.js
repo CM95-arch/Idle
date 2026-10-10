@@ -1,16 +1,16 @@
 // Game state and every action the UI can take. No DOM in here.
 import { CONFIG } from '../config.js';
 import { CLASS, CLASSES, STATS, STAT_LABEL } from '../data/classes.js';
-import { ITEMS, tierLabel, tierValue } from '../data/items.js';
+import { ITEMS, tierLabel } from '../data/items.js';
 import { BIOME, DUNGEON, EVENT_BOSS } from '../data/world.js';
 import { makeRng } from './rng.js';
 import { newCombat, step } from './combat.js';
-import { newCharacter, fighterOf, levelOf } from './character.js';
-import { biomeEnemy, rollItem, rollPotion } from './loot.js';
+import { newCharacter, fighterOf, levelOf, GEAR_SLOTS, slotType } from './character.js';
+import { biomeEnemy, rollPotion } from './loot.js';
 import { createRun, advanceRun, rollRewards } from './dungeon.js';
 import { GOALS } from '../data/goals.js';
 
-const SAVE_KEY = 'idle-realm-save-v1';
+const SAVE_KEY = 'idle-realm-save-v1'; // key kept; state.v tracks the format
 const NAMES = ['Kael', 'Mira', 'Thorne', 'Ysolde', 'Bram', 'Lysa', 'Corvin', 'Elka', 'Dain', 'Sera', 'Varek', 'Nyx', 'Oren', 'Talia', 'Ash', 'Rook', 'Wren', 'Iska', 'Fen', 'Maren'];
 
 // ---------- tiny event bus for the UI ----------
@@ -27,7 +27,7 @@ function freshFarm() {
 export function newGame() {
   const now = Date.now();
   const s = {
-    v: 1, createdAt: now, savedAt: now,
+    v: 2, createdAt: now, savedAt: now,
     slots: CONFIG.startSlots, purchasedSlots: 0, earnedSlots: [],
     chars: Array(CONFIG.startSlots).fill(null), farms: Array.from({ length: CONFIG.startSlots }, freshFarm),
     vault: {}, found: {}, newIds: {}, exalt: {}, classBest: {}, clears: {}, run: null, lastRun: null,
@@ -43,18 +43,37 @@ export function load() {
     const raw = localStorage.getItem(SAVE_KEY);
     state = raw ? JSON.parse(raw) : null;
   } catch { state = null; }
-  if (!state || state.v !== 1) {
+  if (state?.v === 1) migrateV1(state);
+  if (!state || state.v !== 2) {
     state = newGame();
     // first character so the game opens in a working state
-    const c = createCharacterIn(0, 'wizard');
+    createCharacterIn(0, 'wizard');
     startFarming(0, 'forest');
     state.view = 0;
-    void c;
   }
   for (let i = 0; i < state.slots; i++) state.farms[i] ||= freshFarm();
   state.settings ||= {}; state.settings.sound ??= true;
   state.visited ||= {}; for (const f of state.farms) if (f?.status === 'farming') state.visited[f.biome] = true;
   return state;
+}
+/** v1 saves had tiered items in the vault. Keep what each character wore as its slot tiers; keep UTs, potions and runes. */
+function migrateV1(s) {
+  for (const c of s.chars) {
+    if (!c || c.tiers) continue;
+    const eq = c.equip || {};
+    c.tiers = {}; c.ut = {}; c.pending = []; c.ringStat = 'hp';
+    for (const k of GEAR_SLOTS) {
+      const it = ITEMS[eq[k]];
+      c.tiers[k] = Math.max(1, Math.min(20, it ? (it.tier === 'UT' ? it.eq : it.tier) : 1));
+      c.ut[k] = it?.tier === 'UT' ? it.id : null;
+      if (k === 'ring' && it?.ringStat) c.ringStat = it.ringStat;
+    }
+    delete c.equip;
+  }
+  for (const id of Object.keys(s.vault)) if (!ITEMS[id] || typeof ITEMS[id].tier === 'number') delete s.vault[id];
+  for (const id of Object.keys(s.found)) if (!ITEMS[id] || typeof ITEMS[id].tier === 'number') delete s.found[id];
+  for (const id of Object.keys(s.newIds)) if (!ITEMS[id] || typeof ITEMS[id].tier === 'number') delete s.newIds[id];
+  s.v = 2;
 }
 export function save() {
   if (!state) return;
@@ -65,7 +84,8 @@ export function resetGame() { try { localStorage.removeItem(SAVE_KEY); } catch {
 export function exportSave() { return btoa(unescape(encodeURIComponent(JSON.stringify(state)))); }
 export function importSave(text) {
   const s = JSON.parse(decodeURIComponent(escape(atob(text.trim()))));
-  if (s.v !== 1 || !Array.isArray(s.chars)) throw new Error('That isn’t an Idle Realm save.');
+  if (s.v === 1) migrateV1(s);
+  if (s.v !== 2 || !Array.isArray(s.chars)) throw new Error('That isn’t an Idle Realm save.');
   state = s; save();
 }
 
@@ -74,7 +94,7 @@ const fighterCache = new Map();
 export function fighter(slot) {
   const c = state.chars[slot];
   if (!c) return null;
-  const key = JSON.stringify([c.stats, c.equip, state.exalt[c.cls]]);
+  const key = JSON.stringify([c.stats, c.tiers, c.ut, c.ringStat, state.exalt[c.cls]]);
   const hit = fighterCache.get(slot);
   if (hit && hit.key === key) return hit.F;
   const F = fighterOf(c, state);
@@ -87,13 +107,13 @@ function refreshCombatCaps(slot) {
   if (state.run?.slot === slot && F) { state.run.cs.hp = Math.min(state.run.cs.hp, F.maxHp); }
 }
 
-// ---------- inventory ----------
+// ---------- inventory & gear ----------
 export const owned = (id) => state.vault[id] || 0;
 export const discovered = (id) => (state.found[id] || 0) > 0;
-export function equippedCount(id) {
-  let n = 0; for (const c of state.chars) if (c) for (const v of Object.values(c.equip)) if (v === id) n++;
-  return n;
-}
+/** UTs are account-wide unlocks: any character that can use one may wear it. */
+export const unlocked = discovered;
+/** Characters currently wearing a UT. */
+export function wearers(id) { return state.chars.filter((c) => c && Object.values(c.ut || {}).includes(id)); }
 function grant(id, n = 1) {
   state.vault[id] = (state.vault[id] || 0) + n;
   const first = !state.found[id];
@@ -108,35 +128,51 @@ export function canUse(cls, id) {
   if (it.slot === 'ring') return true;
   return (it.slot === 'weapon' && it.type === C.weapon) || (it.slot === 'ability' && it.type === C.ability) || (it.slot === 'armor' && it.type === C.armor);
 }
-function equipQuiet(slot, id) {
-  const c = state.chars[slot]; const it = ITEMS[id];
-  if (!c || !canUse(c.cls, id) || owned(id) < 1) return false;
-  const old = c.equip[it.slot];
-  state.vault[id]--;
-  if (old) state.vault[old] = (state.vault[old] || 0) + 1;
-  c.equip[it.slot] = id;
-  refreshCombatCaps(slot);
+function gearChanged(slot) { refreshCombatCaps(slot); save(); emitUi('gear', { slot }); }
+/** Wear an unlocked UT in its slot (it takes the slot's tier), or pass null to go back to the tiered item. */
+export function setUt(slot, kind, id) {
+  const c = state.chars[slot];
+  if (!c) return false;
+  if (id && (!unlocked(id) || !canUse(c.cls, id) || ITEMS[id].slot !== kind)) return false;
+  c.ut[kind] = id || null;
+  if (id) { delete state.newIds[id]; state.stats.utEquips = (state.stats.utEquips || 0) + 1; }
+  gearChanged(slot);
   return true;
 }
-export function equip(slot, id) {
-  const ok = equipQuiet(slot, id);
-  if (ok) { state.stats.equips = (state.stats.equips || 0) + 1; save(); emitUi('gear', { slot }); }
-  return ok;
+/** Rings: pick which stat the tiered ring gives. Free to change any time. */
+export function setRingStat(slot, stat) {
+  const c = state.chars[slot];
+  if (!c || !STATS.includes(stat)) return;
+  c.ringStat = stat; c.ut.ring = null; gearChanged(slot);
 }
-/** True when id is a higher tier than what the character wears in that slot. */
-export function isUpgrade(slot, id) {
-  const c = state.chars[slot], it = ITEMS[id];
-  if (!c || !it || !['weapon', 'ability', 'armor', 'ring'].includes(it.slot) || !canUse(c.cls, id)) return false;
-  const cur = c.equip[it.slot];
-  return !cur || tierValue(it) > tierValue(ITEMS[cur]);
+/** Slots of a character that a pending upgrade to tier t would raise. */
+export function upgradeSlots(slot, t) {
+  const c = state.chars[slot];
+  return c ? GEAR_SLOTS.filter((k) => c.tiers[k] < t) : [];
 }
-
-export function unequip(slot, kind) {
-  const c = state.chars[slot]; const old = c?.equip[kind];
-  if (!old) return;
-  state.vault[old] = (state.vault[old] || 0) + 1; c.equip[kind] = null;
-  refreshCombatCaps(slot); save(); emitUi('gear', { slot });
+export const pendingUpgrade = (slot) => state.chars[slot]?.pending?.[0] ?? null;
+/** Spend the oldest pending upgrade on one gear slot. */
+export function chooseUpgrade(slot, kind) {
+  const c = state.chars[slot], t = pendingUpgrade(slot);
+  if (!t || !upgradeSlots(slot, t).includes(kind)) return false;
+  c.tiers[kind] = t; c.pending.shift();
+  state.stats.upgrades = (state.stats.upgrades || 0) + 1;
+  gearChanged(slot);
+  dropUselessUpgrades(slot);
+  return true;
 }
+/** An upgrade no slot can use (every slot already at or above it) is worthless; drop it. */
+function dropUselessUpgrades(slot) {
+  const c = state.chars[slot];
+  c.pending = c.pending.filter((t) => upgradeSlots(slot, t).length);
+}
+function giveUpgrade(slot, t) {
+  const c = state.chars[slot];
+  if (!c || !upgradeSlots(slot, t).length) return false;
+  c.pending.push(t); c.pending.sort((a, b) => b - a);
+  return true;
+}
+export const slotTypeOf = (slot, kind) => slotType(state.chars[slot].cls, kind);
 
 // ---------- potions / exaltation ----------
 export const exaltCost = (level) => CONFIG.exaltCostStep * (level + 1);
@@ -166,31 +202,6 @@ export function drinkPotion(slot, stat, count = 1) {
   return drank;
 }
 
-// ---------- fusion ----------
-/** The item 3 copies of `id` fuse into, or null. */
-export function fuseTarget(id) {
-  const it = ITEMS[id];
-  if (!it || typeof it.tier !== 'number' || it.tier >= CONFIG.fuseMaxTier) return null;
-  const next = id.replace(/_t\d+$/, `_t${it.tier + 1}`);
-  return ITEMS[next] ? next : null;
-}
-export const canFuse = (id) => !!fuseTarget(id) && owned(id) >= CONFIG.fuseCost;
-export function fuse(id) {
-  const to = fuseTarget(id);
-  if (!to || owned(id) < CONFIG.fuseCost) return null;
-  state.vault[id] -= CONFIG.fuseCost;
-  grant(to); state.stats.fused = (state.stats.fused || 0) + 1; save(); emitUi('gear', { fuse: true });
-  return to;
-}
-/** Fuse every extra copy in the list (lowest tier first, cascading up), keeping one copy of each. */
-export function fuseAll(ids) {
-  let made = 0;
-  for (const id of ids) {
-    while (fuseTarget(id) && owned(id) >= CONFIG.fuseCost + 1) { state.vault[id] -= CONFIG.fuseCost; grant(fuseTarget(id)); made++; }
-  }
-  if (made) { state.stats.fused = (state.stats.fused || 0) + made; save(); emitUi('gear', { fuse: true }); }
-  return made;
-}
 /** 3 potions of one stat become 1 potion of another. */
 export function convertPotions(fromStat, toStat) {
   const from = `pot_${fromStat}`;
@@ -207,21 +218,19 @@ export function goalList() {
 }
 export const goalsClaimable = () => goalList().filter((g) => g.ready).length;
 export const goalsFinished = () => goalList().every((g) => g.claimed);
-/** Claim a goal's reward for the viewed character's class. Returns the item ids granted. */
+/** Claim a goal's reward. Upgrades go to the character you're viewing. Returns what was granted. */
 export function claimGoal(id) {
   const g = goalList().find((x) => x.id === id);
-  if (!g || !g.ready) return [];
-  const c = state.chars[state.view] || state.chars.find(Boolean);
-  const C = CLASS[c?.cls || 'wizard'];
-  const out = [];
-  if (g.reward.gear) {
-    const type = g.reward.gear === 'ring' ? `ring_${g.reward.ring}` : C[g.reward.gear];
-    out.push(`${type}_t${g.reward.tier}`);
-  }
-  for (let i = 0; i < (g.reward.potions || 0); i++) out.push(`pot_${STATS[Math.floor(Math.random() * STATS.length)]}`);
-  for (const it of out) grant(it);
+  if (!g || !g.ready) return null;
+  const slot = state.chars[state.view] ? state.view : state.chars.findIndex(Boolean);
+  const out = { potions: [], upgrade: null };
+  if (g.reward.upgrade && giveUpgrade(slot, g.reward.upgrade)) out.upgrade = g.reward.upgrade;
+  else if (g.reward.upgrade) g.reward = { potions: 3 }; // that character is already past it
+  for (let i = 0; i < (g.reward.potions || 0); i++) out.potions.push(`pot_${STATS[Math.floor(Math.random() * STATS.length)]}`);
+  for (const it of out.potions) grant(it);
   (state.goals ||= {})[id] = true;
   save();
+  if (out.upgrade) emitUi('gear', { slot });
   return out;
 }
 
@@ -234,20 +243,17 @@ export function createCharacterIn(slot, cls, name) {
   if (!classUnlocked(cls)) return null;
   retire(slot);
   const c = newCharacter(state.nextCharId++, cls, name || NAMES[Math.floor(Math.random() * NAMES.length)]);
-  // starter gear is free and counts as found
-  for (const id of Object.values(c.equip)) if (id) { state.found[id] = (state.found[id] || 0) + 1; }
   state.chars[slot] = c;
   state.farms[slot] = freshFarm();
   fighterCache.delete(slot);
   save();
   return c;
 }
-/** Remove a character. Its gear goes back to the vault. Potions it drank are gone. */
+/** Remove a character. Its tiers and the potions it drank are gone; UT unlocks stay with the account. */
 export function retire(slot) {
   const c = state.chars[slot];
   if (!c) return;
   if (state.run?.slot === slot) abandonRun();
-  for (const id of Object.values(c.equip)) if (id) state.vault[id] = (state.vault[id] || 0) + 1;
   state.chars[slot] = null; state.farms[slot] = freshFarm(); fighterCache.delete(slot);
 }
 export function renameCharacter(slot, name) {
@@ -323,13 +329,15 @@ function farmSource(slot, emit) {
         f.session.drops.unshift(id); f.session.drops.length = Math.min(f.session.drops.length, 12);
         emit?.('drop', { id });
       };
-      const mult = e.event ? EVENT_BOSS.itemMult : e.elite ? CONFIG.eliteDropMult : 1;
-      if (rng.next() < CONFIG.itemDropChance(biome.L) * mult) give(rollItem(biome.tiers, c.cls, rng));
+      const mult = e.elite && !e.event ? CONFIG.eliteDropMult : 1;
       if (e.event) {
         for (let i = 0; i < EVENT_BOSS.guaranteedPotions; i++) give(rollPotion(rng));
         if (rng.next() < biome.potionRate * EVENT_BOSS.potionMult) give(rollPotion(rng));
-        if (e.ut && rng.next() < EVENT_BOSS.utChance) give(e.ut);
-      } else if (biome.potionRate && rng.next() < biome.potionRate * mult) give(rollPotion(rng));
+        if (e.ut && !discovered(e.ut) && rng.next() < EVENT_BOSS.utChance) give(e.ut);
+      } else {
+        if (rng.next() < biome.potionRate * mult) give(rollPotion(rng));
+        if (biome.ut && !discovered(biome.ut) && rng.next() < CONFIG.biomeUtChance * mult) give(biome.ut);
+      }
     },
   };
   return src;
@@ -387,9 +395,9 @@ export function enterDungeon(slot, dungeonId) {
 }
 function finishRun() {
   const r = state.run, slot = r.slot, c = state.chars[slot], d = DUNGEON[r.dungeonId];
-  const result = { dungeonId: r.dungeonId, slot, won: r.phase === 'won', xp: 0, items: [], potions: [], newIds: [], slotEarned: false, durationMs: r.ticks * CONFIG.tickSeconds * 1000 };
+  const result = { dungeonId: r.dungeonId, slot, won: r.phase === 'won', xp: 0, items: [], potions: [], newIds: [], upgrade: null, slotEarned: false, durationMs: r.ticks * CONFIG.tickSeconds * 1000 };
   if (result.won) {
-    const rw = rollRewards(r, c.cls);
+    const rw = rollRewards(r, upgradeSlots(slot, d.tier).length > 0, discovered);
     const before = levelOf(c.xp);
     c.xp += rw.xp; c.clears++; result.xp = rw.xp; noteLevel(c, before);
     if (d.rune) {
@@ -401,6 +409,7 @@ function finishRun() {
     for (const id of [...rw.items, ...rw.potions]) if (grant(id)) result.newIds.push(id);
     quietDiscover = false;
     result.items = rw.items; result.potions = rw.potions;
+    if (rw.upgrade && giveUpgrade(slot, rw.upgrade)) result.upgrade = rw.upgrade;
     state.clears[r.dungeonId] = (state.clears[r.dungeonId] || 0) + 1; state.stats.clears++;
     if (d.slotReward && state.clears[r.dungeonId] === 1 && addSlot(`clear:${r.dungeonId}`)) result.slotEarned = true;
   } else { c.deaths++; state.stats.deaths++; }

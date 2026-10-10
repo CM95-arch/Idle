@@ -2,23 +2,13 @@
 import { CONFIG } from '../config.js';
 import { STAT_LABEL } from '../data/classes.js';
 import { BIOMES, BIOME, DUNGEON } from '../data/world.js';
-import { ITEMS, tierLabel } from '../data/items.js';
-import { levelInfo, statBreakdown } from '../core/character.js';
+import { levelInfo, statBreakdown, slotType } from '../core/character.js';
 import * as G from '../core/game.js';
 import { h, openSheet, fmtXp } from './dom.js';
-import { itemIcon } from './sprites.js';
+import { gearSlots, slotSheet } from './gear.js';
 import { BattleScene } from './scene.js';
 import { heroColors, newCharacterSheet, diffPill } from './common.js';
 import { biomeEstimate } from './estimates.js';
-
-export function gearSlots(slot, onTap) {
-  const c = G.state.chars[slot];
-  return h('div', { class: 'slots' }, ['weapon', 'ability', 'armor', 'ring'].map((k) => {
-    const id = c.equip[k];
-    return h('button', { class: `slot${id ? '' : ' empty'}${id && ITEMS[id].tier === 'UT' ? ' ut' : ''}`, 'aria-label': k, onclick: () => onTap(k) },
-      h('span', { class: 'kind' }, k), id ? itemIcon(id, 38) : null, id ? h('span', { class: 'tier' }, tierLabel(ITEMS[id])) : null);
-  }));
-}
 
 /** ROTMG-style always-visible stat block. Yellow = maxed, green = gear bonus. */
 export function statPanel(slot) {
@@ -28,6 +18,13 @@ export function statPanel(slot) {
     return h('div', { class: 'stat' }, h('span', { class: 'k' }, STAT_LABEL[k]),
       h('span', {}, h('span', { class: `v tnum${b.base >= b.max ? ' maxed' : ''}` }, String(b.base + bonus)), bonus ? h('span', { class: 'g' }, ` (+${bonus})`) : null));
   }));
+}
+
+/** Biome loot line: potion rate and whether its rare UT is found yet. */
+export function lootText(b) {
+  const uts = [b.ut, ...(b.events || []).map((e) => e.ut)].filter(Boolean);
+  const got = uts.filter((id) => G.discovered(id)).length;
+  return `Potions 1/${Math.round(1 / b.potionRate)} · UT ${got}/${uts.length}`;
 }
 
 export function createFarmScreen(root, app) {
@@ -40,7 +37,7 @@ export function createFarmScreen(root, app) {
         h('div', { class: 'h2' }, 'Choose a biome'),
         h('div', { class: 'list' }, BIOMES.map((b) => h('button', { class: `pick${f.biome === b.id ? ' on' : ''}`, onclick: () => { G.startFarming(slot, b.id); close(); render(); } },
           h('div', { class: 'ic', style: { background: `linear-gradient(${b.sky[0]} 55%, ${b.ground} 55%)` } }),
-          h('div', {}, h('b', {}, b.name), h('div', { class: 'small muted' }, `Loot T${b.tiers[0]}–T${b.tiers[1]}${b.potionRate ? ' · potions' : ''}`)),
+          h('div', {}, h('b', {}, b.name), h('div', { class: 'small muted' }, lootText(b))),
           diffPill(biomeEstimate(slot, b.id))))),
       ];
     });
@@ -76,7 +73,7 @@ export function createFarmScreen(root, app) {
     scene.onTap = () => G.farmTap(slot);
     scene.setTheme({ sky: b.sky, ground: b.ground, decor: b.decor, seed: BIOMES.indexOf(b) + 3 });
     const li = levelInfo(c.xp);
-    scene.setHero(c.cls, heroColors(c.cls), ITEMS[c.equip.weapon]?.type, c.name, li.level);
+    scene.setHero(c.cls, heroColors(c.cls), slotType(c.cls, 'weapon'), c.name, li.level);
 
     const action = inRun ? h('button', { class: 'btn gold sm', onclick: () => app.nav('dungeons') }, 'In dungeon')
       : f.status === 'farming' ? null
@@ -86,14 +83,14 @@ export function createFarmScreen(root, app) {
       h('div', { class: 'panel biomebar' },
         h('button', { class: 'grow', style: { textAlign: 'left' }, onclick: () => biomeSheet(slot) },
           h('div', { class: 'name' }, b.name, h('span', { class: 'muted', style: { fontSize: '12px' } }, ' ▼')),
-          h('div', { class: 'sub' }, `Loot T${b.tiers[0]}–T${b.tiers[1]}${b.potionRate ? ' · potions' : ''}`)),
+          h('div', { class: 'sub' }, lootText(b))),
         diffPill(biomeEstimate(slot, f.biome)), action),
       scene.host,
       h('div', { class: 'xprow' }, refs.lv = h('span', {}, `Lv ${li.level}`), h('div', { class: 'bar xpbar' }, refs.xp = h('i', { style: { width: `${(li.into / li.need) * 100}%` } })), refs.xpTxt = h('span', { class: 'muted tnum' }, `${fmtXp(li.into)}/${li.need}`)),
     ];
     const n = nudge(slot);
     if (n) kids.push(n);
-    kids.push(gearSlots(slot, (k) => app.equip(slot, k)), statPanel(slot));
+    kids.push(gearSlots(slot, (k) => slotSheet(slot, k, render)), statPanel(slot));
     root.replaceChildren(...kids);
     updateMessage();
   }

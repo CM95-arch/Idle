@@ -1,6 +1,7 @@
 // Boot, navigation, the frame loop, sounds and offline catch-up.
 import { BUILD } from './config.js';
 import { ITEMS } from './data/items.js';
+import { slotType } from './core/character.js';
 import { BIOME } from './data/world.js';
 import * as G from './core/game.js';
 import { $, h, showDialog, confirmDialog, toast, fmtDur, fmtNum, fmtXp } from './ui/dom.js';
@@ -27,9 +28,7 @@ let catching = false;
 const pendingResults = [];
 
 const app = {
-  nav(id) { if (id !== 'vault') screens.vault?.leaveEquip(); tab = id; try { sessionStorage.setItem('idle-tab', id); } catch {} showTab(); },
-  /** Tap on a gear slot: open the vault filtered to that slot, return to `back` after equipping. */
-  equip(slot, kind, back = tab) { screens.vault.openEquip(slot, kind, back); tab = 'vault'; showTab(); },
+  nav(id) { tab = id; try { sessionStorage.setItem('idle-tab', id); } catch {} showTab(); },
   refresh() { showTab(); },
   refreshTop() { renderTop(); },
   sound: (name) => play(name),
@@ -75,7 +74,7 @@ function settings() {
 }
 
 // ---------- events from the game ----------
-const weaponOf = (slot) => ITEMS[G.state.chars[slot]?.equip.weapon]?.type || 'staff';
+const weaponOf = (slot) => { const c = G.state.chars[slot]; return c ? slotType(c.cls, 'weapon') : 'staff'; };
 function withSound(screen, slotOf) {
   const show = (kind, d) => {
     screen.emit(kind, d);
@@ -105,7 +104,7 @@ G.on('levelup', ({ name, level }) => {
 G.on('fallen', ({ slot }) => { if (!catching) toast({ title: `${G.state.chars[slot].name} has fallen`, kind: 'bad' }); renderTop(); });
 G.on('runEnd', (res) => { if (catching) pendingResults.push(res); else showRunResult(res, showDialog, () => showTab()); renderTabs(); renderTop(); });
 G.on('changed', () => showTab());
-G.on('gear', (d) => { if (!d.drink) play('equip'); if (tab !== 'vault') screens[tab].render(); renderTop(); });
+G.on('gear', (d) => { if (!d.drink) play('equip'); screens[tab].render(); renderTop(); });
 G.on('estimates', () => { if (tab === 'farm' || (tab === 'dungeons' && !G.state.run)) screens[tab].render(); });
 
 // ---------- catch-up after time away ----------
@@ -138,12 +137,12 @@ async function catchUp() {
     const b = before[i];
     if (!a.name) return;
     const same = a.start === b.start;
-    const kills = a.kills - (same ? b.kills : 0), items = a.items - (same ? b.items : 0), potions = a.potions - (same ? b.potions : 0), xp = a.xp - (same ? b.xp : 0), finds = a.finds - (same ? b.finds : 0);
+    const kills = a.kills - (same ? b.kills : 0), items = a.items - (same ? b.items : 0), potions = a.potions - (same ? b.potions : 0), xp = a.xp - (same ? b.xp : 0);
     if (kills <= 0 && a.status === b.status) return;
     const f = G.state.farms[i];
     lines.push(h('div', { class: 'panel small' },
       h('div', { class: 'row between' }, h('b', {}, a.name), h('b', { style: { color: a.status === 'fallen' ? 'var(--red)' : 'var(--green)' } }, a.status === 'fallen' ? 'Fallen' : BIOME[f.biome].name)),
-      h('div', { class: 'muted tnum', style: { fontWeight: 700 } }, `${fmtNum(kills)} kills · +${fmtXp(xp)} XP · ${fmtNum(items)} items${potions ? ` · ${fmtNum(potions)} potions` : ''}${finds ? ` · ${finds} new` : ''}`),
+      h('div', { class: 'muted tnum', style: { fontWeight: 700 } }, `${fmtNum(kills)} kills · +${fmtXp(xp)} XP${potions ? ` · ${fmtNum(potions)} potions` : ''}${items ? ` · ${fmtNum(items)} unique!` : ''}`),
       a.status === 'fallen' && f.session?.endMs ? h('div', { style: { color: 'var(--red)', fontWeight: 700 } }, `Fell after ${fmtDur(f.session.endMs - f.session.startMs)}`) : null));
   });
   if (lines.length && awayMs > 60000) showDialog((close) => [h('div', { class: 'banner' }, h('h2', {}, `Away for ${fmtDur(awayMs)}`)), ...lines, h('button', { class: 'btn', onclick: close }, 'Nice')]);

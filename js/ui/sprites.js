@@ -62,7 +62,7 @@ const M = {
 };
 
 const BASE = { o: '#0a080c', d: '#2a2230', e: '#e5b98f', k: '#1a1418' };
-export const TIER_COLORS = (t) => (t >= 12 ? ['#b2263a', '#ff8a7a', '#ffd34d'] : t >= 10 ? ['#7b4bd1', '#c9a6ff', '#ffd34d'] : t >= 7 ? ['#2f62c9', '#8ec1ff', '#ffe08a'] : t >= 4 ? ['#2d8f73', '#8fe0c3', '#f2c14e'] : ['#8a6a4a', '#cdb08a', '#b8c0c8']);
+export const TIER_COLORS = (t) => (t >= 18 ? ['#e8e8f0', '#ffffff', '#ffd34d'] : t >= 15 ? ['#1a9aa8', '#7cf0ff', '#ffffff'] : t >= 12 ? ['#b2263a', '#ff8a7a', '#ffd34d'] : t >= 10 ? ['#7b4bd1', '#c9a6ff', '#ffd34d'] : t >= 7 ? ['#2f62c9', '#8ec1ff', '#ffe08a'] : t >= 4 ? ['#2d8f73', '#8fe0c3', '#f2c14e'] : ['#8a6a4a', '#cdb08a', '#b8c0c8']);
 export const POT_COLORS = { hp: '#2ad1c2', mp: '#f2c94c', att: '#e24fcf', def: '#3c3a44', spd: '#49c25c', dex: '#f28c2a', vit: '#d83b3b', wis: '#4aa3f0' };
 const UT_COLORS = ['#c0408f', '#ff9de6', '#fff2a8'];
 
@@ -127,5 +127,5 @@ export function bagColor(id) {
   if (it.slot === 'potion') return { a: '#3a6ad8', b: '#8ab0ff' };
   if (it.slot === 'rune') return { a: '#d9a441', b: '#ffe08a' };
   const t = it.tier;
-  return t >= 11 ? { a: '#3ac8d8', b: '#9af0ff' } : t >= 8 ? { a: '#7a3ac0', b: '#b88aff' } : t >= 5 ? { a: '#c04a8a', b: '#ff9ad0' } : { a: '#7a5a3a', b: '#b08a5a' };
+  return t >= 15 ? { a: '#e8e8f0', b: '#ffffff' } : t >= 11 ? { a: '#3ac8d8', b: '#9af0ff' } : t >= 8 ? { a: '#7a3ac0', b: '#b88aff' } : t >= 5 ? { a: '#c04a8a', b: '#ff9ad0' } : { a: '#7a5a3a', b: '#b08a5a' };
 }

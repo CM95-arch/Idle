@@ -1,7 +1,7 @@
 // ★ All balance numbers live here. Change a value, reload, and the game uses it.
 // `node tools/balance.mjs` prints survival times and kill rates for reference builds.
 
-export const BUILD = '2026-10-10 · 7';
+export const BUILD = '2026-10-10 · 8';
 
 export const CONFIG = {
   tickSeconds: 0.1,            // combat simulation step (same step online and offline)
@@ -35,18 +35,15 @@ export const CONFIG = {
   exaltMax: 5,
   exaltGain: { hp: 5, mp: 5, att: 1, def: 1, spd: 1, dex: 1, vit: 1, wis: 1 },
 
-  // ---- loot while farming ----
-  itemDropChance: (L) => 0.32 - 0.028 * (L - 1),  // per kill, by biome level: 32% in the Forest, about 12% in the Godlands
-  eliteDropMult: 3,
-  classBias: 0.7,              // share of drops picked from gear the farming class can use
-  tierWeights: [35, 30, 22, 13],     // lowest tier in the range first
-
+  // ---- loot while farming: XP, potions (rate per biome in world.js) and one rare UT per biome ----
+  eliteDropMult: 3,            // elites are this many times likelier to drop potions and the biome's UT
+  biomeUtChance: 1 / 24000,    // per kill: about two days of farming one biome on one character
   // ---- dungeons ----
   dungeonEnemiesPerRoom: [5, 7], 
   dungeonWalkHealPct: 0.025,   // dungeons heal less between enemies than farming does
   roomTransitionSeconds: 3,  // walk between dungeon rooms (fast regen while walking)
-  dungeonLootRolls: [3, 5],
-  dungeonUtChance: 0.08,       // per unique item, per clear
+  upgradeChance: 0.2,          // a clear has a 1 in 5 chance to upgrade one gear slot to the dungeon's tier
+  dungeonUtChance: 0.1,        // a clear has a 1 in 10 chance to drop one of the dungeon's UTs you don't have yet
   telegraphEvery: [9, 13],     // seconds between boss telegraphs
   telegraphWindup: 1.8,        // seconds the player has to tap
   telegraphHitMult: 2.6,       // a missed telegraph hits this many times harder than a normal boss hit
@@ -55,9 +52,7 @@ export const CONFIG = {
   closedAppDodgeChance: 0.35,  // telegraphs dodged automatically while the app is closed
   closedAppAbilityDelay: 4,    // seconds the auto-cast waits while the app is closed
 
-  // ---- fusion ----
-  fuseCost: 3,                 // 3 copies of an item fuse into 1 copy of the next tier
-  fuseMaxTier: 11,             // fusion can't create anything above this (T12+ stays dungeon-only)
+  // ---- vault ----
   potionConvertCost: 3,        // 3 potions of one kind → 1 potion of your choice
   runeChance: 0.4,             // chance a rune dungeon drops its rune; guaranteed after 2 misses in a row
   runePityMisses: 2,

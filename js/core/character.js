@@ -1,7 +1,9 @@
 // Character stats: class base + potions drunk + exaltation + gear. Levels never add power.
 import { CONFIG } from '../config.js';
 import { CLASS, STATS } from '../data/classes.js';
-import { ITEMS } from '../data/items.js';
+import { ITEMS, WEAPON_TYPES, ARMOR_TYPES, weaponStats, abilityStats } from '../data/items.js';
+
+export const GEAR_SLOTS = ['weapon', 'ability', 'armor', 'ring'];
 
 export function newCharacter(id, cls, name) {
   const C = CLASS[cls];
@@ -9,9 +11,43 @@ export function newCharacter(id, cls, name) {
   for (const k of STATS) stats[k] = Math.round(C.base[k] + (C.max[k] - C.base[k]) * CONFIG.startStatFraction);
   return {
     id, cls, name, xp: 0, stats, createdAt: Date.now(), kills: 0, deaths: 0, clears: 0,
-    equip: { weapon: `${C.weapon}_t1`, ability: `${C.ability}_t1`, armor: `${C.armor}_t1`, ring: null },
+    // Gear is a tier per slot, raised by dungeon upgrades. A slot can show an unlocked UT instead; it uses the slot's tier.
+    tiers: { weapon: 1, ability: 1, armor: 1, ring: 1 }, ringStat: 'hp', ut: { weapon: null, ability: null, armor: null, ring: null }, pending: [],
   };
 }
+
+/** The item type a class uses in a slot ('ring' for rings). */
+export const slotType = (cls, slot) => (slot === 'ring' ? 'ring' : CLASS[cls][slot]);
+
+const utCache = new Map();
+/** A UT item built at slot tier t: the tier's normal base stats plus the UT's own bonus and effect. */
+export function utAtTier(id, t) {
+  const key = `${id}@${t}`;
+  if (utCache.has(key)) return utCache.get(key);
+  const it = ITEMS[id];
+  const out = { ...it, slotTier: t };
+  if (WEAPON_TYPES[it.type]) out.weapon = weaponStats(it.type, t);
+  else if (ARMOR_TYPES[it.type]) {
+    const A = ARMOR_TYPES[it.type], b = { def: A.def(t), ...A.bonus(t) };
+    for (const [k, v] of Object.entries(it.utBonus)) b[k] = (b[k] || 0) + v;
+    out.bonus = b;
+  } else if (it.type === 'ring') {
+    // rings have no base stats, so a UT ring's own bonus grows with the slot tier
+    out.bonus = Object.fromEntries(Object.entries(it.utBonus).map(([k, v]) => [k, Math.max(1, Math.round((v * t) / it.eq))]));
+  } else out.ability = abilityStats(it.type, t);
+  utCache.set(key, out);
+  return out;
+}
+
+/** What a character has in a slot, resolved to an item object (tiered item, or a UT built at that tier). */
+export function gearItem(char, slot, over = {}) {
+  const t = over.tier ?? char.tiers[slot];
+  const ut = 'ut' in over ? over.ut : char.ut?.[slot];
+  if (ut && ITEMS[ut]) return utAtTier(ut, t);
+  if (slot === 'ring') return ITEMS[`ring_${over.ringStat || char.ringStat}_t${t}`];
+  return ITEMS[`${slotType(char.cls, slot)}_t${t}`];
+}
+export const gearOf = (char) => GEAR_SLOTS.map((k) => gearItem(char, k));
 
 export function levelInfo(xp) {
   let level = 1, start = 0, need = CONFIG.xpToNext(1);
@@ -29,8 +65,7 @@ export function exaltBonus(state, cls, stat) {
 export function statBreakdown(char, state) {
   const C = CLASS[char.cls];
   const gear = Object.fromEntries(STATS.map((k) => [k, 0]));
-  for (const id of Object.values(char.equip)) {
-    const it = id && ITEMS[id];
+  for (const it of gearOf(char)) {
     if (it) for (const [k, v] of Object.entries(it.bonus)) gear[k] += v;
   }
   const out = {};
@@ -46,12 +81,13 @@ export const maxedCount = (char) => STATS.filter((k) => char.stats[k] >= CLASS[c
 export function fighterOf(char, state) {
   const sb = statBreakdown(char, state);
   const t = (k) => Math.max(0, sb[k].total);
-  const w = ITEMS[char.equip.weapon]?.weapon || { dmgMin: 5, dmgMax: 8, shots: 1, rof: 1 };
-  const ab = ITEMS[char.equip.ability];
+  const gear = gearOf(char);
+  const w = gear[0]?.weapon || { dmgMin: 5, dmgMax: 8, shots: 1, rof: 1 };
+  const ab = gear[1];
   // UT effects from everything equipped. Numbers add up; cooldown-style effects take the best one.
   const fx = {};
-  for (const id of Object.values(char.equip)) {
-    for (const [k, v] of Object.entries(ITEMS[id]?.fx || {})) {
+  for (const it of gear) {
+    for (const [k, v] of Object.entries(it?.fx || {})) {
       fx[k] = ['cheatDeath'].includes(k) ? Math.min(fx[k] ?? Infinity, v) : ['burstEvery', 'openerHits', 'rofMult', 'openerMult', 'burstMult', 'buffDur', 'critAfterDodge', 'ignoreDef', 'rampCap', 'luckyMult', 'freeCastEvery'].includes(k) ? Math.max(fx[k] || 0, v) : (fx[k] || 0) + v;
     }
   }

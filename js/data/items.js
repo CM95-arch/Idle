@@ -1,10 +1,10 @@
 // Every item in the game. Tiered gear is generated from the tables below; UT (untiered) items are hand-made.
-// Weapon and armor names follow ROTMG's tiered gear for the test build (T13–T14 names are placeholders).
+// Weapon and armor names follow ROTMG's tiered gear for the test build (T13–T20 names are placeholders).
 // Ability and ring names are original, since ROTMG's stop at T7.
 
 import { STAT_NAME } from './classes.js';
 
-export const MAX_TIER = 14;
+export const MAX_TIER = 20;
 const GROWTH = 1.28; // power multiplier per tier
 
 export const WEAPON_TYPES = {
@@ -22,29 +22,29 @@ export const ARMOR_TYPES = {
 export const ABILITY_LABEL = { spell: 'Spell', tome: 'Tome', quiver: 'Quiver', cloak: 'Cloak', helm: 'Helm', shield: 'Shield', seal: 'Seal', trap: 'Trap', scepter: 'Scepter', skull: 'Skull', poison: 'Poison' };
 
 const NAMES = {
-  staff: ['Firebrand Staff', 'Comet Staff', 'Serpentine Staff', 'Meteor Staff', 'Slayer Staff', 'Avenger Staff', 'Staff of Destruction', 'Staff of Horror', 'Staff of Necrotic Arcana', 'Staff of Diabolic Secrets', 'Staff of Astral Knowledge', 'Staff of the Cosmic Whole', 'Staff of the Vital Unity', 'Staff of the Fundamental Core'],
-  wand: ['Force Wand', 'Power Wand', 'Missile Wand', 'Eldritch Wand', "Hell's Fire Wand", 'Wand of Dark Magic', 'Wand of Arcane Flame', 'Wand of Death', 'Wand of Deep Sorcery', 'Wand of Shadow', 'Wand of Ancient Warning', 'Wand of Recompense', 'Wand of Evocation', 'Wand of the Unbound Star'],
-  bow: ['Reinforced Bow', 'Crossbow', 'Double Bow', 'Heavy Crossbow', 'Golden Bow', 'Verdant Bow', 'Bow of Fey Magic', 'Bow of Innocent Blood', 'Bow of Covert Havens', 'Bow of Mystical Energy', 'Bow of Deep Enchantment', 'Bow of the Morning Star', 'Bow of the Sundered Sky', 'Bow of the Final Dawn'],
-  sword: ['Broad Sword', 'Saber', 'Long Sword', 'Falchion', 'Fire Sword', 'Glass Sword', 'Golden Sword', 'Ravenheart Sword', 'Dragonsoul Sword', 'Archon Sword', 'Skysplitter Sword', 'Sword of Acclaim', 'Sword of Splendor', 'Sword of the Last Light'],
-  dagger: ['Dirk', 'Blue Steel Dagger', 'Dagger of Sinister Deeds', 'Silver Dagger', 'Golden Dagger', 'Obsidian Dagger', 'Mithril Dagger', 'Fire Dagger', 'Ragetalon Dagger', 'Emeraldshard Dagger', 'Agateclaw Dagger', 'Dagger of Foul Malevolence', 'Dagger of Sheer Dread', 'Dagger of the Hollow Moon'],
-  robe: ['Robe of the Apprentice', 'Robe of the Acolyte', 'Robe of the Student', 'Robe of the Conjurer', 'Robe of the Adept', 'Robe of the Invoker', 'Robe of the Illusionist', 'Robe of the Master', 'Robe of the Shadow Magus', 'Robe of the Moon Wizard', 'Robe of the Elder Warlock', 'Robe of the Grand Sorcerer', 'Robe of the Star Mother', 'Robe of the Ninth Sky'],
-  leather: ['Wolfskin Armor', 'Basilisk Hide Armor', 'Hippogriff Hide Armor', 'Griffon Hide Armor', 'Drake Hide Armor', 'Roc Leather Armor', 'Studded Hide Armor', 'Shadowcloth Armor', 'Wyvern Skin Armor', 'Hydra Skin Armor', 'Leviathan Armor', 'Kraken Hide Armor', 'Abyssal Drake Armor', 'Starwoven Leather'],
-  heavy: ['Iron Mail', 'Bronze Lamellar', 'Steel Breastplate', 'Mithril Chainmail', 'Mithril Armor', 'Golden Chainmail', 'Desolation Armor', 'Vengeance Armor', 'Abyssal Armor', 'Acropolis Armor', 'Dominion Armor', 'Annihilation Armor', 'Bulwark of the Titan', 'Aegis of the First King'],
+  staff: ['Firebrand Staff', 'Comet Staff', 'Serpentine Staff', 'Meteor Staff', 'Slayer Staff', 'Avenger Staff', 'Staff of Destruction', 'Staff of Horror', 'Staff of Necrotic Arcana', 'Staff of Diabolic Secrets', 'Staff of Astral Knowledge', 'Staff of the Cosmic Whole', 'Staff of the Vital Unity', 'Staff of the Fundamental Core', 'Staff of the Bright Beyond', 'Staff of Ashen Stars', 'Staff of the Hollow Sun', 'Staff of the Last Sigil', 'Staff of Unmaking', 'Staff of the Endless Realm'],
+  wand: ['Force Wand', 'Power Wand', 'Missile Wand', 'Eldritch Wand', "Hell's Fire Wand", 'Wand of Dark Magic', 'Wand of Arcane Flame', 'Wand of Death', 'Wand of Deep Sorcery', 'Wand of Shadow', 'Wand of Ancient Warning', 'Wand of Recompense', 'Wand of Evocation', 'Wand of the Unbound Star', 'Wand of the Pale Comet', 'Wand of Silent Thunder', 'Wand of the Iron Crown', 'Wand of Starless Night', 'Wand of the Eighth Gate', 'Wand of the Endless Realm'],
+  bow: ['Reinforced Bow', 'Crossbow', 'Double Bow', 'Heavy Crossbow', 'Golden Bow', 'Verdant Bow', 'Bow of Fey Magic', 'Bow of Innocent Blood', 'Bow of Covert Havens', 'Bow of Mystical Energy', 'Bow of Deep Enchantment', 'Bow of the Morning Star', 'Bow of the Sundered Sky', 'Bow of the Final Dawn', 'Bow of the Silver Gale', 'Bow of Burning Skies', 'Bow of the Hunter King', 'Bow of Shattered Light', 'Bow of the Last Arrow', 'Bow of the Endless Realm'],
+  sword: ['Broad Sword', 'Saber', 'Long Sword', 'Falchion', 'Fire Sword', 'Glass Sword', 'Golden Sword', 'Ravenheart Sword', 'Dragonsoul Sword', 'Archon Sword', 'Skysplitter Sword', 'Sword of Acclaim', 'Sword of Splendor', 'Sword of the Last Light', 'Sword of the Dawnbreaker', 'Sword of Burning Oaths', 'Sword of the Sunken Crown', 'Sword of the Starforge', 'Sword of the Final Oath', 'Sword of the Endless Realm'],
+  dagger: ['Dirk', 'Blue Steel Dagger', 'Dagger of Sinister Deeds', 'Silver Dagger', 'Golden Dagger', 'Obsidian Dagger', 'Mithril Dagger', 'Fire Dagger', 'Ragetalon Dagger', 'Emeraldshard Dagger', 'Agateclaw Dagger', 'Dagger of Foul Malevolence', 'Dagger of Sheer Dread', 'Dagger of the Hollow Moon', 'Dagger of the Quiet Star', 'Dagger of Black Embers', 'Dagger of the Veiled Path', 'Dagger of the Last Breath', 'Dagger of Unseen Ends', 'Dagger of the Endless Realm'],
+  robe: ['Robe of the Apprentice', 'Robe of the Acolyte', 'Robe of the Student', 'Robe of the Conjurer', 'Robe of the Adept', 'Robe of the Invoker', 'Robe of the Illusionist', 'Robe of the Master', 'Robe of the Shadow Magus', 'Robe of the Moon Wizard', 'Robe of the Elder Warlock', 'Robe of the Grand Sorcerer', 'Robe of the Star Mother', 'Robe of the Ninth Sky', 'Robe of the Starweaver', 'Robe of the Ember Sage', 'Robe of the Veiled Archon', 'Robe of the Ancient Flame', 'Robe of the World Mind', 'Robe of the Endless Realm'],
+  leather: ['Wolfskin Armor', 'Basilisk Hide Armor', 'Hippogriff Hide Armor', 'Griffon Hide Armor', 'Drake Hide Armor', 'Roc Leather Armor', 'Studded Hide Armor', 'Shadowcloth Armor', 'Wyvern Skin Armor', 'Hydra Skin Armor', 'Leviathan Armor', 'Kraken Hide Armor', 'Abyssal Drake Armor', 'Starwoven Leather', 'Phoenix Hide Armor', 'Behemoth Leather', 'Skyray Hide Armor', 'Voidhide Armor', 'Dragonlord Leather', 'Endless Realm Leather'],
+  heavy: ['Iron Mail', 'Bronze Lamellar', 'Steel Breastplate', 'Mithril Chainmail', 'Mithril Armor', 'Golden Chainmail', 'Desolation Armor', 'Vengeance Armor', 'Abyssal Armor', 'Acropolis Armor', 'Dominion Armor', 'Annihilation Armor', 'Bulwark of the Titan', 'Aegis of the First King', 'Citadel Plate', 'Starforged Plate', 'Behemoth Armor', 'Warden of Ages Plate', 'Godslayer Armor', 'Armor of the Endless Realm'],
 };
 const ABILITY_WORDS = {
-  spell: ['Spark', 'Ember', 'Cinder', 'Flare', 'Blaze', 'Inferno', 'Pyre', 'Scorch', 'Wildfire', 'Hellflame', 'Starfire', 'Sunburst', 'Nova', 'Supernova'].map((w) => `${w} Spell`),
-  tome: ['Novice', 'Healing', 'Mending', 'Renewal', 'Blessed', 'Sacred', 'Hallowed', 'Radiant', "Seraph's", "Saint's", 'Divine', 'Celestial', 'Exalted', 'Eternal'].map((w) => `${w} Tome`),
-  quiver: ["Hunter's", "Ranger's", 'Thorn', 'Barbed', 'Ironhead', 'Steelhead', 'Piercing', 'Gale', 'Storm', 'Thunder', 'Skybreaker', 'Starshot', 'Comet', 'Eclipse'].map((w) => `${w} Quiver`),
-  cloak: ['Drab', 'Dusk', 'Shadow', 'Nightfall', 'Smoke', 'Shade', 'Phantom', 'Wraith', 'Umbral', 'Midnight', 'Voidsilk', 'Eclipse', 'Starless', 'Oblivion'].map((w) => `${w} Cloak`),
-  helm: ['Iron', 'Bronze', 'Steel', 'Battle', 'War', "Berserker's", "Warlord's", "Champion's", "Conqueror's", "Titan's", 'Dragonbone', 'Demonforged', 'Godforged', 'Ascendant'].map((w) => `${w} Helm`),
-  shield: ['Wooden', 'Iron', 'Kite', 'Tower', 'Steel', 'Mithril', 'Bulwark', 'Colossus', 'Dragonscale', 'Aegis', 'Bastion', 'Citadel', 'Titanwall', 'Worldguard'].map((w) => `${w} Shield`),
-  seal: ['Faith', 'Valor', 'Honor', 'Devotion', 'Glory', 'Mercy', 'Justice', 'Triumph', 'the Saint', 'the Martyr', 'the Crusade', 'the Dawn', 'the Archangel', 'Eternity'].map((w) => `Seal of ${w}`),
-  trap: ['Snare', 'Spike', 'Barbed', 'Iron Jaw', 'Bear', 'Thornwire', 'Venomclaw', 'Hellspike', 'Dragontooth', 'Earthsplitter', 'Stormcoil', 'Abyssal', 'Starfall', 'Worldbreaker'].map((w) => `${w} Trap`),
-  scepter: ['Copper', 'Silver', 'Spark', 'Storm', 'Lightning', 'Tempest', 'Thunderlord', 'Skyfire', 'Arc', 'Maelstrom', 'Cyclone', 'Heavenshock', 'Godstorm', 'Worldspark'].map((w) => `${w} Scepter`),
-  skull: ['Rat', 'Wolf', 'Ghoul', 'Bone', 'Grave', 'Lich', 'Wraith', 'Banshee', 'Bonelord', 'Reaper', 'Deathlord', 'Doom', 'Abyssal', 'Oblivion'].map((w) => `${w} Skull`),
-  poison: ['Nettle', 'Spider', 'Viper', 'Scorpion', 'Hemlock', 'Nightshade', 'Basilisk', 'Wyvern', 'Hydra', 'Leviathan', 'Plaguebloom', 'Blackheart', 'Godbane', 'Worldrot'].map((w) => `${w} Poison`),
+  spell: ['Spark', 'Ember', 'Cinder', 'Flare', 'Blaze', 'Inferno', 'Pyre', 'Scorch', 'Wildfire', 'Hellflame', 'Starfire', 'Sunburst', 'Nova', 'Supernova', 'Comet', 'Starstorm', 'Voidflame', 'Worldfire', 'Godflame', 'Endless'].map((w) => `${w} Spell`),
+  tome: ['Novice', 'Healing', 'Mending', 'Renewal', 'Blessed', 'Sacred', 'Hallowed', 'Radiant', "Seraph's", "Saint's", 'Divine', 'Celestial', 'Exalted', 'Eternal', 'Astral', 'Sovereign', 'Timeless', 'Godly', 'Infinite', 'Endless'].map((w) => `${w} Tome`),
+  quiver: ["Hunter's", "Ranger's", 'Thorn', 'Barbed', 'Ironhead', 'Steelhead', 'Piercing', 'Gale', 'Storm', 'Thunder', 'Skybreaker', 'Starshot', 'Comet', 'Eclipse', 'Meteor', 'Starfall', 'Godshot', 'Voidshot', 'Worldpiercer', 'Endless'].map((w) => `${w} Quiver`),
+  cloak: ['Drab', 'Dusk', 'Shadow', 'Nightfall', 'Smoke', 'Shade', 'Phantom', 'Wraith', 'Umbral', 'Midnight', 'Voidsilk', 'Eclipse', 'Starless', 'Oblivion', 'Nightveil', 'Shadowsoul', 'Voidcloak', 'Ghostking', 'Worldshade', 'Endless'].map((w) => `${w} Cloak`),
+  helm: ['Iron', 'Bronze', 'Steel', 'Battle', 'War', "Berserker's", "Warlord's", "Champion's", "Conqueror's", "Titan's", 'Dragonbone', 'Demonforged', 'Godforged', 'Ascendant', 'Starforged', 'Kingslayer', 'Voidforged', 'Worldbreaker', 'Godking', 'Endless'].map((w) => `${w} Helm`),
+  shield: ['Wooden', 'Iron', 'Kite', 'Tower', 'Steel', 'Mithril', 'Bulwark', 'Colossus', 'Dragonscale', 'Aegis', 'Bastion', 'Citadel', 'Titanwall', 'Worldguard', 'Starwall', 'Skyguard', 'Godwall', 'Voidbreaker', 'Everguard', 'Endless'].map((w) => `${w} Shield`),
+  seal: ['Faith', 'Valor', 'Honor', 'Devotion', 'Glory', 'Mercy', 'Justice', 'Triumph', 'the Saint', 'the Martyr', 'the Crusade', 'the Dawn', 'the Archangel', 'Eternity', 'the Seraph', 'the Throne', 'the Heavens', 'the Pantheon', 'Infinity', 'the Endless Realm'].map((w) => `Seal of ${w}`),
+  trap: ['Snare', 'Spike', 'Barbed', 'Iron Jaw', 'Bear', 'Thornwire', 'Venomclaw', 'Hellspike', 'Dragontooth', 'Earthsplitter', 'Stormcoil', 'Abyssal', 'Starfall', 'Worldbreaker', 'Godsnare', 'Voidjaw', 'Starcoil', 'Doomspike', 'Worldsnare', 'Endless'].map((w) => `${w} Trap`),
+  scepter: ['Copper', 'Silver', 'Spark', 'Storm', 'Lightning', 'Tempest', 'Thunderlord', 'Skyfire', 'Arc', 'Maelstrom', 'Cyclone', 'Heavenshock', 'Godstorm', 'Worldspark', 'Starstorm', 'Voidspark', 'Skyking', 'Thunderthrone', 'Infinite', 'Endless'].map((w) => `${w} Scepter`),
+  skull: ['Rat', 'Wolf', 'Ghoul', 'Bone', 'Grave', 'Lich', 'Wraith', 'Banshee', 'Bonelord', 'Reaper', 'Deathlord', 'Doom', 'Abyssal', 'Oblivion', 'Soulreaver', 'Dreadlord', 'Voidskull', 'Godreaper', 'Worldend', 'Endless'].map((w) => `${w} Skull`),
+  poison: ['Nettle', 'Spider', 'Viper', 'Scorpion', 'Hemlock', 'Nightshade', 'Basilisk', 'Wyvern', 'Hydra', 'Leviathan', 'Plaguebloom', 'Blackheart', 'Godbane', 'Worldrot', 'Voidrot', 'Starblight', 'Dreadbloom', 'Godrot', 'Worldbane', 'Endless'].map((w) => `${w} Poison`),
 };
-const RING_ADJ = ['Minor', 'Lesser', '', 'Greater', 'Superior', 'Paramount', 'Exalted', 'Unbound', 'Ascendant', 'Mythic', 'Celestial', 'Astral', 'Primordial', 'Eternal'];
+const RING_ADJ = ['Minor', 'Lesser', '', 'Greater', 'Superior', 'Paramount', 'Exalted', 'Unbound', 'Ascendant', 'Mythic', 'Celestial', 'Astral', 'Primordial', 'Eternal', 'Radiant', 'Sovereign', 'Titanic', 'Godly', 'Infinite', 'Endless'];
 const RING_STATS = ['hp', 'mp', 'att', 'def', 'spd', 'dex', 'vit', 'wis'];
 // Rings: a main stat plus a smaller second stat, so every kind has a use.
 // ATT/DEX = damage, SPD = tempo (walk time and dodge), WIS/MP = abilities, HP/DEF/VIT = survival.
@@ -72,7 +72,7 @@ const FLAVOR = {
   ability: ['A novice’s focus.', 'A veteran’s tool.', 'A relic of legendary power.'],
   ring: ['A modest band.', 'Set with a stone that glows faintly.', 'A ring fit for a god.'],
 };
-const band = (t) => (t <= 4 ? 0 : t <= 9 ? 1 : 2);
+const band = (t) => (t <= 5 ? 0 : t <= 12 ? 1 : 2);
 const round1 = (n) => Math.round(n * 10) / 10;
 
 export function weaponStats(type, t, mult = 1) {
@@ -158,11 +158,19 @@ const UT = [
   ['ut_lost_plate', 'Lost Lord\u2019s Plate', 'heavy', 11, { def: 3 }, 'Bulwark: completely block 20% of hits.', { block: 0.2 }, 'Armor from a kingdom that sank.'],
   ['ut_hermit_shell', 'Hermit\u2019s Shell', 'robe', 11, { wis: 4 }, 'Tidepool: regenerate 3% MP per second.', { mpRegenPct: 0.03 }, 'Something lived in it for a thousand years.'],
   ['ut_shrine_dagger', 'Shrine Flame Dagger', 'dagger', 11, { spd: 3 }, 'Flame skulls: kills burst, dealing 30% of the enemy\u2019s max HP to the next enemy.', { killCarry: 0.3 }, 'It keeps a little of everything it burns.'],
+  // biome rares: about two days of farming each
+  ['ut_lucky_coin', 'Bandit\u2019s Lucky Coin', 'ring', 2, { hp: 20, att: 1 }, 'Lucky: 6% of hits deal triple damage.', { luckyChance: 0.06, luckyMult: 3 }, 'Heads you win. Tails you also win.'],
+  ['ut_warlord_cleaver', 'Warlord\u2019s Cleaver', 'sword', 3, { hp: 20 }, 'Warcry: kills give +30% attack speed for 2s.', { killHaste: 2 }, 'Notched from a hundred skirmishes.'],
+  ['ut_nomad_wraps', 'Nomad\u2019s Wraps', 'robe', 4, { spd: 3 }, 'Mirage: +6% dodge, and regenerate 0.5% max HP per second.', { dodge: 0.06, regenPct: 0.005 }, 'Cool in the day, warm at night.'],
+  ['ut_pixie_spell', 'Pixie Dust Spell', 'spell', 5, { wis: 2 }, 'Sparkle: every fourth cast is free.', { freeCastEvery: 4 }, 'Smells of honeysuckle and mischief.'],
+  ['ut_cursed_bulwark', 'Cursed Knight\u2019s Bulwark', 'shield', 6, { def: 2 }, 'Spite: reflect 15% of damage taken and take 5% less damage.', { reflect: 0.15, dr: 0.05 }, 'Its last owner never stopped standing guard.'],
+  ['ut_brimstone_bow', 'Brimstone Bow', 'bow', 7, { att: 2 }, 'Brimstone: every 5th volley explodes for 2.5× damage.', { burstEvery: 5, burstMult: 2.5 }, 'The string is a braided flame.'],
+  ['ut_abyss_eye', 'Eye of the Abyss', 'ring', 9, { def: 2, wis: 2 }, 'Gaze: +6% crit chance, and +30% damage to enemies under 30% HP.', { critChance: 0.06, execute: 0.3 }, 'It looks back.'],
   ['ut_final_night', 'Robe of the Final Night', 'robe', 14, { att: 5, wis: 5 }, 'Last light: deal 50% more damage while under 40% HP.', { lowHpDmg: 0.5 }, 'Stitched from the last hour before the end.'],
 ];
 for (const [id, name, type, eq, bonus, special, fx, desc] of UT) {
   const mult = 1;
-  const base = { id, name, type, tier: 'UT', eq, desc, special, fx };
+  const base = { id, name, type, tier: 'UT', eq, desc, special, fx, utBonus: bonus };
   if (WEAPON_TYPES[type]) add({ ...base, slot: 'weapon', cat: WEAPON_TYPES[type].cat, weapon: weaponStats(type, eq, mult), bonus });
   else if (ARMOR_TYPES[type]) {
     const A = ARMOR_TYPES[type];

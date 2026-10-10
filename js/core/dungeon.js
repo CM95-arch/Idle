@@ -3,7 +3,7 @@ import { CONFIG } from '../config.js';
 import { DUNGEON, DUNGEON_MOBS } from '../data/world.js';
 import { makeRng } from './rng.js';
 import { newCombat, step } from './combat.js';
-import { dungeonEnemy, dungeonBoss, rollItem, rollPotion } from './loot.js';
+import { dungeonEnemy, dungeonBoss, rollPotion } from './loot.js';
 
 export function createRun(dungeonId, F, seed) {
   const d = DUNGEON[dungeonId];
@@ -57,16 +57,17 @@ export function runProgress(run) {
   return { total, done };
 }
 
-/** Rewards for a clear. Uses its own seeded roll so it can't be re-rolled by reloading. */
-export function rollRewards(run, cls) {
+/** Rewards for a clear. Uses its own seeded roll so it can't be re-rolled by reloading.
+ *  canUpgrade: some slot is below the dungeon's tier. have(id): that UT is already unlocked. */
+export function rollRewards(run, canUpgrade, have) {
   const d = DUNGEON[run.dungeonId];
   const rng = makeRng(run.seed ^ 0x9e3779b9);
+  const upgrade = rng.next() < CONFIG.upgradeChance && canUpgrade ? d.tier : null;
   const items = [];
-  const n = rng.int(...CONFIG.dungeonLootRolls);
-  for (let i = 0; i < n; i++) items.push(rollItem(d.tiers, cls, rng));
-  for (const ut of d.uts) if (rng.next() < CONFIG.dungeonUtChance) items.push(ut);
+  const missing = d.uts.filter((id) => !have(id));
+  if (rng.next() < CONFIG.dungeonUtChance && missing.length) items.push(rng.pick(missing));
   const potions = [];
   const pc = rng.int(...d.potions);
   for (let i = 0; i < pc; i++) potions.push(rollPotion(rng, d.sig));
-  return { xp: d.xp, items, potions };
+  return { xp: d.xp, items, potions, upgrade };
 }

@@ -28,16 +28,16 @@ This works exactly like Mystic Coin:
 | | |
 |---|---|
 | **Farm** | Every character slot farms at the same time. Attack speed follows ROTMG (8 shots/s at 75 DEX), and fights take about 5 seconds at matched gear. HP and MP carry over when you switch biomes. There's no resting: HP comes back quickly while walking to the next enemy. The simulation keeps running while the app is closed and replays the time you were away when you reopen it. A fall stops farming; nothing is lost. |
-| **Early game** | Drops are frequent in low biomes (about 1 in 3 kills in the Forest). Tap a gear slot to pick gear in the Vault; ▲ marks upgrades. When the next biome is safe enough, a "Ready for …" button appears. Each biome is a big step up: an undergeared character dies within minutes. |
+| **Gear** | Each character has four slots (weapon, ability, armor, ring) with a tier from T1 to T20. Tiers only go up, and only from dungeons. There are no random gear drops, no duplicates and no salvaging. |
 | **Difficulty** | Estimated by running the real combat engine ahead: Low = survives 8h+, Moderate = 1–8h, High = under 1h. |
-| **Dungeons** | 3–4 rooms, then a boss (about 3–6 minutes). Combat is automatic, but in dungeons you tap the ability yourself and tap to dodge boss attacks (which stuns the boss). Dungeons are harder than the biome with the same loot. Rewards are only given on a clear. If you close the app mid-run, it plays on with worse timing. |
+| **Dungeons** | 3–4 rooms, then a boss (about 3–5 minutes). Combat is automatic, but in dungeons you tap the ability yourself and tap to dodge boss attacks (which stuns the boss). Each dungeon has one tier, from Snake Pit (T2) to Oryx's Castle (T20). Every clear has a flat 1 in 5 chance to upgrade one slot to that tier, and you pick the slot (only slots below it are offered). Once all four slots reach a dungeon's tier, it shows ✓. A dungeon is tuned for a character whose slots are all one tier below it. Clears also give XP, potions and a 1 in 10 chance at one of the dungeon's UTs. Rewards are only given on a clear. If you close the app mid-run, it plays on with worse timing. |
 | **Oryx's Castle** | Needs the Sword, Shield and Helm runes. Each drops from its dungeon (Lost Halls, The Void, The Shatters) on about 40% of clears, guaranteed by the third. Entering uses them up. |
-| **Potions** | Drop in Abandoned City (1 in 200 kills), Hell (1 in 100), Abyss (1 in 45), Godlands (1 in 20), and dungeons. Stored in the vault and drunk on any character. |
+| **Potions** | Drop in every biome, more often deeper in: Forest 1 in 200 kills up to Godlands 1 in 20, plus dungeons. Stored in the vault and drunk on any character. 3 potions of one kind convert into 1 of your choice. |
 | **Exaltation** | Potions drunk past a stat's max count toward +1 for every character of that class: 25 potions, then 50 more, then 75… up to +5. |
-| **Fusion** | 3 copies of an item fuse into 1 copy of the next tier, up to T11 (T12+ only drops in dungeons). 3 potions of one kind convert into 1 of your choice. "Fuse extras" in the Vault fuses everything while keeping one copy of each item. |
-| **UT items** | Every unique has a special effect (poison, exploding hits, cheat death, ramping damage, double casts…), shown in pink on the item. |
-| **Rings** | Each ring has a main and a second stat: ATT/DEX for damage, SPD for tempo (shorter walks and dodging), WIS/MP for abilities, HP/DEF/VIT for survival. |
-| **First Steps** | 14 early milestones (flag button in the top bar), each with a guaranteed reward made for the character you're viewing. |
+| **Biome UTs** | Each biome has one rare UT (about two days of farming that biome). Godlands event bosses each have their own. |
+| **UT items** | Unlocks for the whole account: any character that can use one can wear it at any time, at that character's slot tier. A UT has the normal stats of its tier plus a small bonus and a special effect (poison, exploding hits, cheat death, ramping damage, double casts…), shown in pink. Tap a gear slot to swap. |
+| **Rings** | Rings use the same tier ladder. Pick the ring's stat in its slot for free, any time: ATT/DEX for damage, SPD for tempo (shorter walks and dodging), WIS/MP for abilities, HP/DEF/VIT for survival. |
+| **First Steps** | 14 early milestones (flag button in the top bar). Rewards are potions or gear upgrades for the character you're viewing. |
 | **Classes** | Wizard, Priest, Archer, Rogue and Warrior from the start. Knight (Warrior), Paladin (Knight), Huntress (Archer), Sorcerer (Wizard), Necromancer (Priest) and Assassin (Rogue) unlock at level 20 of the class in brackets, about 2–2.5 hours of farming. Early levels come every minute or two. |
 | **Slots** | 2 to start. +1 for the first clear of Abyss of Demons and of Lost Halls. More cost $2.99 each (a stand-in in the test build; no payment is taken). |
 
@@ -45,7 +45,7 @@ This works exactly like Mystic Coin:
 
 All numbers live in two files:
 
-- `js/config.js`: stat formulas, drop rates, potions, exaltation, fusion, dungeon rules.
+- `js/config.js`: stat formulas, upgrade and UT chances, potions, exaltation, dungeon rules.
 - `js/data/world.js`: biomes, dungeons, enemy strength curves, boss multipliers.
 
 After a change, run the balance report to see what it did:
@@ -54,6 +54,7 @@ After a change, run the balance report to see what it did:
 npm run balance                     # survival time and kills/hour per biome for reference builds
 npm run balance:dungeons -- wizard  # clear rate per dungeon (closed app)
 node tools/classes.mjs              # every class side by side: kills/hour and survival
+node tools/tune-dungeons.mjs wizard # suggested enemy level per dungeon (slots one tier under clear ~70%)
 ```
 
 ## Adding your own art
