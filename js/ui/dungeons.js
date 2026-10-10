@@ -207,7 +207,6 @@ export function showRunResult(res, showDialog, onChange) {
         h('span', { style: { color: '#7a4fc0' } }, `+${res.xp} XP`),
         Object.entries(pots).map(([id, n]) => h('span', { class: 'row', style: { gap: '3px' } }, itemIcon(id, 22), `×${n}`))),
       pending || (res.upgrade ? h('div', { style: { textAlign: 'center', fontWeight: 900, color: 'var(--gold-dark)' } }, `T${res.upgrade} upgrade applied`) : null),
-      !res.upgrade && c && G.upgradeSlots(res.slot, d.tier).length ? h('div', { class: 'small muted', style: { textAlign: 'center', fontWeight: 700 } }, `No upgrade this time (1 in ${Math.round(1 / CONFIG.upgradeChance)} per clear).`) : null,
       res.items.some((id) => ITEMS[id].tier === 'UT') ? h('div', { style: { textAlign: 'center', fontWeight: 900, color: 'var(--ut)' } }, 'A unique item dropped!') : null,
       res.slotEarned ? h('div', { style: { textAlign: 'center', fontWeight: 900, color: 'var(--gold-dark)' } }, '+1 character slot') : null,
       rows.length ? h('div', { class: 'lootlist' }, rows) : null,
