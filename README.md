@@ -45,7 +45,7 @@ This works exactly like Mystic Coin:
 
 All numbers live in two files:
 
-- `js/config.js`: stat formulas, drop rates, potions, exaltation, Essence prices, dungeon rules.
+- `js/config.js`: stat formulas, drop rates, potions, exaltation, fusion, dungeon rules.
 - `js/data/world.js`: biomes, dungeons, enemy strength curves, boss multipliers.
 
 After a change, run the balance report to see what it did:
