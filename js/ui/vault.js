@@ -1,65 +1,77 @@
-// Screen 3: the vault. Unique items are account-wide unlocks (any character that can use one may wear it);
-// potions and runes are stacks. Tiered gear isn't kept here: it lives on each character as slot tiers.
+// Screen 3: the vault. Gear from dungeons (safe here, even if a character falls), potions, runes,
+// the unique-item collection with reforging, and essence.
 import { CLASS, STATS } from '../data/classes.js';
-import { ITEM_LIST, ITEMS, ARMOR_TYPES, ABILITY_LABEL, WEAPON_TYPES } from '../data/items.js';
+import { ITEM_LIST, ITEMS, tierLabel } from '../data/items.js';
 import * as G from '../core/game.js';
-import { h } from './dom.js';
+import { h, toast, fmtNum, showDialog } from './dom.js';
 import { itemIcon } from './sprites.js';
 import { openItemSheet } from './itemSheet.js';
 
-const uts = (type) => ITEM_LIST.filter((it) => it.tier === 'UT' && it.type === type).map((it) => it.id);
-const plural = (l) => ({ Staff: 'Staves', 'Leather Armor': 'Leather', 'Heavy Armor': 'Heavy' }[l] || `${l}s`);
-
 const CATS = {
-  weapon: { label: 'Weapons', subs: Object.keys(WEAPON_TYPES).map((t) => [t, plural(WEAPON_TYPES[t].label)]) },
-  armor: { label: 'Armor', subs: Object.keys(ARMOR_TYPES).map((t) => [t, plural(ARMOR_TYPES[t].label)]) },
-  ability: { label: 'Abilities', subs: Object.keys(ABILITY_LABEL).map((t) => [t, plural(ABILITY_LABEL[t])]) },
-  ring: { label: 'Rings', subs: [['ring', 'Rings']] },
-  potion: { label: 'Potions', subs: [['potion', 'Potions'], ['rune', 'Runes']] },
+  weapon: 'Weapons', ability: 'Abilities', armor: 'Armor', ring: 'Rings', ut: 'Uniques', potion: 'Potions',
 };
-function idsFor(cat, sub) {
-  if (cat === 'potion') return sub === 'rune' ? ['rune_sword', 'rune_shield', 'rune_helm'] : STATS.map((st) => `pot_${st}`);
-  return uts(sub);
+const value = (it) => (it.tier === 'UT' ? it.eq + 0.5 : it.tier || 0);
+
+function idsFor(cat) {
+  if (cat === 'potion') return [...STATS.map((st) => `pot_${st}`), 'rune_sword', 'rune_shield', 'rune_helm'];
+  if (cat === 'ut') return ITEM_LIST.filter((it) => it.tier === 'UT').map((it) => it.id);
+  return ITEM_LIST.filter((it) => it.slot === cat && G.owned(it.id) > 0).sort((a, b) => value(b) - value(a)).map((it) => it.id);
 }
-const classSub = (cat) => { const c = G.state.chars[G.state.view]; const C = c && CLASS[c.cls]; return C && { weapon: C.weapon, armor: C.armor, ability: C.ability, ring: 'ring' }[cat]; };
 
 export function createVaultScreen(root) {
-  let cat = 'weapon', sub = null;
+  let cat = 'weapon';
 
   function tile(id) {
-    const s = G.state, it = ITEMS[id], known = G.discovered(id), c = s.chars[s.view];
-    const stack = it.slot === 'potion' || it.slot === 'rune';
-    const isEq = !stack && c && Object.values(c.ut).includes(id);
-    const own = G.owned(id);
-    const cls = ['tile', isEq ? 'on' : '', stack ? '' : 'ut', known ? '' : 'unk', stack && known && !own ? 'none' : '', s.newIds[id] ? 'new' : ''].filter(Boolean).join(' ');
+    const s = G.state, it = ITEMS[id], known = G.discovered(id), own = G.owned(id);
+    const ut = it.tier === 'UT', stack = it.slot === 'potion' || it.slot === 'rune';
+    const up = !stack && own > 0 && G.isUpgrade(s.view, id);
+    const cls = ['tile', ut ? 'ut' : '', known ? '' : 'unk', (stack || ut) && known && !own ? 'none' : '', s.newIds[id] ? 'new' : ''].filter(Boolean).join(' ');
     return h('button', { class: cls, 'aria-label': known ? it.name : 'Undiscovered', onclick: () => openItemSheet(id, () => render()) },
       itemIcon(id, 34, !known),
-      isEq ? h('span', { class: 'eq' }, '✓') : null,
-      known && stack && !s.newIds[id] ? h('span', { class: 'tl' }, `×${own}`) : null);
+      up ? h('span', { class: 'up' }, '▲') : null,
+      known && !s.newIds[id] ? h('span', { class: 'tl' }, stack ? `×${own}` : ut ? (own ? `×${own}` : '') : `${tierLabel(it)}${own > 1 ? ` ×${own}` : ''}`) : null);
+  }
+
+  function salvageDialog() {
+    let max = 3;
+    showDialog((close, rerender) => {
+      const ids = ITEM_LIST.filter((it) => typeof it.tier === 'number' && G.isGear(it.id) && it.tier <= max && G.owned(it.id) > 0);
+      const n = ids.reduce((a, it) => a + G.owned(it.id), 0), gain = ids.reduce((a, it) => a + G.owned(it.id) * G.salvageValue(it.id), 0);
+      return [
+        h('h2', {}, 'Salvage gear'),
+        h('p', { class: 'muted', style: { margin: 0, textAlign: 'center' } }, 'Turn vault gear into essence. Uniques and worn gear are never touched.'),
+        h('div', { class: 'row', style: { justifyContent: 'center', gap: '12px' } },
+          h('button', { class: 'btn gray sm', onclick: () => { max = Math.max(1, max - 1); rerender(); } }, '−'),
+          h('b', { style: { fontSize: '18px' } }, `T${max} and below`),
+          h('button', { class: 'btn gray sm', onclick: () => { max = Math.min(20, max + 1); rerender(); } }, '+')),
+        h('div', { style: { textAlign: 'center', fontWeight: 800 } }, `${n} item${n === 1 ? '' : 's'} → +${fmtNum(gain)} ✦`),
+        h('button', { class: 'btn', disabled: !n, onclick: () => { let got = 0; for (const it of ids) got += G.salvage(it.id, G.owned(it.id)); toast({ title: `+${fmtNum(got)} essence` }); close(); render(); } }, 'Salvage'),
+        h('button', { class: 'btn gray', onclick: close }, 'Cancel'),
+      ];
+    });
   }
 
   function render() {
     const s = G.state, c = s.chars[s.view];
     root.classList.remove('fit');
-    if (!sub || !CATS[cat].subs.some(([k]) => k === sub)) sub = classSub(cat) || CATS[cat].subs[0][0];
-    const all = ITEM_LIST.filter((it) => it.tier === 'UT');
-    const found = all.filter((it) => G.discovered(it.id)).length;
+    const uts = ITEM_LIST.filter((it) => it.tier === 'UT');
     const kids = [
-      h('div', { class: 'row between' }, h('div', { class: 'h1' }, 'Vault'), h('span', { class: 'small muted tnum', style: { fontWeight: 800 } }, `${found} / ${all.length} uniques`)),
-      h('div', { class: 'seg' }, Object.keys(CATS).map((k) => h('button', { class: k === cat ? 'on' : '', onclick: () => { cat = k; sub = null; render(); root.scrollTop = 0; } }, CATS[k].label))),
+      h('div', { class: 'row between' }, h('div', { class: 'h1' }, 'Vault'),
+        h('span', { class: 'pill', style: { background: '#2b333e', color: '#ffe08a', fontWeight: 900 } }, `✦ ${fmtNum(s.essence)} essence`)),
+      h('div', { class: 'seg' }, Object.entries(CATS).map(([k, l]) => h('button', { class: k === cat ? 'on' : '', onclick: () => { cat = k; render(); root.scrollTop = 0; } }, l))),
     ];
-    const subs = CATS[cat].subs;
-    if (subs.length > 1) kids.push(h('div', { class: 'chips' }, subs.map(([k, l]) => {
-      const mine = c && k === classSub(cat);
-      const hasNew = idsFor(cat, k).some((id) => s.newIds[id]);
-      return h('button', { class: `chip${k === sub ? ' on' : ''}`, onclick: () => { sub = k; render(); } }, l, mine ? ' ★' : '', hasNew ? ' •' : '');
-    })));
-    const ids = idsFor(cat, sub);
-    const n = ids.filter((id) => G.discovered(id)).length;
-    const title = (subs.find(([k]) => k === sub) || [, ''])[1];
-    kids.push(h('div', { class: 'vsec' }, h('span', {}, cat === 'potion' ? title : `Unique ${title.toLowerCase()}`), h('small', {}, cat === 'potion' ? '' : `${n} / ${ids.length}`)));
-    kids.push(h('div', { class: 'vgrid' }, ids.map(tile)));
-    if (cat !== 'potion') kids.push(h('p', { class: 'small muted', style: { fontWeight: 700 } }, 'Unlocked uniques can be worn by any of your characters that can use them, at that character\'s slot tier. Tap a gear slot to swap.'));
+    const ids = idsFor(cat);
+    if (cat === 'ut') {
+      kids.push(h('div', { class: 'vsec' }, h('span', {}, 'Unique items'), h('small', {}, `${uts.filter((it) => G.discovered(it.id)).length} / ${uts.length} found`)));
+      kids.push(h('div', { class: 'small muted', style: { fontWeight: 700 } }, 'Found uniques can be reforged for essence any time, even after one is lost.'));
+    } else if (cat === 'potion') kids.push(h('div', { class: 'vsec' }, h('span', {}, 'Potions and runes'), h('small', {}, '')));
+    else {
+      const C = c && CLASS[c.cls];
+      kids.push(h('div', { class: 'vsec' }, h('span', {}, CATS[cat]), h('small', {}, C ? `▲ = upgrade for ${c.name}` : '')));
+      if (!ids.length) kids.push(h('div', { class: 'panel small muted', style: { textAlign: 'center' } }, 'Nothing here yet. Gear only drops in dungeons.'));
+    }
+    if (ids.length) kids.push(h('div', { class: 'vgrid' }, ids.map(tile)));
+    if (['weapon', 'ability', 'armor', 'ring'].includes(cat)) kids.push(h('button', { class: 'btn gray sm', style: { marginTop: '6px' }, onclick: salvageDialog }, 'Salvage gear for essence…'));
     root.replaceChildren(...kids);
   }
   return { render, frame() {} };

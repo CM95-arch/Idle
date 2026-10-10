@@ -8,7 +8,7 @@ import { $, h, showDialog, confirmDialog, toast, fmtDur, fmtNum, fmtXp } from '.
 import { itemIcon } from './ui/sprites.js';
 import { renderTopBar } from './ui/common.js';
 import { createFarmScreen } from './ui/farm.js';
-import { createDungeonScreen, showRunResult } from './ui/dungeons.js';
+import { createDungeonScreen } from './ui/dungeons.js';
 import { createVaultScreen } from './ui/vault.js';
 import { createCharacterScreen } from './ui/character.js';
 import { initSound, setSoundEnabled, play } from './ui/sound.js';
@@ -25,7 +25,6 @@ initSound(G.state.settings.sound);
 let tab = 'farm';
 try { const t = sessionStorage.getItem('idle-tab'); if (TABS.some(([id]) => id === t)) tab = t; } catch {}
 let catching = false;
-const pendingResults = [];
 
 const app = {
   nav(id) { tab = id; try { sessionStorage.setItem('idle-tab', id); } catch {} showTab(); },
@@ -90,7 +89,6 @@ function withSound(screen, slotOf) {
   return (kind, d) => { if (d?.frac > 0.02) setTimeout(() => show(kind, d), d.frac * 100); else show(kind, d); };
 }
 const farmEmit = withSound(screens.farm, () => G.state.view);
-const runEmit = withSound(screens.dungeons, () => G.state.run?.slot);
 
 G.on('toast', (t) => { if (!catching) toast(t); });
 G.on('discover', ({ id }) => { if (!catching && ITEMS[id].slot !== 'potion') toast({ title: ITEMS[id].tier === 'UT' ? 'Unique item!' : 'New item', body: ITEMS[id].name, icon: itemIcon(id, 28), kind: ITEMS[id].tier === 'UT' ? 'gold' : '' }); renderTabs(); });
@@ -101,11 +99,11 @@ G.on('levelup', ({ name, level }) => {
   if (host) { const el = h('div', { class: 'lvlup' }, `Level ${level}!`); host.append(el); setTimeout(() => el.remove(), 1700); } else toast({ title: `${name} reached level ${level}` });
   renderTop();
 });
-G.on('fallen', ({ slot }) => { if (!catching) toast({ title: `${G.state.chars[slot].name} has fallen`, kind: 'bad' }); renderTop(); });
-G.on('runEnd', (res) => { if (catching) pendingResults.push(res); else showRunResult(res, showDialog, () => showTab()); renderTabs(); renderTop(); });
+G.on('retreated', ({ slot, biome }) => { if (!catching) { toast({ title: `${G.state.chars[slot].name} retreated`, body: `From the ${BIOME[biome].name}. Send them back in when ready.`, kind: 'bad' }); play('hurt'); } renderTop(); });
+G.on('runEnd', () => { renderTabs(); renderTop(); });
 G.on('changed', () => showTab());
 G.on('gear', (d) => { if (!d.drink) play('equip'); screens[tab].render(); renderTop(); });
-G.on('estimates', () => { if (tab === 'farm' || (tab === 'dungeons' && !G.state.run)) screens[tab].render(); });
+G.on('estimates', () => { if (tab === 'farm') screens[tab].render(); });
 
 // ---------- catch-up after time away ----------
 function snapshot() {
@@ -123,7 +121,6 @@ async function catchUp() {
     const now = Date.now();
     let budget = 120000;
     for (let i = 0; i < G.state.slots && budget > 0; i++) budget -= G.advanceFarm(i, now, budget);
-    if (budget > 0) G.advanceRunTo(now, budget, null, 'auto');
     const left = G.ticksBehind();
     const bar = document.getElementById('cu-bar'); if (bar) bar.style.width = `${Math.min(100, (1 - left / total) * 100)}%`;
     if (left > 0) await new Promise((r) => setTimeout(r, 0));
@@ -137,16 +134,15 @@ async function catchUp() {
     const b = before[i];
     if (!a.name) return;
     const same = a.start === b.start;
-    const kills = a.kills - (same ? b.kills : 0), items = a.items - (same ? b.items : 0), potions = a.potions - (same ? b.potions : 0), xp = a.xp - (same ? b.xp : 0);
+    const kills = a.kills - (same ? b.kills : 0), potions = a.potions - (same ? b.potions : 0), xp = a.xp - (same ? b.xp : 0);
     if (kills <= 0 && a.status === b.status) return;
     const f = G.state.farms[i];
     lines.push(h('div', { class: 'panel small' },
-      h('div', { class: 'row between' }, h('b', {}, a.name), h('b', { style: { color: a.status === 'fallen' ? 'var(--red)' : 'var(--green)' } }, a.status === 'fallen' ? 'Fallen' : BIOME[f.biome].name)),
-      h('div', { class: 'muted tnum', style: { fontWeight: 700 } }, `${fmtNum(kills)} kills · +${fmtXp(xp)} XP${potions ? ` · ${fmtNum(potions)} potions` : ''}${items ? ` · ${fmtNum(items)} unique!` : ''}`),
-      a.status === 'fallen' && f.session?.endMs ? h('div', { style: { color: 'var(--red)', fontWeight: 700 } }, `Fell after ${fmtDur(f.session.endMs - f.session.startMs)}`) : null));
+      h('div', { class: 'row between' }, h('b', {}, a.name), h('b', { style: { color: a.status === 'retreated' ? 'var(--red)' : 'var(--green)' } }, a.status === 'retreated' ? `Retreated from ${BIOME[f.biome].name}` : BIOME[f.biome].name)),
+      h('div', { class: 'muted tnum', style: { fontWeight: 700 } }, `${fmtNum(kills)} kills · +${fmtXp(xp)} XP${potions ? ` · ${fmtNum(potions)} potions` : ''}`),
+      a.status === 'retreated' && f.session?.endMs ? h('div', { style: { color: 'var(--red)', fontWeight: 700 } }, `Retreated after ${fmtDur(f.session.endMs - f.session.startMs)}: waiting for you`) : null));
   });
   if (lines.length && awayMs > 60000) showDialog((close) => [h('div', { class: 'banner' }, h('h2', {}, `Away for ${fmtDur(awayMs)}`)), ...lines, h('button', { class: 'btn', onclick: close }, 'Nice')]);
-  for (const r of pendingResults.splice(0)) showRunResult(r, showDialog, () => showTab());
   showTab();
 }
 
@@ -158,11 +154,7 @@ function frame(t) {
     const now = Date.now();
     const s = G.state;
     for (let i = 0; i < s.slots; i++) G.advanceFarm(i, now, 600, tab === 'farm' && i === s.view ? farmEmit : null);
-    if (s.run) {
-      const live = tab === 'dungeons' && document.visibilityState === 'visible';
-      G.advanceRunTo(now, 600, live ? runEmit : null, live ? 'live' : 'auto');
-    }
-    screens[tab].frame(dt);
+    if (!document.body.classList.contains('in-arena')) screens[tab].frame(dt);
     if (now - lastTop > 2000) { lastTop = now; renderTop(); }
     if (now - lastSave > 5000) { G.save(); lastSave = now; }
   }

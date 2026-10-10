@@ -6,6 +6,6 @@
   "scripts": {
     "start": "node server.js",
     "balance": "node tools/balance.mjs",
-    "balance:dungeons": "node tools/balance.mjs dungeons"
+    "balance:dungeons": "node tools/arena-bot.mjs"
   }
 }

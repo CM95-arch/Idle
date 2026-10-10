@@ -1,13 +1,14 @@
-// Gear UI: the four slot buttons, the slot sheet (UT choice, ring stat) and the upgrade chooser.
-import { CLASS, STATS, STAT_LABEL, ABILITY_TYPES } from '../data/classes.js';
-import { ITEM_LIST, ITEMS, typeLabel } from '../data/items.js';
-import { GEAR_SLOTS, gearItem, fighterOf, dpsOf, slotType } from '../core/character.js';
-import { abilityCost, PATTERN } from '../core/combat.js';
+// Gear UI: the four slot buttons and the slot sheet (what's worn, and what in the vault could go there).
+import { CLASS, STAT_LABEL, ABILITY_TYPES } from '../data/classes.js';
+import { ITEMS, ITEM_LIST, tierLabel } from '../data/items.js';
+import { GEAR_SLOTS, gearItem, fighterOf, dpsOf, starterItem } from '../core/character.js';
+import { abilityCost } from '../core/combat.js';
+import { ABILITY_INFO } from '../core/arena.js';
 import * as G from '../core/game.js';
 import { h, openSheet, toast, fmtNum } from './dom.js';
 import { itemIcon } from './sprites.js';
 
-const SLOT_LABEL = { weapon: 'Weapon', ability: 'Ability', armor: 'Armor', ring: 'Ring' };
+export const SLOT_LABEL = { weapon: 'Weapon', ability: 'Ability', armor: 'Armor', ring: 'Ring' };
 
 export function statLines(it) {
   const rows = [];
@@ -17,8 +18,11 @@ export function statLines(it) {
   return rows;
 }
 
-/** "+120 DPS · −4 DEF" comparing the character now against a changed copy, or null when nothing changes. */
-export function compareChar(c, changed) {
+/** "+120 DPS · −4 DEF" comparing a character against a copy wearing `id`, or null when nothing changes. */
+export function compareItem(c, id) {
+  const it = ITEMS[id];
+  if (!c || !it || !G.canUse(c.cls, id)) return null;
+  const changed = { ...c, equip: { ...c.equip, [it.slot]: id } };
   const parts = [];
   const add = (n, label) => { if (Math.round(n)) parts.push(h('span', { class: n > 0 ? 'better' : 'worse' }, `${n > 0 ? '+' : ''}${fmtNum(n)} ${label}`)); };
   const base = fighterOf(c, G.state), test = fighterOf(changed, G.state);
@@ -28,106 +32,58 @@ export function compareChar(c, changed) {
   add(test.maxMp - base.maxMp, 'MP');
   const a = test.ability, b = base.ability;
   add((a?.power || 0) - (b?.power || 0), 'power');
-  if (a && b) add(-(abilityCost(a) - abilityCost(b)), 'MP cost');
-  const sb = (ch) => Object.fromEntries(['att', 'spd', 'dex', 'vit', 'wis'].map((k) => [k, GEAR_SLOTS.reduce((n, s) => n + (gearItem(ch, s)?.bonus?.[k] || 0), 0)]));
-  const x = sb(changed), y = sb(c);
-  for (const k of Object.keys(x)) add(x[k] - y[k], STAT_LABEL[k]);
+  const cur = gearItem(c, it.slot);
+  for (const k of ['att', 'spd', 'dex', 'vit', 'wis']) add((it.bonus?.[k] || 0) - (cur?.bonus?.[k] || 0), STAT_LABEL[k]);
   return parts.length ? parts.reduce((acc, p, i) => (i ? [...acc, ' · ', p] : [p]), []) : null;
 }
 
-/** The four gear slots. Gold ▲ marks slots a pending upgrade can raise. */
+/** The four gear slots. ▲ marks a slot the vault has an upgrade for. */
 export function gearSlots(slot, onTap = (k) => slotSheet(slot, k)) {
   const c = G.state.chars[slot];
-  const t = G.pendingUpgrade(slot), can = t ? G.upgradeSlots(slot, t) : [];
+  const upgrades = new Set(Object.keys(G.state.vault).filter((id) => G.owned(id) > 0 && G.isUpgrade(slot, id)).map((id) => ITEMS[id].slot));
   return h('div', { class: 'slots' }, GEAR_SLOTS.map((k) => {
-    const it = gearItem(c, k), ut = !!c.ut[k];
-    return h('button', { class: `slot${ut ? ' ut' : ''}${can.includes(k) ? ' canup' : ''}`, 'aria-label': k, onclick: () => onTap(k) },
-      h('span', { class: 'kind' }, k), itemIcon(it.id, 38), h('span', { class: 'tier' }, `T${c.tiers[k]}`),
-      can.includes(k) ? h('span', { class: 'upmark' }, '▲') : null);
+    const it = gearItem(c, k), starter = !c.equip[k];
+    return h('button', { class: `slot${it ? '' : ' empty'}${it?.tier === 'UT' ? ' ut' : ''}${upgrades.has(k) ? ' canup' : ''}`, 'aria-label': k, onclick: () => onTap(k) },
+      h('span', { class: 'kind' }, k), it ? itemIcon(it.id, 38) : null,
+      it ? h('span', { class: 'tier' }, starter ? 'T1' : tierLabel(it)) : null,
+      upgrades.has(k) ? h('span', { class: 'upmark' }, '▲') : null);
   }));
 }
 
-/** Pick which slot gets a pending upgrade. Used on the dungeon result, the character screen and First Steps. */
-export function upgradeChooser(slot, onDone) {
-  const c = G.state.chars[slot], t = G.pendingUpgrade(slot);
-  if (!c || !t) return null;
-  const opts = G.upgradeSlots(slot, t);
-  const more = c.pending.length - 1;
-  return h('div', { class: 'upbox' },
-    h('div', { class: 'row between' }, h('b', {}, `Gear upgrade · T${t}`), more > 0 ? h('span', { class: 'small', style: { fontWeight: 800 } }, `+${more} more waiting`) : null),
-    h('div', { class: 'small', style: { fontWeight: 700 } }, `Choose one of ${c.name}'s slots to raise to T${t}. It stays at T${t} for good.`),
-    h('div', { class: 'uplist' }, opts.map((k) => {
-      const cmp = compareChar(c, { ...c, tiers: { ...c.tiers, [k]: t } });
-      return h('button', { class: 'upopt', onclick: () => {
-        if (G.chooseUpgrade(slot, k)) {
-          toast({ title: `${SLOT_LABEL[k]} upgraded to T${t}`, body: gearItem(c, k).name, icon: itemIcon(gearItem(c, k).id, 26), kind: 'gold' });
-          onDone?.();
-        }
-      } },
-      itemIcon(gearItem(c, k, { tier: t }).id, 32),
-      h('div', { style: { minWidth: 0 } }, h('b', {}, `${SLOT_LABEL[k]} T${c.tiers[k]} → T${t}`), h('div', { class: 'small' }, cmp || h('span', { class: 'muted' }, '—'))));
-    })));
-}
-
-/** UTs that fit this class and slot, unlocked first. */
-function utsFor(cls, kind) {
-  const type = slotType(cls, kind);
-  return ITEM_LIST.filter((it) => it.tier === 'UT' && it.slot === kind && (kind === 'ring' || it.type === type));
-}
-
-/** Tapping a gear slot: what's in it, its upgrade, ring stat choice and the UTs it can show instead. */
+/** Tapping a gear slot: what's worn there, and the vault items that fit (best first). */
 export function slotSheet(slot, kind, onChange) {
   openSheet((close, rerender) => {
     const c = G.state.chars[slot];
     if (!c) { close(); return []; }
-    const it = gearItem(c, kind), t = c.tiers[kind];
+    const it = gearItem(c, kind), starter = !c.equip[kind];
+    const busy = G.state.run?.slot === slot;
     const done = () => { rerender(); onChange?.(); };
-    const kids = [
-      h('div', { class: 'ihead' }, h('div', { class: 'ibig' }, itemIcon(it.id, 54)),
+    const kids = [];
+    if (it) {
+      kids.push(h('div', { class: 'ihead' }, h('div', { class: 'ibig' }, itemIcon(it.id, 54)),
         h('div', {},
-          h('div', { class: 'h2', style: { color: c.ut[kind] ? 'var(--ut)' : '' } }, it.name),
-          h('div', { class: 'small muted', style: { fontWeight: 700 } }, `${SLOT_LABEL[kind]} · T${t}${c.ut[kind] ? ` · unique ${typeLabel(it).toLowerCase()}` : ''}`))),
-      h('div', { class: 'kv tnum' }, statLines(it).map(([k, v]) => h('div', {}, h('span', {}, k), String(v)))),
-    ];
-    if (it.special) kids.push(h('div', { class: 'special' }, it.special));
-    if (kind === 'ability') kids.push(h('div', { class: 'small muted' }, ABILITY_TYPES[CLASS[c.cls].ability].effect));
-    if (kind === 'weapon') { const P = PATTERN[CLASS[c.cls].weapon]; kids.push(h('div', { class: 'small', style: { fontWeight: 700 } }, h('b', {}, `${P.name}: `), P.desc)); }
-    const up = G.pendingUpgrade(slot);
-    if (up && G.upgradeSlots(slot, up).includes(kind)) kids.push(upgradeChooser(slot, done));
-    else kids.push(h('div', { class: 'small muted' }, `Slot tiers go up from dungeon clears: each dungeon has a 1 in 5 chance to raise one slot to its tier.`));
+          h('div', { class: 'h2', style: { color: it.tier === 'UT' ? 'var(--ut)' : '' } }, it.name),
+          h('div', { class: 'small muted', style: { fontWeight: 700 } }, `${SLOT_LABEL[kind]} · ${tierLabel(it)}${starter ? ' · starter gear (never lost)' : ''}`))));
+      kids.push(h('div', { class: 'kv tnum' }, statLines(it).map(([k, v]) => h('div', {}, h('span', {}, k), String(v)))));
+      if (it.special) kids.push(h('div', { class: 'special' }, it.special));
+    } else kids.push(h('div', { class: 'h2' }, 'No ring'), h('div', { class: 'small muted' }, 'Rings drop in dungeons.'));
+    if (kind === 'ability') kids.push(h('div', { class: 'small muted' }, `${ABILITY_TYPES[CLASS[c.cls].ability].name}: ${ABILITY_INFO[CLASS[c.cls].ability]}`));
+    if (!starter && !busy) kids.push(h('button', { class: 'btn gray sm', onclick: () => { G.unequip(slot, kind); done(); } }, kind === 'ring' ? 'Take off' : 'Back to starter gear'));
+    if (!starter) kids.push(h('div', { class: 'small', style: { color: 'var(--red-dark)', fontWeight: 800 } }, 'Worn gear is lost if this character falls in a dungeon.'));
 
-    if (kind === 'ring') {
-      kids.push(h('div', { class: 'label' }, `Ring stat · free to change`));
-      kids.push(h('div', { class: 'classes' }, STATS.map((st) => {
-        const r = ITEMS[`ring_${st}_t${t}`];
-        const on = !c.ut.ring && c.ringStat === st;
-        return h('button', { class: `cls${on ? ' on' : ''}`, onclick: () => { G.setRingStat(slot, st); done(); } },
-          itemIcon(r.id, 26), h('span', {}, STAT_LABEL[st]), h('small', {}, Object.entries(r.bonus).filter(([, v]) => v).map(([k, v]) => `+${v} ${STAT_LABEL[k]}`).join(' ')));
-      })));
-    }
-
-    const list = utsFor(c.cls, kind);
-    const have = list.filter((u) => G.unlocked(u.id));
-    kids.push(h('div', { class: 'row between' }, h('span', { class: 'label' }, 'Unique items'), h('span', { class: 'small muted', style: { fontWeight: 800 } }, `${have.length} / ${list.length} unlocked`)));
-    if (!have.length) kids.push(h('div', { class: 'small muted' }, 'None unlocked yet. Unique items drop rarely in biomes and dungeons, and work at this slot\'s tier.'));
-    const rows = [];
-    if (c.ut[kind] && kind !== 'ring') {
-      const plain = gearItem(c, kind, { ut: null });
-      rows.push(h('div', { class: 'loot' }, h('span', { class: 'ic' }, itemIcon(plain.id, 34)),
-        h('div', { style: { minWidth: 0 } }, h('b', {}, plain.name), h('span', { class: 'small muted', style: { display: 'block', fontWeight: 700 } }, compareChar(c, { ...c, ut: { ...c.ut, [kind]: null } }) || 'Same')),
-        h('button', { class: 'btn sm gray', onclick: () => { G.setUt(slot, kind, null); done(); } }, 'Wear')));
-    }
-    for (const u of have) {
-      const on = c.ut[kind] === u.id;
-      const atT = gearItem(c, kind, { ut: u.id });
-      rows.push(h('div', { class: `loot${on ? ' on' : ''}` }, h('span', { class: 'ic' }, itemIcon(u.id, 34)),
+    const options = ITEM_LIST.filter((x) => x.slot === kind && G.owned(x.id) > 0 && G.canUse(c.cls, x.id) && x.id !== starterItem(c.cls, kind))
+      .sort((a, b) => (b.tier === 'UT' ? b.eq + 0.5 : b.tier) - (a.tier === 'UT' ? a.eq + 0.5 : a.tier));
+    kids.push(h('div', { class: 'label' }, `In your vault (${options.length})`));
+    if (!options.length) kids.push(h('div', { class: 'small muted' }, 'Nothing for this slot yet. Gear drops in dungeons.'));
+    else kids.push(h('div', { class: 'lootlist' }, options.map((x) => {
+      const up = G.isUpgrade(slot, x.id), cmp = compareItem(c, x.id);
+      return h('div', { class: `loot${x.tier === 'UT' ? ' on' : ''}` }, h('span', { class: 'ic' }, itemIcon(x.id, 34)),
         h('div', { style: { minWidth: 0 } },
-          h('b', { style: { color: 'var(--ut)' } }, u.name),
-          h('span', { class: 'small', style: { display: 'block', fontWeight: 800 } }, u.special),
-          on ? null : h('span', { class: 'small muted', style: { display: 'block', fontWeight: 700 } }, compareChar(c, { ...c, ut: { ...c.ut, [kind]: u.id } }) || `T${atT.slotTier} base stats`)),
-        h('button', { class: `btn sm${on ? ' gray' : ''}`, onclick: () => { G.setUt(slot, kind, on ? null : u.id); done(); } }, on ? 'Take off' : 'Wear')));
-    }
-    if (rows.length) kids.push(h('div', { class: 'lootlist' }, rows));
+          h('b', { style: { color: x.tier === 'UT' ? 'var(--ut)' : '' } }, x.name, ' ', h('span', { class: 'muted', style: { fontSize: '12px' } }, tierLabel(x)), G.owned(x.id) > 1 ? h('span', { class: 'muted', style: { fontSize: '12px' } }, ` ×${G.owned(x.id)}`) : null),
+          x.special ? h('span', { class: 'small', style: { display: 'block', fontWeight: 800, color: 'var(--ut)' } }, x.special) : null,
+          h('span', { class: 'small muted', style: { display: 'block', fontWeight: 700 } }, cmp || 'Same stats')),
+        h('button', { class: `btn sm${up ? '' : ' gray'}`, disabled: busy, onclick: () => { if (G.equip(slot, x.id)) { toast({ title: 'Equipped', body: x.name, icon: itemIcon(x.id, 26) }); done(); } } }, 'Equip'));
+    })));
     return kids;
   });
 }

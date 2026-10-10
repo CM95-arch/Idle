@@ -1,12 +1,12 @@
-// Survival estimate: run the real engine forward, off-screen, a few times and see when the character falls.
+// Survival estimate: run the real engine forward, off-screen, a few times and see when the character would retreat.
 import { CONFIG } from '../config.js';
 import { makeRng } from './rng.js';
 import { newCombat, step } from './combat.js';
-import { biomeWave } from './loot.js';
+import { biomeEnemy } from './loot.js';
 
 /**
  * A resumable estimate: call job.work(ticks) until it returns a result.
- * Result: { hours (cautious time to death, Infinity if it survived), kph (kills per hour, in classic-enemy units), level }
+ * Result: { hours (cautious time until a retreat, Infinity if it never retreats), kph (kills per hour), level }
  */
 export function survivalJob(F, biome, opts = {}) {
   const hours = opts.hours ?? CONFIG.survivalSimHours;
@@ -16,14 +16,16 @@ export function survivalJob(F, biome, opts = {}) {
   let kills = 0, simulated = 0, r = 0, i = 0, cs = null, rng = null, src = null, k = 0;
   const begin = () => {
     rng = makeRng(1234 + r * 7919); cs = newCombat(F); i = 0; k = 0;
-    src = { wave: (g) => biomeWave(biome, g), onKill: (e) => { k += e.worth ?? 1; } };
+    src = { next: (g) => biomeEnemy(biome, g), onKill: () => { k++; } };
   };
   begin();
   return {
     work(budget) {
       while (budget > 0) {
         const n = Math.min(budget, ticks - i);
-        for (let j = 0; j < n && !cs.dead; j++, i++) step(cs, F, src, rng, null, 'auto');
+        const floor = F.maxHp * CONFIG.retreatHp;
+        for (let j = 0; j < n && !cs.dead && cs.hp >= floor; j++, i++) step(cs, F, src, rng, null, 'auto');
+        if (cs.hp < floor) cs.dead = true; // a retreat ends the estimate like a fall would
         budget -= n;
         if (cs.dead || i >= ticks) {
           deaths.push(cs.dead ? (i * CONFIG.tickSeconds) / 3600 : Infinity);

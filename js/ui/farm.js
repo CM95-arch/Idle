@@ -20,11 +20,9 @@ export function statPanel(slot) {
   }));
 }
 
-/** Biome loot line: potion rate and whether its rare UT is found yet. */
+/** Biome loot line: XP and potions (gear only comes from dungeons). */
 export function lootText(b) {
-  const uts = [b.ut, ...(b.events || []).map((e) => e.ut)].filter(Boolean);
-  const got = uts.filter((id) => G.discovered(id)).length;
-  return `Potions 1/${Math.round(1 / b.potionRate)} · UT ${got}/${uts.length}`;
+  return `XP · potions 1 in ${Math.round(1 / b.potionRate)}${b.events ? ' · event bosses' : ''}`;
 }
 
 export function createFarmScreen(root, app) {
@@ -49,7 +47,7 @@ export function createFarmScreen(root, app) {
     if (f.status !== 'farming') return null;
     const i = BIOMES.findIndex((b) => b.id === f.biome);
     const here = biomeEstimate(slot, f.biome), next = BIOMES[i + 1], prev = BIOMES[i - 1];
-    if (here?.level === 'low' && prev) return h('button', { class: 'nudge warn', onclick: () => { G.startFarming(slot, prev.id); render(); } }, h('span', { class: 'grow' }, 'Very dangerous here'), h('span', {}, `← ${prev.name}`));
+    if (here?.level === 'low' && prev) return h('button', { class: 'nudge warn', onclick: () => { G.startFarming(slot, prev.id); render(); } }, h('span', { class: 'grow' }, 'Will retreat soon here'), h('span', {}, `← ${prev.name}`));
     const est = next && biomeEstimate(slot, next.id);
     if (!est || est.hours < CONFIG.nudgeHours) return null;
     return h('button', { class: 'nudge', onclick: () => { G.startFarming(slot, next.id); render(); } }, h('span', { class: 'grow' }, `Ready for ${next.name}`), h('span', {}, 'Go →'));
@@ -77,7 +75,7 @@ export function createFarmScreen(root, app) {
 
     const action = inRun ? h('button', { class: 'btn gold sm', onclick: () => app.nav('dungeons') }, 'In dungeon')
       : f.status === 'farming' ? null
-        : h('button', { class: 'btn sm', onclick: () => { G.startFarming(slot, f.biome); render(); } }, f.status === 'fallen' ? 'Restart' : 'Start');
+        : h('button', { class: 'btn sm', onclick: () => { G.startFarming(slot, f.biome); render(); } }, f.status === 'retreated' ? 'Send back in' : 'Start');
 
     const kids = [
       h('div', { class: 'panel biomebar' },
@@ -86,7 +84,7 @@ export function createFarmScreen(root, app) {
           h('div', { class: 'sub' }, lootText(b))),
         diffPill(biomeEstimate(slot, f.biome)), action),
       scene.host,
-      h('div', { class: 'xprow' }, refs.lv = h('span', {}, `Lv ${li.level}`), h('div', { class: 'bar xpbar' }, refs.xp = h('i', { style: { width: `${(li.into / li.need) * 100}%` } })), refs.xpTxt = h('span', { class: 'muted tnum' }, `${fmtXp(li.into)}/${li.need}`)),
+      h('div', { class: 'xprow' }, refs.lv = h('span', {}, `Lv ${li.level}`), h('div', { class: 'bar xpbar' }, refs.xp = h('i', { style: { width: `${(li.into / li.need) * 100}%` } })), refs.xpTxt = h('span', { class: 'muted tnum' }, li.max ? 'MAX' : `${fmtXp(li.into)}/${li.need}`)),
     ];
     const n = nudge(slot);
     if (n) kids.push(n);
@@ -99,7 +97,7 @@ export function createFarmScreen(root, app) {
     if (!scene) return;
     const s = G.state, slot = s.view, f = s.farms[slot], c = s.chars[slot];
     if (s.run?.slot === slot) scene.showMessage(h('div', {}, h('div', { class: 'h2' }, `${c.name} is in ${DUNGEON[s.run.dungeonId].name}`)));
-    else if (f.status === 'fallen') scene.showMessage(h('div', { style: { display: 'grid', gap: '8px', justifyItems: 'center' } }, h('div', { class: 'h2' }, `${c.name} has fallen`), h('button', { class: 'btn sm', onclick: () => { G.startFarming(slot, f.biome); render(); } }, 'Restart')));
+    else if (f.status === 'retreated') scene.showMessage(h('div', { style: { display: 'grid', gap: '8px', justifyItems: 'center' } }, h('div', { class: 'h2' }, `${c.name} retreated`), h('div', { class: 'small', style: { color: '#c9d2dc' } }, `Too much damage in the ${BIOME[f.biome].name}. Send them back in, or pick an easier biome.`), h('div', { class: 'row' }, h('button', { class: 'btn sm', onclick: () => { G.startFarming(slot, f.biome); render(); } }, 'Send back in'), h('button', { class: 'btn gray sm', onclick: () => biomeSheet(slot) }, 'Other biome'))));
     else if (f.status !== 'farming') scene.showMessage(h('div', { style: { display: 'grid', gap: '8px', justifyItems: 'center' } }, h('div', { class: 'h2' }, 'Not farming'), h('button', { class: 'btn sm', onclick: () => { G.startFarming(slot, f.biome); render(); } }, 'Start')));
     else scene.showMessage(null);
   }
@@ -115,7 +113,7 @@ export function createFarmScreen(root, app) {
       if (status !== lastStatus) { lastStatus = status; render(); return; }
       scene?.frame(dt, f.status === 'farming' ? f.cs : null, G.fighter(s.view));
       const li = levelInfo(c.xp);
-      if (refs.xp) { refs.xp.style.width = `${(li.into / li.need) * 100}%`; refs.xpTxt.textContent = `${fmtXp(li.into)}/${li.need}`; refs.lv.textContent = `Lv ${li.level}`; }
+      if (refs.xp) { refs.xp.style.width = `${(li.into / li.need) * 100}%`; refs.xpTxt.textContent = li.max ? 'MAX' : `${fmtXp(li.into)}/${li.need}`; refs.lv.textContent = `Lv ${li.level}`; }
     },
   };
 }
