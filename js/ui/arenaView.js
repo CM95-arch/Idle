@@ -94,6 +94,14 @@ export class ArenaView {
       g.drawImage(hc, Math.round(h.x - hc.width / 2), Math.round(h.y - hc.height / 2));
       g.globalAlpha = 1;
       if (h.berserkUntil > R.t) { g.strokeStyle = 'rgba(255,90,74,.7)'; g.lineWidth = 2; g.beginPath(); g.arc(h.x, h.y, 16, 0, Math.PI * 2); g.stroke(); }
+      // HP and MP bars under the hero, like Realm, so you never have to look away
+      const bw = 30, bx = Math.round(h.x - bw / 2), by = Math.round(h.y + hc.height / 2 + 3);
+      const hf = Math.max(0, h.hp / F.maxHp), mf = Math.max(0, h.mp / F.maxMp);
+      g.fillStyle = '#000'; g.fillRect(bx - 1, by - 1, bw + 2, 8);
+      g.fillStyle = '#3a1414'; g.fillRect(bx, by, bw, 4);
+      g.fillStyle = hf > 0.5 ? '#3fbf5c' : hf > 0.25 ? '#e8b928' : '#e0483e'; g.fillRect(bx, by, Math.round(bw * hf), 4);
+      g.fillStyle = '#3d7fe0'; g.fillRect(bx, by + 5, Math.round(bw * mf), 2);
+      if (hf <= 0.25 && Math.floor(this.t * 4) % 2) { g.strokeStyle = 'rgba(224,72,62,.8)'; g.lineWidth = 2; g.beginPath(); g.arc(h.x, h.y, 18, 0, Math.PI * 2); g.stroke(); }
       // the real hitbox: a small dot, like Realm
       g.fillStyle = '#ffffff'; g.beginPath(); g.arc(h.x, h.y, 2.5, 0, Math.PI * 2); g.fill();
     }

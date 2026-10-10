@@ -32,7 +32,7 @@ export function playDungeon(info, onEnd, sound) {
         refs.rooms = h('div', { class: 'rooms2' }),
         refs.bossWrap = h('div', { style: { display: 'none' } }, h('div', { class: 'bbar' }, refs.boss = h('i')))),
       refs.bag = h('div', { class: 'abag' }, '0')),
-    cv,
+    h('div', { class: 'astage' }, cv),
     h('div', { class: 'ahud' },
       h('div', { class: 'grow', style: { display: 'grid', gap: '5px' } },
         h('div', { class: 'vbar' }, refs.hp = h('i', { style: { background: '#3fbf5c' } }), refs.hpT = h('b')),
