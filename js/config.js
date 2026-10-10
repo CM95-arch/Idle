@@ -1,7 +1,7 @@
 // ★ All balance numbers live here. Change a value, reload, and the game uses it.
 // `node tools/balance.mjs` prints survival times and kill rates for reference builds.
 
-export const BUILD = '2026-10-10 · 14';
+export const BUILD = '2026-10-10 · 15';
 
 export const CONFIG = {
   tickSeconds: 0.1,            // combat simulation step (same step online and offline)

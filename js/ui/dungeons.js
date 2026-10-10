@@ -68,7 +68,8 @@ export function createDungeonScreen(root, app) {
 
   function listView() {
     const s = G.state, slot = s.view, c = s.chars[slot];
-    const kids = [h('div', { class: 'h1' }, 'Dungeons')];
+    const kids = [h('div', { class: 'h1' }, 'Dungeons'),
+      h('a', { class: 'btn gold', href: 'arena.html' }, 'Play the new Snake Pit (prototype)')];
     if (!c) kids.push(h('button', { class: 'btn gray', onclick: () => newCharacterSheet(slot, () => app.refresh()) }, 'Create a character in this slot'));
 
     // Oryx feature card
