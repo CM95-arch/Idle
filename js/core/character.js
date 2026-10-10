@@ -97,7 +97,7 @@ export function fighterOf(char, state) {
     maxHp: t('hp'), maxMp: t('mp'), def: t('def'),
     attMult: CONFIG.attMult(t('att')),
     aps: CONFIG.attacksPerSec(t('dex')) * w.rof * (fx.rofMult || 1),
-    dmgMin: w.dmgMin, dmgMax: w.dmgMax, shots: w.shots,
+    weaponType: CLASS[char.cls].weapon, dmgMin: w.dmgMin, dmgMax: w.dmgMax, shots: w.shots,
     hpRegen: CONFIG.hpRegen(t('vit')), mpRegen: CONFIG.mpRegen(t('wis')),
     dodge: CONFIG.dodgeChance(t('spd')) + (fx.dodge || 0), travel: Math.max(0.25, CONFIG.travelSeconds(t('spd'))),
     ability: ab ? { type: ab.type, power: Math.round(ab.ability.power * (1 + (fx.abilityPower || 0))), cost: Math.round(ab.ability.cost * (1 + (fx.abilityCostMult || 0))) } : null,

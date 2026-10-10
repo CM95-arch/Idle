@@ -4,9 +4,9 @@ import { CLASS, CLASSES, STATS, STAT_LABEL } from '../data/classes.js';
 import { ITEMS, tierLabel } from '../data/items.js';
 import { BIOME, DUNGEON, EVENT_BOSS } from '../data/world.js';
 import { makeRng } from './rng.js';
-import { newCombat, step } from './combat.js';
+import { newCombat, step, upgradeCombat } from './combat.js';
 import { newCharacter, fighterOf, levelOf, GEAR_SLOTS, slotType } from './character.js';
-import { biomeEnemy, rollPotion } from './loot.js';
+import { biomeWave, rollPotion } from './loot.js';
 import { createRun, advanceRun, rollRewards } from './dungeon.js';
 import { GOALS } from '../data/goals.js';
 
@@ -52,6 +52,9 @@ export function load() {
     state.view = 0;
   }
   for (let i = 0; i < state.slots; i++) state.farms[i] ||= freshFarm();
+  // saves from before group fights: restart the current fight in the new format
+  state.farms.forEach((f, i) => { if (f.cs && state.chars[i]) f.cs = upgradeCombat(f.cs, fighter(i)); });
+  if (state.run && state.chars[state.run.slot]) { state.run.cs = upgradeCombat(state.run.cs, fighter(state.run.slot)); state.run.spawned ??= state.run.killed; }
   state.settings ||= {}; state.settings.sound ??= true;
   state.visited ||= {}; for (const f of state.farms) if (f?.status === 'farming') state.visited[f.biome] = true;
   return state;
@@ -317,7 +320,7 @@ export function stopFarming(slot) {
 function farmSource(slot, emit) {
   const f = state.farms[slot], c = state.chars[slot], biome = BIOME[f.biome];
   const src = {
-    next: (rng) => biomeEnemy(biome, rng),
+    wave: (rng) => biomeWave(biome, rng),
     onKill: (e, rng) => {
       const before = levelOf(c.xp);
       c.xp += e.xp; c.kills++; state.stats.kills++;
@@ -329,7 +332,8 @@ function farmSource(slot, emit) {
         f.session.drops.unshift(id); f.session.drops.length = Math.min(f.session.drops.length, 12);
         emit?.('drop', { id });
       };
-      const mult = e.elite && !e.event ? CONFIG.eliteDropMult : 1;
+      // a group member is worth a share of a classic single enemy
+      const mult = (e.elite && !e.event ? CONFIG.eliteDropMult : 1) * (e.worth ?? 1);
       if (e.event) {
         for (let i = 0; i < EVENT_BOSS.guaranteedPotions; i++) give(rollPotion(rng));
         if (rng.next() < biome.potionRate * EVENT_BOSS.potionMult) give(rollPotion(rng));
@@ -446,13 +450,19 @@ export function advanceRunTo(toMs, maxTicks = Infinity, emit = null, mode = 'aut
 /** Tapping the battle fires an extra volley (watching speeds things up a little). */
 export function farmTap(slot) {
   const f = state.farms[slot];
-  if (f?.status !== 'farming' || !f.cs?.enemy) return false;
+  if (f?.status !== 'farming' || !f.cs?.enemies?.length) return false;
   f.cs.tapShots = Math.min((f.cs.tapShots || 0) + 1, CONFIG.maxQueuedTaps);
+  return true;
+}
+/** Tap an enemy to make it the target (tap it again to let the character choose). */
+export function focusEnemy(cs, uid) {
+  if (!cs?.enemies?.some((e) => e.uid === uid && e.hp > 0)) return false;
+  cs.focus = cs.focus === uid ? null : uid;
   return true;
 }
 export function runInput(kind) {
   const r = state.run; if (!r) return;
-  if (kind === 'tap' && r.cs.enemy) r.cs.tapShots = Math.min((r.cs.tapShots || 0) + 1, CONFIG.maxQueuedTaps);
+  if (kind === 'tap' && r.cs.enemies?.length) r.cs.tapShots = Math.min((r.cs.tapShots || 0) + 1, CONFIG.maxQueuedTaps);
   if (kind === 'cast') r.cs.castInput = true;
   if (kind === 'dodge') r.cs.dodgeInput = r.cs.t;
 }

@@ -2,7 +2,7 @@
 import { CONFIG } from '../config.js';
 import { DUNGEONS, DUNGEON } from '../data/world.js';
 import { ITEMS, typeLabel } from '../data/items.js';
-import { abilityCost } from '../core/combat.js';
+import { abilityCost, mainEnemy } from '../core/combat.js';
 import { runProgress } from '../core/dungeon.js';
 import * as G from '../core/game.js';
 import { h, openSheet, confirmDialog, toast, fmtDur } from './dom.js';
@@ -112,7 +112,7 @@ export function createDungeonScreen(root, app) {
     }
     scene.setHero(c.cls, heroColors(c.cls), slotType(c.cls, 'weapon'), c.name, levelOf(c.xp));
     scene.setEnemyLevel('');
-    scene.onTap = () => { G.runInput('tap'); return !!G.state.run?.cs.enemy; };
+    scene.onTap = (uid) => { const cs = G.state.run?.cs; if (uid != null) G.focusEnemy(cs, uid); G.runInput('tap'); return !!cs?.enemies?.length; };
     refs.dodge = h('button', { class: 'dodge-btn hidden', onpointerdown: (e) => { e.preventDefault(); G.runInput('dodge'); } }, 'TAP TO DODGE');
     scene.host.append(refs.dodge);
     const ab = gearItem(c, 'ability');
@@ -145,7 +145,7 @@ export function createDungeonScreen(root, app) {
 
   function frameRun(dt) {
     const r = G.state.run; if (!r) return;
-    const F = G.fighter(r.slot), cs = r.cs, e = cs.enemy;
+    const F = G.fighter(r.slot), cs = r.cs, e = mainEnemy(cs);
     scene.frame(dt, cs, F);
     const prog = runProgress(r);
     refs.rooms.replaceChildren(...r.rooms.map((n, i) => h('i', { class: i < r.room ? 'done' : i === r.room && r.phase === 'room' ? 'now' : '' })), h('i', { class: `boss${r.phase === 'boss' ? ' now' : ''}` }));
@@ -153,8 +153,8 @@ export function createDungeonScreen(root, app) {
     refs.bossWrap.classList.toggle('hidden', !bossOn);
     refs.roomInfo.classList.toggle('hidden', !!bossOn);
     if (bossOn) { refs.bossBar.style.width = `${(e.hp / e.maxHp) * 100}%`; refs.bossPct.textContent = `${Math.ceil((e.hp / e.maxHp) * 100)}%`; }
-    else refs.roomInfo.textContent = r.phase === 'boss' ? 'The boss is coming…' : `Room ${r.room + 1} of ${r.rooms.length} · ${prog.done} / ${prog.total} enemies`;
-    refs.dodge.classList.toggle('hidden', !e?.tele);
+    else refs.roomInfo.textContent = r.phase === 'boss' ? 'The boss is coming…' : `Room ${r.room + 1} of ${r.rooms.length} · ${prog.done} / ${prog.total} enemies · tap one to focus`;
+    refs.dodge.classList.toggle('hidden', !cs.enemies.some((x) => x.tele));
     const ab = F.ability;
     const cost = ab ? abilityCost(ab) : 1;
     const frac = Math.min(1, cs.mp / cost);

@@ -1,7 +1,10 @@
 // Balance report: `node tools/balance.mjs`
 // Simulates reference builds in every biome and prints time-to-death and kills per hour.
 import { CLASS, STATS } from '../js/data/classes.js';
-import { BIOMES, ENEMY_CURVE } from '../js/data/world.js';
+import { BIOMES, ENEMY_CURVE, PACK } from '../js/data/world.js';
+// tuning hooks (also used by classes.mjs): PACK_RATE=0.5 PACK_HP=0.4 node tools/balance.mjs
+if (process.env.PACK_RATE) PACK.rate = Number(process.env.PACK_RATE);
+if (process.env.PACK_HP) PACK.hp = Number(process.env.PACK_HP);
 import { newCharacter, fighterOf, dpsOf } from '../js/core/character.js';
 import { estimateSurvival } from '../js/core/survival.js';
 

@@ -35,15 +35,15 @@ export const CLASS = Object.fromEntries(CLASSES.map((c) => [c.id, c]));
 
 // Abilities. `power` comes from the item tier; see items.js.
 export const ABILITY_TYPES = {
-  spell:   { name: 'Spell',   effect: 'Fire burst: heavy damage to the target.' },
-  tome:    { name: 'Tome',    effect: 'Restores a large amount of HP.' },
-  quiver:  { name: 'Quiver',  effect: 'Piercing shot that deals damage and paralyzes the target.' },
-  cloak:   { name: 'Cloak',   effect: 'Turns invisible: enemies cannot hit you for a few seconds.' },
+  spell:   { name: 'Spell',   effect: 'Fire burst: heavy damage to the target, splashing onto its neighbors.' },
+  tome:    { name: 'Tome',    effect: 'Restores a large amount of HP and boosts your damage.' },
+  quiver:  { name: 'Quiver',  effect: 'Piercing arrow down a whole lane: damages and paralyzes front and back.' },
+  cloak:   { name: 'Cloak',   effect: 'Turns invisible: enemies cannot hit you, and your next stab is a critical hit.' },
   helm:    { name: 'Helm',    effect: 'Berserk: attack much faster for a few seconds.' },
-  shield:  { name: 'Shield',  effect: 'Shield bash: damage and a long stun.' },
+  shield:  { name: 'Shield',  effect: 'Shield bash: hits the whole front row, stuns it and knocks enemies back a row.' },
   seal:    { name: 'Seal',    effect: 'Heals and boosts your damage for a few seconds.' },
-  trap:    { name: 'Trap',    effect: 'Damages and slows the target’s attacks.' },
-  scepter: { name: 'Scepter', effect: 'Chain lightning: big damage, cheap to cast.' },
-  skull:   { name: 'Skull',   effect: 'Damages the target and heals you for half.' },
-  poison:  { name: 'Poison',  effect: 'Damage over time that ignores defense.' },
+  trap:    { name: 'Trap',    effect: 'Snares a lane: damages and slows everything in it.' },
+  scepter: { name: 'Scepter', effect: 'Chain lightning: jumps between up to 4 enemies, cheap to cast.' },
+  skull:   { name: 'Skull',   effect: 'Drains the target\'s whole row and heals you for part of it.' },
+  poison:  { name: 'Poison',  effect: 'A poison cloud on a lane: damage over time to everything in it.' },
 };

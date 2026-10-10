@@ -4,7 +4,7 @@
 export const ENEMY_CURVE = {
   hp: (L) => 1700 * Math.pow(1.5, L - 1),
   dmg: (L) => 30 * Math.pow(1.095, L - 1),   // per hit, before the player's DEF
-  def: (L) => Math.round(1.6 * (L - 1)),
+  def: (L) => Math.max(0, Math.round(1.6 * (L - 1))),
   rate: 0.75,                                // attacks per second
   xp: (L) => 2 * Math.pow(1.4, L - 1),        // 2 XP per kill in the Forest, ~21 in the Godlands
 };
@@ -53,38 +53,45 @@ export const BIOMES = [
 export const BIOME = Object.fromEntries(BIOMES.map((b) => [b.id, b]));
 export const EVENT_BOSS = { chance: 1 / 40, hp: 6, dmg: 1.2, xp: 15, potionMult: 10, guaranteedPotions: 1, utChance: 0.01 };
 export const ELITE = { chance: 0.06, hp: 2.3, dmg: 1.4, xp: 4 };
+// Biome fights are groups. Each group member is a share of a classic single enemy: less HP, attacks less often,
+// same hit strength (so DEF works the same). XP and drop chances scale with that share ("worth").
+export const PACK = { size: [3, 5], hp: 0.4, rate: 0.45 };
 
-// Dungeons in increasing difficulty. L sets enemy strength (tuned so the previous tier's gear clears it).
+// Dungeons in increasing difficulty. L sets enemy strength, tuned per dungeon with tools/tune-dungeons.mjs
+// so a character with every slot one tier under the dungeon clears it about 70% of the time with the app closed.
 // sig: the potion this dungeon is known for (half of its potions are this kind).
 const D = (id, name, L, rooms, potions, sig, boss, bossSprite, pal, uts, extra = {}) =>
-  ({ id, name, L, rooms, potions, sig, boss, bossSprite, pal, uts, xp: Math.round(45 * Math.pow(1.5, L - 1)), ...extra });
+  ({ id, name, L, rooms, potions, sig, boss, bossSprite, pal, uts, ...extra });
 
 export const DUNGEONS = [
-  D('snake_pit', 'Snake Pit', 1.2, 3, [0, 1], 'spd', 'Stheno, the Snake Queen', 'snake', { a: '#5c8f2a', b: '#c6d96a', c: '#ffde3d', bg: '#3c4223' }, ['ut_pit_fang', 'ut_coiled_scale', 'ut_viper_eye']),
-  D('sprite_world', 'Sprite World', 1.7, 3, [0, 1], 'dex', 'Limon the Sprite God', 'wisp', { a: '#5de0ff', b: '#bff3d8', c: '#ffffff', d: '#1d6b5a', bg: '#1f3a4a' }, ['ut_wild_whimsy', 'ut_flicker_cloak']),
-  D('undead_lair', 'Undead Lair', 2.4, 3, [1, 1], 'wis', 'Septavius the Ghost God', 'ghost', { a: '#8a8ab0', b: '#d0d0f0', c: '#40ffe0', bg: '#2a2a3a' }, ['ut_gravewarden', 'ut_lantern_skull']),
-  D('abyss_demons', 'Abyss of Demons', 2.9, 4, [1, 1], 'vit', 'Archdemon Malphas', 'demon', { a: '#a02010', b: '#e06030', c: '#ffd040', bg: '#4a1a14' }, ['ut_demonfire', 'ut_molten_helm']),
-  D('manor', 'Manor of the Immortals', 3.4, 4, [1, 2], 'att', 'Lord Ruthven', 'humanoid', { a: '#3a0a1a', b: '#8a2a3a', c: '#ffd34d', bg: '#2a1630' }, ['ut_thirst', 'ut_bloodsilk']),
-  D('davy', 'Davy Jones’ Locker', 4, 4, [1, 2], 'def', 'Davy Jones', 'ghost', { a: '#2a6a7a', b: '#6ab0c0', c: '#ffd34d', bg: '#123040' }, ['ut_drowned_saber', 'ut_ghostship']),
-  D('labyrinth', 'Woodland Labyrinth', 4.9, 4, [1, 2], 'dex', 'Murderous Megamoth', 'bug', { a: '#4a6a2a', b: '#8ab050', c: '#ffef80', bg: '#1f3a1a' }, ['ut_thornheart', 'ut_mossback']),
-  D('docks', 'Deadwater Docks', 6.5, 4, [1, 2], 'att', 'Jon Bilgewater the Pirate King', 'humanoid', { a: '#2a3a5a', b: '#5a7ab0', c: '#ffd34d', bg: '#14303a' }, ['ut_harpoon', 'ut_tidecaller']),
-  D('wetlands', 'Sulfurous Wetlands', 7.5, 4, [1, 2], 'vit', 'The Bog Hydra', 'snake', { a: '#6a6a1a', b: '#b0b040', c: '#ff6020', bg: '#3a3a12' }, ['ut_bog_witch', 'ut_swamp_lord']),
-  D('trench', 'Ocean Trench', 8.8, 4, [2, 2], 'wis', 'Thessal the Mermaid Goddess', 'humanoid', { a: '#1a5a8a', b: '#4aa0d0', c: '#ffd34d', bg: '#0f2a4a' }, ['ut_coral_seal', 'ut_abyssal_pearl']),
-  D('tomb', 'Tomb of the Ancients', 9.5, 4, [2, 2], 'hp', 'The Tomb Triad', 'golem', { a: '#a08030', b: '#e0c060', c: '#40a0ff', bg: '#4a3a14' }, ['ut_sunscorch', 'ut_scarab_plate', 'ut_pharaoh']),
-  D('fungal', 'Fungal Cavern', 10, 4, [2, 3], 'mp', 'The Mushroom Mother', 'blob', { a: '#8a3a6a', b: '#d070b0', c: '#ffef80', bg: '#2a3a2a' }, ['ut_sporecloud', 'ut_mycelium']),
-  D('nest', 'The Nest', 10.5, 4, [2, 3], 'spd', 'Killer Bee Queen', 'bug', { a: '#b08a1a', b: '#f0d040', c: '#1a1a1a', bg: '#4a3010' }, ['ut_stinger', 'ut_honeyglass']),
-  D('cultist', 'Cultist Hideout', 10.9, 4, [2, 3], 'att', 'Malus the Cult Leader', 'humanoid', { a: '#5a0a1a', b: '#a02a3a', c: '#ffd34d', bg: '#3a0f1a' }, ['ut_eclipsed', 'ut_shroud']),
-  D('crystal', 'Crystal Cavern', 11.4, 4, [2, 3], 'def', 'The Crystal Worm Mother', 'snake', { a: '#6a4ac0', b: '#b090ff', c: '#ffffff', bg: '#2a1f4a' }, ['ut_prism_wand', 'ut_geode_helm']),
-  D('lost_halls', 'Lost Halls', 11.9, 4, [3, 4], 'def', 'The Marble Colossus', 'golem', { a: '#c8c8d0', b: '#ffffff', c: '#ff4040', bg: '#2a1a3a' }, ['ut_marble_seal', 'ut_colossus'], { rune: 'rune_sword', slotReward: true }),
-  D('void', 'The Void', 12.3, 4, [3, 4], 'mp', 'The Void Entity', 'eye', { a: '#1a0a3a', b: '#5a2a9a', c: '#ff40ff', bg: '#120a1f' }, ['ut_voidcaller', 'ut_nullfield'], { rune: 'rune_shield' }),
-  D('shatters', 'The Shatters', 12.7, 4, [3, 4], 'att', 'The Forgotten King', 'humanoid', { a: '#2a3a4a', b: '#6a8aa0', c: '#a0ffff', bg: '#1a1f2a' }, ['ut_starlight', 'ut_kings_edge', 'ut_shattered_crown'], { rune: 'rune_helm' }),
-  D('oryx', 'Oryx’s Castle', 13.2, 4, [4, 6], null, 'Oryx the Mad God', 'demon', { a: '#3a2a4a', b: '#8a6ab0', c: '#ffd34d', bg: '#2a1d0c' }, ['ut_mad_wrath', 'ut_oryx_crown', 'ut_mad_ring', 'ut_final_night'], { needsRunes: ['rune_sword', 'rune_shield', 'rune_helm'], final: true }),
+  D('snake_pit', 'Snake Pit', 0.7, 3, [0, 1], 'spd', 'Stheno, the Snake Queen', 'snake', { a: '#5c8f2a', b: '#c6d96a', c: '#ffde3d', bg: '#3c4223' }, ['ut_pit_fang', 'ut_coiled_scale', 'ut_viper_eye']),
+  D('sprite_world', 'Sprite World', 0.75, 3, [0, 1], 'dex', 'Limon the Sprite God', 'wisp', { a: '#5de0ff', b: '#bff3d8', c: '#ffffff', d: '#1d6b5a', bg: '#1f3a4a' }, ['ut_wild_whimsy', 'ut_flicker_cloak']),
+  D('undead_lair', 'Undead Lair', 1.3, 3, [1, 1], 'wis', 'Septavius the Ghost God', 'ghost', { a: '#8a8ab0', b: '#d0d0f0', c: '#40ffe0', bg: '#2a2a3a' }, ['ut_gravewarden', 'ut_lantern_skull']),
+  D('abyss_demons', 'Abyss of Demons', 2.3, 4, [1, 1], 'vit', 'Archdemon Malphas', 'demon', { a: '#a02010', b: '#e06030', c: '#ffd040', bg: '#4a1a14' }, ['ut_demonfire', 'ut_molten_helm']),
+  D('manor', 'Manor of the Immortals', 2.75, 4, [1, 2], 'att', 'Lord Ruthven', 'humanoid', { a: '#3a0a1a', b: '#8a2a3a', c: '#ffd34d', bg: '#2a1630' }, ['ut_thirst', 'ut_bloodsilk']),
+  D('davy', 'Davy Jones’ Locker', 2.95, 4, [1, 2], 'def', 'Davy Jones', 'ghost', { a: '#2a6a7a', b: '#6ab0c0', c: '#ffd34d', bg: '#123040' }, ['ut_drowned_saber', 'ut_ghostship']),
+  D('labyrinth', 'Woodland Labyrinth', 4.2, 4, [1, 2], 'dex', 'Murderous Megamoth', 'bug', { a: '#4a6a2a', b: '#8ab050', c: '#ffef80', bg: '#1f3a1a' }, ['ut_thornheart', 'ut_mossback']),
+  D('docks', 'Deadwater Docks', 5.8, 4, [1, 2], 'att', 'Jon Bilgewater the Pirate King', 'humanoid', { a: '#2a3a5a', b: '#5a7ab0', c: '#ffd34d', bg: '#14303a' }, ['ut_harpoon', 'ut_tidecaller']),
+  D('wetlands', 'Sulfurous Wetlands', 6.5, 4, [1, 2], 'vit', 'The Bog Hydra', 'snake', { a: '#6a6a1a', b: '#b0b040', c: '#ff6020', bg: '#3a3a12' }, ['ut_bog_witch', 'ut_swamp_lord']),
+  D('trench', 'Ocean Trench', 7.5, 4, [2, 2], 'wis', 'Thessal the Mermaid Goddess', 'humanoid', { a: '#1a5a8a', b: '#4aa0d0', c: '#ffd34d', bg: '#0f2a4a' }, ['ut_coral_seal', 'ut_abyssal_pearl']),
+  D('tomb', 'Tomb of the Ancients', 9.0, 4, [2, 2], 'hp', 'The Tomb Triad', 'golem', { a: '#a08030', b: '#e0c060', c: '#40a0ff', bg: '#4a3a14' }, ['ut_sunscorch', 'ut_scarab_plate', 'ut_pharaoh']),
+  D('fungal', 'Fungal Cavern', 9.4, 4, [2, 3], 'mp', 'The Mushroom Mother', 'blob', { a: '#8a3a6a', b: '#d070b0', c: '#ffef80', bg: '#2a3a2a' }, ['ut_sporecloud', 'ut_mycelium']),
+  D('nest', 'The Nest', 9.85, 4, [2, 3], 'spd', 'Killer Bee Queen', 'bug', { a: '#b08a1a', b: '#f0d040', c: '#1a1a1a', bg: '#4a3010' }, ['ut_stinger', 'ut_honeyglass']),
+  D('cultist', 'Cultist Hideout', 10.05, 4, [2, 3], 'att', 'Malus the Cult Leader', 'humanoid', { a: '#5a0a1a', b: '#a02a3a', c: '#ffd34d', bg: '#3a0f1a' }, ['ut_eclipsed', 'ut_shroud']),
+  D('crystal', 'Crystal Cavern', 10.45, 4, [2, 3], 'def', 'The Crystal Worm Mother', 'snake', { a: '#6a4ac0', b: '#b090ff', c: '#ffffff', bg: '#2a1f4a' }, ['ut_prism_wand', 'ut_geode_helm']),
+  D('lost_halls', 'Lost Halls', 10.75, 4, [3, 4], 'def', 'The Marble Colossus', 'golem', { a: '#c8c8d0', b: '#ffffff', c: '#ff4040', bg: '#2a1a3a' }, ['ut_marble_seal', 'ut_colossus'], { rune: 'rune_sword', slotReward: true }),
+  D('void', 'The Void', 11.1, 4, [3, 4], 'mp', 'The Void Entity', 'eye', { a: '#1a0a3a', b: '#5a2a9a', c: '#ff40ff', bg: '#120a1f' }, ['ut_voidcaller', 'ut_nullfield'], { rune: 'rune_shield' }),
+  D('shatters', 'The Shatters', 11.6, 4, [3, 4], 'att', 'The Forgotten King', 'humanoid', { a: '#2a3a4a', b: '#6a8aa0', c: '#a0ffff', bg: '#1a1f2a' }, ['ut_starlight', 'ut_kings_edge', 'ut_shattered_crown'], { rune: 'rune_helm' }),
+  D('oryx', 'Oryx’s Castle', 12.6, 4, [4, 6], null, 'Oryx the Mad God', 'demon', { a: '#3a2a4a', b: '#8a6ab0', c: '#ffd34d', bg: '#2a1d0c' }, ['ut_mad_wrath', 'ut_oryx_crown', 'ut_mad_ring', 'ut_final_night'], { needsRunes: ['rune_sword', 'rune_shield', 'rune_helm'], final: true }),
 ];
 // Each dungeon has one gear tier: Snake Pit T2 up to Oryx's Castle T20. A clear has a chance to upgrade one slot to it.
-DUNGEONS.forEach((d, i) => { d.tier = i + 2; });
+// XP follows the dungeon's place on the ladder, independent of how its enemy level L was tuned.
+const XP_LADDER = [1.2, 1.7, 2.4, 2.9, 3.4, 4, 4.9, 6.5, 7.5, 8.8, 9.5, 10, 10.5, 10.9, 11.4, 11.9, 12.3, 12.7, 13.2];
+DUNGEONS.forEach((d, i) => { d.tier = i + 2; d.xp = Math.round(45 * Math.pow(1.5, XP_LADDER[i] - 1)); });
 export const DUNGEON = Object.fromEntries(DUNGEONS.map((d) => [d.id, d]));
 export const BOSS = { hp: 9, dmg: 0.9, rate: 0.9 };       // multiples of a room enemy at the same L
 export const ROOM = { hp: 1.15, dmg: 1.2 };                // dungeon rooms are a bit tougher than biomes at the same L
+export const BOSS_ADDS = 2;                                 // room enemies fighting alongside each boss
 
 // Room enemies per dungeon: [name, sprite template]
 export const DUNGEON_MOBS = {

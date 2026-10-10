@@ -1,6 +1,6 @@
-// Dungeon runs: 3–4 rooms of enemies, then the boss. Rewards are only granted on a clear.
+// Dungeon runs: 3–4 rooms of enemy groups, then the boss and its guards. Rewards are only granted on a clear.
 import { CONFIG } from '../config.js';
-import { DUNGEON, DUNGEON_MOBS } from '../data/world.js';
+import { DUNGEON, DUNGEON_MOBS, BOSS_ADDS } from '../data/world.js';
 import { makeRng } from './rng.js';
 import { newCombat, step } from './combat.js';
 import { dungeonEnemy, dungeonBoss, rollPotion } from './loot.js';
@@ -9,7 +9,7 @@ export function createRun(dungeonId, F, seed) {
   const d = DUNGEON[dungeonId];
   const rng = makeRng(seed);
   const rooms = Array.from({ length: d.rooms }, () => rng.int(...CONFIG.dungeonEnemiesPerRoom));
-  return { dungeonId, seed, rngState: rng.s, cs: newCombat(F), rooms, room: 0, killed: 0, phase: 'room', ticks: 0 };
+  return { dungeonId, seed, rngState: rng.s, cs: newCombat(F), rooms, room: 0, killed: 0, spawned: 0, phase: 'room', ticks: 0 };
 }
 
 /** Engine source for a run. Mutates run as rooms are cleared. */
@@ -18,22 +18,34 @@ export function runSource(run) {
   return {
     castDelay: 0,
     walkHealPct: CONFIG.dungeonWalkHealPct,
-    next(rng) {
+    wave(rng) {
       if (run.phase === 'room') {
         if (run.killed >= run.rooms[run.room]) {
-          run.room++; run.killed = 0;
+          run.room++; run.killed = 0; run.spawned = 0;
           if (run.room >= run.rooms.length) run.phase = 'boss';
           run.cs.travel = CONFIG.roomTransitionSeconds; // walking to the next room heals faster
           return null;
         }
-        return dungeonEnemy(d, rng.pick(DUNGEON_MOBS[run.dungeonId]), rng);
+        const n = Math.min(CONFIG.dungeonGroupSize, run.rooms[run.room] - run.killed);
+        run.spawned = run.killed + n;
+        return Array.from({ length: n }, () => dungeonEnemy(d, rng.pick(DUNGEON_MOBS[run.dungeonId]), rng));
       }
-      if (run.phase === 'boss' && !run.bossSpawned) { run.bossSpawned = true; return dungeonBoss(d); }
+      if (run.phase === 'boss' && !run.bossSpawned) {
+        run.bossSpawned = true;
+        return [dungeonBoss(d), ...Array.from({ length: BOSS_ADDS }, () => ({ ...dungeonEnemy(d, rng.pick(DUNGEON_MOBS[run.dungeonId]), rng), add: true }))];
+      }
       return null;
+    },
+    // the rest of a room's enemies step into empty slots as others fall
+    reinforce(rng) {
+      if (run.phase !== 'room' || (run.spawned || 0) >= run.rooms[run.room]) return null;
+      if (run.cs.enemies.filter((e) => e.hp > 0).length >= CONFIG.dungeonGroupSize) return null;
+      run.spawned++;
+      return dungeonEnemy(d, rng.pick(DUNGEON_MOBS[run.dungeonId]), rng);
     },
     onKill(e) {
       if (e.boss) run.phase = 'won';
-      else run.killed++;
+      else if (!e.add) run.killed++;
     },
   };
 }

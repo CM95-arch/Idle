@@ -1,7 +1,7 @@
 // ★ All balance numbers live here. Change a value, reload, and the game uses it.
 // `node tools/balance.mjs` prints survival times and kill rates for reference builds.
 
-export const BUILD = '2026-10-10 · 11';
+export const BUILD = '2026-10-10 · 12';
 
 export const CONFIG = {
   tickSeconds: 0.1,            // combat simulation step (same step online and offline)
@@ -25,6 +25,8 @@ export const CONFIG = {
   minDamageAfterDef: 0.15,     // DEF can never block more than 85% of a hit
   outOfCombatRegenMult: 5,     // HP/MP regen is this many times faster while walking between enemies
   walkHealPct: 0.04,           // plus this share of max HP per second while walking
+  travelPerWave: 2,            // walking time between groups, in multiples of the SPD-based walk time
+  reinforceSeconds: 1.2,       // how often reinforcements can step into an empty slot
   tapDamage: 0.3,              // tapping the battle fires an extra volley at this fraction of a normal attack
   maxQueuedTaps: 3,
   startStatFraction: 0.5,      // new characters start halfway between class base and class max
@@ -39,7 +41,8 @@ export const CONFIG = {
   eliteDropMult: 3,            // elites are this many times likelier to drop potions and the biome's UT
   biomeUtChance: 1 / 24000,    // per kill: about two days of farming one biome on one character
   // ---- dungeons ----
-  dungeonEnemiesPerRoom: [5, 7], 
+  dungeonEnemiesPerRoom: [11, 15], // group members per room (they arrive a few at a time)
+  dungeonGroupSize: 4,         // how many start each room; the rest step in as others fall
   dungeonWalkHealPct: 0.025,   // dungeons heal less between enemies than farming does
   roomTransitionSeconds: 3,  // walk between dungeon rooms (fast regen while walking)
   upgradeChance: 0.2,          // a clear has a 1 in 5 chance to upgrade one gear slot to the dungeon's tier

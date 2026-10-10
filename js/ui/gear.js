@@ -2,7 +2,7 @@
 import { CLASS, STATS, STAT_LABEL, ABILITY_TYPES } from '../data/classes.js';
 import { ITEM_LIST, ITEMS, typeLabel } from '../data/items.js';
 import { GEAR_SLOTS, gearItem, fighterOf, dpsOf, slotType } from '../core/character.js';
-import { abilityCost } from '../core/combat.js';
+import { abilityCost, PATTERN } from '../core/combat.js';
 import * as G from '../core/game.js';
 import { h, openSheet, toast, fmtNum } from './dom.js';
 import { itemIcon } from './sprites.js';
@@ -91,6 +91,7 @@ export function slotSheet(slot, kind, onChange) {
     ];
     if (it.special) kids.push(h('div', { class: 'special' }, it.special));
     if (kind === 'ability') kids.push(h('div', { class: 'small muted' }, ABILITY_TYPES[CLASS[c.cls].ability].effect));
+    if (kind === 'weapon') { const P = PATTERN[CLASS[c.cls].weapon]; kids.push(h('div', { class: 'small', style: { fontWeight: 700 } }, h('b', {}, `${P.name}: `), P.desc)); }
     const up = G.pendingUpgrade(slot);
     if (up && G.upgradeSlots(slot, up).includes(kind)) kids.push(upgradeChooser(slot, done));
     else kids.push(h('div', { class: 'small muted' }, `Slot tiers go up from dungeon clears: each dungeon has a 1 in 5 chance to raise one slot to its tier.`));

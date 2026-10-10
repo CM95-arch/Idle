@@ -67,7 +67,6 @@ function settings() {
       showDialog((c2) => [h('h2', {}, 'Load a save'), h('textarea', { id: 'import-save', placeholder: 'Paste a save code', oninput: (e) => { text = e.target.value; }, style: { height: '140px' } }),
         h('button', { class: 'btn', onclick: () => { try { G.importSave(text); c2(); location.reload(); } catch (e) { toast({ title: 'Could not load that save', body: e.message, kind: 'bad' }); } } }, 'Load save')]);
     } }, 'Load a save code'),
-    h('a', { class: 'btn gold', href: 'proto.html' }, 'Try the battle prototype'),
     h('button', { class: 'btn red', onclick: async () => { if (await confirmDialog({ title: 'Erase everything?', body: 'Deletes all characters, items and progress on this device.', ok: 'Erase', danger: true })) { G.resetGame(); location.reload(); } } }, 'Erase save'),
     h('div', { class: 'small muted', style: { textAlign: 'center', fontWeight: 700 } }, `Build ${BUILD} · ${fmtNum(G.state.stats.kills)} kills · ${G.state.stats.clears} clears`),
     h('button', { class: 'btn', onclick: close }, 'Done'),
@@ -79,13 +78,13 @@ const weaponOf = (slot) => { const c = G.state.chars[slot]; return c ? slotType(
 function withSound(screen, slotOf) {
   const show = (kind, d) => {
     screen.emit(kind, d);
-    if (kind === 'hit') play(weaponOf(slotOf()));
+    if (kind === 'attack') play(weaponOf(slotOf()));
     else if (kind === 'hurt' && d.big) play('hurt');
     else if (kind === 'drop') play(ITEMS[d.id].tier === 'UT' ? 'lootRare' : 'loot');
     else if (kind === 'ability') play('ability');
     else if (kind === 'dodged') play('dodge');
     else if (kind === 'telegraph') play('tele');
-    else if (kind === 'spawn' && d.enemy?.event) { play('lootRare'); toast({ title: 'Event boss!', body: d.enemy.name, kind: 'gold' }); }
+    else if (kind === 'spawn' && d.enemies?.some((x) => x.event)) { play('lootRare'); toast({ title: 'Event boss!', body: d.enemies.find((x) => x.event).name, kind: 'gold' }); }
   };
   // Events carry `frac`, their position inside the 0.1s combat step; play them at that moment for a steady rhythm.
   return (kind, d) => { if (d?.frac > 0.02) setTimeout(() => show(kind, d), d.frac * 100); else show(kind, d); };

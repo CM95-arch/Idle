@@ -70,7 +70,8 @@ export function createFarmScreen(root, app) {
     const b = BIOME[f.biome], inRun = s.run?.slot === slot;
     const key = `${slot}|${f.biome}|${c.cls}`;
     if (!scene || sceneKey !== key) { scene = new BattleScene(h('div', { class: 'scene' })); sceneKey = key; }
-    scene.onTap = () => G.farmTap(slot);
+    // tap an enemy to focus it; any tap also fires a quick extra volley
+    scene.onTap = (uid) => { const f2 = G.state.farms[slot]; if (uid != null) G.focusEnemy(f2.cs, uid); return G.farmTap(slot); };
     scene.setTheme({ sky: b.sky, ground: b.ground, decor: b.decor, seed: BIOMES.indexOf(b) + 3 });
     const li = levelInfo(c.xp);
     scene.setHero(c.cls, heroColors(c.cls), slotType(c.cls, 'weapon'), c.name, li.level);
