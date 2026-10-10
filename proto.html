@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <meta name="theme-color" content="#222a35" />
+  <title>Idle Realm · Battle prototype</title>
+  <link rel="icon" href="assets/icons/icon.svg" type="image/svg+xml" />
+  <link rel="preload" href="assets/fonts/PixelifySans.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="css/main.css" />
+  <style>
+    #proto { position: absolute; inset: 0; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+    #proto .scene { flex: none; height: 46vh; min-height: 300px; max-height: 420px; }
+    .pstats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; text-align: center; font-weight: 900; font-size: 15px; }
+    .pstats small { display: block; font-size: 10px; font-weight: 800; color: var(--ink-3); letter-spacing: .05em; text-transform: uppercase; }
+    #proto .chips { flex-wrap: wrap; overflow: visible; }
+    .chips .chip { font-size: 13px; }
+    .cmp table { width: 100%; border-collapse: collapse; font-size: 12px; font-weight: 800; }
+    .cmp td, .cmp th { padding: 4px 3px; text-align: right; border-bottom: 1px solid var(--edge); }
+    .cmp th { font-size: 10px; color: var(--ink-3); text-transform: uppercase; }
+    .cmp td:first-child, .cmp th:first-child { text-align: left; }
+    .cmp .best { color: var(--green); }
+    .cmp .worst { color: var(--red); }
+  </style>
+</head>
+<body>
+  <div id="app" class="shell"><div id="proto"></div></div>
+  <script type="module" src="js/proto/main.js"></script>
+</body>
+</html>

@@ -67,6 +67,7 @@ function settings() {
       showDialog((c2) => [h('h2', {}, 'Load a save'), h('textarea', { id: 'import-save', placeholder: 'Paste a save code', oninput: (e) => { text = e.target.value; }, style: { height: '140px' } }),
         h('button', { class: 'btn', onclick: () => { try { G.importSave(text); c2(); location.reload(); } catch (e) { toast({ title: 'Could not load that save', body: e.message, kind: 'bad' }); } } }, 'Load save')]);
     } }, 'Load a save code'),
+    h('a', { class: 'btn gold', href: 'proto.html' }, 'Try the battle prototype'),
     h('button', { class: 'btn red', onclick: async () => { if (await confirmDialog({ title: 'Erase everything?', body: 'Deletes all characters, items and progress on this device.', ok: 'Erase', danger: true })) { G.resetGame(); location.reload(); } } }, 'Erase save'),
     h('div', { class: 'small muted', style: { textAlign: 'center', fontWeight: 700 } }, `Build ${BUILD} · ${fmtNum(G.state.stats.kills)} kills · ${G.state.stats.clears} clears`),
     h('button', { class: 'btn', onclick: close }, 'Done'),
