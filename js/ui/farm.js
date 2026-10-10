@@ -1,154 +1,109 @@
+// Screen 1: idle farming. Fits one phone screen, no scrolling.
 import { CONFIG } from '../config.js';
-// Screen 1: idle farming.
+import { STAT_LABEL } from '../data/classes.js';
 import { BIOMES, BIOME, DUNGEON } from '../data/world.js';
 import { ITEMS, tierLabel } from '../data/items.js';
-import { levelInfo } from '../core/character.js';
+import { levelInfo, statBreakdown } from '../core/character.js';
 import * as G from '../core/game.js';
-import { h, openSheet, fmtNum, fmtDur, fmtHours, fmtXp, plural } from './dom.js';
+import { h, openSheet, fmtXp } from './dom.js';
 import { itemIcon } from './sprites.js';
 import { BattleScene } from './scene.js';
-import { chips, heroColors, newCharacterSheet, itemRow } from './common.js';
-import { biomeEstimate, LEVEL_TEXT } from './estimates.js';
-import { openItemSheet, openEquipPicker } from './itemSheet.js';
+import { heroColors, newCharacterSheet, diffPill } from './common.js';
+import { biomeEstimate } from './estimates.js';
 
-export function createFarmScreen(root, nav) {
-  let scene = null, refs = {}, sceneSlot = -1, sceneKey = '';
+export function gearSlots(slot, onTap) {
+  const c = G.state.chars[slot];
+  return h('div', { class: 'slots' }, ['weapon', 'ability', 'armor', 'ring'].map((k) => {
+    const id = c.equip[k];
+    return h('button', { class: `slot${id ? '' : ' empty'}${id && ITEMS[id].tier === 'UT' ? ' ut' : ''}`, 'aria-label': k, onclick: () => onTap(k) },
+      h('span', { class: 'kind' }, k), id ? itemIcon(id, 38) : null, id ? h('span', { class: 'tier' }, tierLabel(ITEMS[id])) : null);
+  }));
+}
 
-  function survivalPill(slot, biomeId) {
-    const est = biomeEstimate(slot, biomeId);
-    if (!est) return h('span', { class: 'pill calc' }, 'Estimating…');
-    return h('span', { class: `pill ${est.level}` }, `Survival · ${LEVEL_TEXT[est.level]}`);
-  }
+/** ROTMG-style always-visible stat block. Yellow = maxed, green = gear bonus. */
+export function statPanel(slot) {
+  const c = G.state.chars[slot], sb = statBreakdown(c, G.state);
+  return h('div', { class: 'panel dark statgrid' }, ['hp', 'mp', 'att', 'def', 'spd', 'dex', 'vit', 'wis'].map((k) => {
+    const b = sb[k], bonus = b.gear + b.exalt;
+    return h('div', { class: 'stat' }, h('span', { class: 'k' }, STAT_LABEL[k]),
+      h('span', {}, h('span', { class: `v tnum${b.base >= b.max ? ' maxed' : ''}` }, String(b.base + bonus)), bonus ? h('span', { class: 'g' }, ` (+${bonus})`) : null));
+  }));
+}
+
+export function createFarmScreen(root, app) {
+  let scene = null, sceneKey = '', refs = {};
 
   function biomeSheet(slot) {
     const sh = openSheet((close) => {
       const f = G.state.farms[slot];
       return [
-        h('div', { class: 'title', style: { fontSize: '18px' } }, 'Choose a biome'),
-        h('p', { class: 'small muted', style: { margin: 0 } }, 'Every biome is open. Survival is estimated from this character’s gear and stats; tougher biomes drop better loot.'),
-        h('div', { class: 'list' }, BIOMES.map((b) => {
-          const est = biomeEstimate(slot, b.id);
-          return h('button', { class: `pick${f.biome === b.id ? ' on' : ''}`, onclick: () => { G.startFarming(slot, b.id); close(); render(); } },
-            h('div', { class: 'ic', style: { background: `linear-gradient(${b.sky[0]}, ${b.sky[1]})` } }),
-            h('div', {}, h('b', {}, b.name), h('div', { class: 'small muted' }, `Loot T${b.tiers[0]}–T${b.tiers[1]}`, b.potionRate ? ` · potions 1 in ${Math.round(1 / b.potionRate)}` : '')),
-            h('div', { style: { textAlign: 'right' } }, est ? h('span', { class: `pill ${est.level}` }, LEVEL_TEXT[est.level]) : h('span', { class: 'pill calc' }, '…'),
-              est ? h('div', { class: 'small muted tnum', style: { marginTop: '3px' } }, est.hours === Infinity ? `${fmtNum(est.kph)} kills/h` : `≈ ${fmtHours(est.hours)} to fall`) : null));
-        })),
+        h('div', { class: 'h2' }, 'Choose a biome'),
+        h('div', { class: 'list' }, BIOMES.map((b) => h('button', { class: `pick${f.biome === b.id ? ' on' : ''}`, onclick: () => { G.startFarming(slot, b.id); close(); render(); } },
+          h('div', { class: 'ic', style: { background: `linear-gradient(${b.sky[0]} 55%, ${b.ground} 55%)` } }),
+          h('div', {}, h('b', {}, b.name), h('div', { class: 'small muted' }, `Loot T${b.tiers[0]}–T${b.tiers[1]}${b.potionRate ? ' · potions' : ''}`)),
+          diffPill(biomeEstimate(slot, b.id))))),
       ];
     });
     const off = G.on('estimates', () => (sh.isOpen() ? sh.render() : off()));
   }
 
-  /** Suggest moving up when the next biome is safe, or back down when this one is deadly. */
-  function nudgeCard(slot) {
+  function nudge(slot) {
     const f = G.state.farms[slot];
-    if (f.status !== 'farming' && f.status !== 'fallen') return null;
+    if (f.status !== 'farming') return null;
     const i = BIOMES.findIndex((b) => b.id === f.biome);
-    const here = biomeEstimate(slot, f.biome);
-    const next = BIOMES[i + 1], prev = BIOMES[i - 1];
-    if (here?.level === 'low' && prev) {
-      return h('button', { class: 'card row between nudge warn', style: { textAlign: 'left' }, onclick: () => { G.startFarming(slot, prev.id); render(); } },
-        h('div', {}, h('div', { class: 'label', style: { color: 'var(--low)' } }, 'Too dangerous'), h('div', { class: 'small' }, `${BIOMES[i].name} will likely kill this character soon.`)),
-        h('span', { class: 'btn ghost sm' }, `← ${prev.name}`));
-    }
-    if (!next) return null;
-    const est = biomeEstimate(slot, next.id);
+    const here = biomeEstimate(slot, f.biome), next = BIOMES[i + 1], prev = BIOMES[i - 1];
+    if (here?.level === 'low' && prev) return h('button', { class: 'nudge warn', onclick: () => { G.startFarming(slot, prev.id); render(); } }, h('span', { class: 'grow' }, 'Very dangerous here'), h('span', {}, `← ${prev.name}`));
+    const est = next && biomeEstimate(slot, next.id);
     if (!est || est.hours < CONFIG.nudgeHours) return null;
-    return h('button', { class: 'card row between nudge', style: { textAlign: 'left' }, onclick: () => { G.startFarming(slot, next.id); render(); } },
-      h('div', {}, h('div', { class: 'label', style: { color: 'var(--high)' } }, `Ready for ${next.name}`), h('div', { class: 'small' }, `Survival ${LEVEL_TEXT[est.level]} · loot T${next.tiers[0]}–T${next.tiers[1]}${next.potionRate ? ' · potions' : ''}`)),
-      h('span', { class: 'btn sm' }, 'Move →'));
+    return h('button', { class: 'nudge', onclick: () => { G.startFarming(slot, next.id); render(); } }, h('span', { class: 'grow' }, `Ready for ${next.name}`), h('span', {}, 'Go →'));
   }
 
   function render() {
     const s = G.state, slot = s.view, c = s.chars[slot], f = s.farms[slot];
     refs = {};
-    const kids = [chips(() => render())];
+    root.classList.add('fit');
     if (!c) {
-      kids.push(h('div', { class: 'card', style: { textAlign: 'center', padding: '28px 16px' } },
-        h('div', { class: 'title', style: { fontSize: '18px' } }, 'Empty slot'),
-        h('p', { class: 'muted' }, 'Create a character here and it will farm alongside your others.'),
-        h('button', { class: 'btn', onclick: () => newCharacterSheet(slot, render) }, 'Create character')));
-      root.replaceChildren(...kids); scene = null; return;
+      scene = null;
+      root.replaceChildren(h('div', { class: 'panel', style: { textAlign: 'center', padding: '28px 16px', margin: 'auto 0' } },
+        h('div', { class: 'h2' }, 'Empty slot'),
+        h('p', { class: 'muted' }, 'Create a character to farm in this slot.'),
+        h('button', { class: 'btn', onclick: () => newCharacterSheet(slot, () => app.refresh()) }, 'Create character')));
+      return;
     }
-    const b = BIOME[f.biome];
-    const est = biomeEstimate(slot, f.biome);
-    kids.push(h('button', { class: 'card row between', style: { textAlign: 'left' }, onclick: () => biomeSheet(slot) },
-      h('div', {}, h('div', { class: 'label' }, 'Biome · tap to change'), h('div', { class: 'title', style: { fontSize: '16px' } }, b.name),
-        h('div', { class: 'small muted' }, `Loot T${b.tiers[0]}–T${b.tiers[1]}`, b.potionRate ? ` · potions 1 in ${Math.round(1 / b.potionRate)}` : ' · no potions')),
-      h('div', { style: { textAlign: 'right' } }, survivalPill(slot, f.biome),
-        h('div', { class: 'small muted tnum', style: { marginTop: '3px' } }, est ? (est.hours === Infinity ? '8h+ estimated' : `≈ ${fmtHours(est.hours)} estimated`) : ''))));
-
+    const b = BIOME[f.biome], inRun = s.run?.slot === slot;
     const key = `${slot}|${f.biome}|${c.cls}`;
-    if (!scene || sceneSlot !== slot || sceneKey !== key) {
-      scene = new BattleScene(h('div', { class: 'scene' })); sceneSlot = slot; sceneKey = key;
-    }
-    kids.push(scene.host);
+    if (!scene || sceneKey !== key) { scene = new BattleScene(h('div', { class: 'scene' })); sceneKey = key; }
     scene.onTap = () => G.farmTap(slot);
     scene.setTheme({ sky: b.sky, ground: b.ground, decor: b.decor, seed: BIOMES.indexOf(b) + 3 });
-    scene.setHero(c.cls, heroColors(c.cls), ITEMS[c.equip.weapon]?.type);
-
-    const nudge = nudgeCard(slot);
-    if (nudge) kids.push(nudge);
-
     const li = levelInfo(c.xp);
-    kids.push(h('div', { class: 'row' },
-      refs.lv = h('span', { class: 'title', style: { fontSize: '13px', color: 'var(--ember)' } }, `Lv ${li.level}`),
-      h('div', { class: 'bar xpbar grow' }, refs.xp = h('i', { style: { width: `${(li.into / li.need) * 100}%` } })),
-      refs.xpTxt = h('span', { class: 'small muted tnum' }, `${fmtXp(li.into)} / ${li.need} XP`)));
+    scene.setHero(c.cls, heroColors(c.cls), ITEMS[c.equip.weapon]?.type, c.name, li.level);
 
-    kids.push(h('div', { class: 'slots' }, ['weapon', 'ability', 'armor', 'ring'].map((k) => {
-      const id = c.equip[k];
-      return h('button', { class: `slot${id ? '' : ' empty'}${id && ITEMS[id].tier === 'UT' ? ' ut' : ''}`, onclick: () => openEquipPicker(slot, k) },
-        h('span', { class: 'kind' }, k), id ? itemIcon(id, 36) : null, id ? h('span', { class: 'tier' }, tierLabel(ITEMS[id])) : null);
-    })));
+    const action = inRun ? h('button', { class: 'btn gold sm', onclick: () => app.nav('dungeons') }, 'In dungeon')
+      : f.status === 'farming' ? h('button', { class: 'btn red sm', onclick: () => { G.stopFarming(slot); render(); } }, 'Stop')
+        : h('button', { class: 'btn sm', onclick: () => { G.startFarming(slot, f.biome); render(); } }, f.status === 'fallen' ? 'Restart' : 'Start');
 
-    // session
-    const sess = f.session;
-    if (sess) {
-      refs.sess = h('div', { class: 'card', style: { display: 'grid', gap: '7px' } });
-      kids.push(refs.sess);
-    }
-    // controls
-    if (s.run?.slot === slot) {
-      kids.push(h('div', { class: 'card small' }, `${c.name} is in ${DUNGEON[s.run.dungeonId].name}. Farming resumes when the run ends.`),
-        h('button', { class: 'btn', onclick: () => nav('dungeons') }, 'Watch the run'));
-    } else if (f.status === 'farming') {
-      kids.push(h('div', { class: 'row' }, h('button', { class: 'btn ghost grow', onclick: () => biomeSheet(slot) }, 'Biome'), h('button', { class: 'btn stop', style: { flex: 2 }, onclick: () => { G.stopFarming(slot); render(); } }, '■ Stop farming')));
-    } else {
-      kids.push(h('div', { class: 'row' }, h('button', { class: 'btn ghost grow', onclick: () => biomeSheet(slot) }, 'Biome'), h('button', { class: 'btn', style: { flex: 2 }, onclick: () => { G.startFarming(slot, f.biome); render(); } }, f.status === 'fallen' ? '↻ Restart farming' : '▶ Start farming')));
-    }
+    const kids = [
+      h('div', { class: 'panel biomebar' },
+        h('button', { class: 'grow', style: { textAlign: 'left' }, onclick: () => biomeSheet(slot) },
+          h('div', { class: 'name' }, b.name, h('span', { class: 'muted', style: { fontSize: '12px' } }, ' ▼')),
+          h('div', { class: 'sub' }, `Loot T${b.tiers[0]}–T${b.tiers[1]}${b.potionRate ? ' · potions' : ''}`)),
+        diffPill(biomeEstimate(slot, f.biome)), action),
+      scene.host,
+      h('div', { class: 'xprow' }, refs.lv = h('span', {}, `Lv ${li.level}`), h('div', { class: 'bar xpbar' }, refs.xp = h('i', { style: { width: `${(li.into / li.need) * 100}%` } })), refs.xpTxt = h('span', { class: 'muted tnum' }, `${fmtXp(li.into)}/${li.need}`)),
+    ];
+    const n = nudge(slot);
+    if (n) kids.push(n);
+    kids.push(gearSlots(slot, (k) => app.equip(slot, k)), statPanel(slot));
     root.replaceChildren(...kids);
-    updateSession(true);
     updateMessage();
-  }
-
-  let lastSessKey = '';
-  function updateSession(force) {
-    const s = G.state, f = s.farms[s.view], sess = f?.session;
-    if (!refs.sess || !sess) return;
-    const end = sess.endMs || (f.status === 'farming' ? f.simMs : Date.now());
-    const key = `${sess.kills}|${sess.items}|${sess.potions}|${Math.floor((end - sess.startMs) / 1000)}|${f.status}`;
-    if (!force && key === lastSessKey) return;
-    lastSessKey = key;
-    const b = BIOME[f.biome];
-    refs.sess.replaceChildren(
-      h('div', { class: 'row between' }, h('span', { class: 'label' }, f.status === 'farming' ? 'This session' : f.status === 'fallen' ? 'Last session · fell' : 'Last session'),
-        h('span', { class: 'small muted tnum' }, `${fmtDur(end - sess.startMs)} · ${plural(sess.kills, 'kill')}`)),
-      h('div', { class: 'rewards' },
-        h('div', { class: 'rw' }, h('b', { style: { color: 'var(--ember)' } }, `+${fmtXp(sess.xp)}`), h('span', {}, 'XP')),
-        h('div', { class: 'rw' }, h('b', {}, fmtNum(sess.items)), h('span', {}, 'Items')),
-        h('div', { class: `rw${b.potionRate ? '' : ' off'}` }, h('b', { style: { color: 'var(--mp)' } }, b.potionRate ? fmtNum(sess.potions) : '—'), h('span', {}, 'Potions'))),
-      sess.drops.length ? h('div', { class: 'row between' }, itemRow(sess.drops.slice(0, 8), { newIds: Object.keys(s.newIds), onTap: openItemSheet }),
-        sess.newFinds ? h('span', { class: 'small', style: { color: 'var(--ember)', whiteSpace: 'nowrap' } }, `${sess.newFinds} new ★`) : null)
-        : h('div', { class: 'small muted' }, 'Drops show up here.'));
   }
 
   function updateMessage() {
     if (!scene) return;
     const s = G.state, slot = s.view, f = s.farms[slot], c = s.chars[slot];
-    if (s.run?.slot === slot) scene.showMessage(h('div', {}, h('div', { class: 'title' }, 'In a dungeon'), h('div', { class: 'small muted' }, DUNGEON[s.run.dungeonId].name)));
-    else if (f.status === 'fallen') scene.showMessage(h('div', {}, h('div', { class: 'title', style: { color: 'var(--low)', fontSize: '18px' } }, `${c.name} has fallen`), h('div', { class: 'small muted' }, `After ${fmtDur(f.session.endMs - f.session.startMs)} in ${BIOME[f.biome].name}. Nothing was lost.`)));
-    else if (f.status !== 'farming') scene.showMessage(h('div', {}, h('div', { class: 'title' }, 'Not farming'), h('div', { class: 'small muted' }, 'Pick a biome and press Start.')));
+    if (s.run?.slot === slot) scene.showMessage(h('div', {}, h('div', { class: 'h2' }, `${c.name} is in ${DUNGEON[s.run.dungeonId].name}`)));
+    else if (f.status === 'fallen') scene.showMessage(h('div', { style: { display: 'grid', gap: '8px', justifyItems: 'center' } }, h('div', { class: 'h2' }, `${c.name} has fallen`), h('button', { class: 'btn sm', onclick: () => { G.startFarming(slot, f.biome); render(); } }, 'Restart')));
+    else if (f.status !== 'farming') scene.showMessage(h('div', { style: { display: 'grid', gap: '8px', justifyItems: 'center' } }, h('div', { class: 'h2' }, 'Not farming'), h('button', { class: 'btn sm', onclick: () => { G.startFarming(slot, f.biome); render(); } }, 'Start')));
     else scene.showMessage(null);
   }
 
@@ -159,12 +114,11 @@ export function createFarmScreen(root, nav) {
     frame(dt) {
       const s = G.state, f = s.farms[s.view], c = s.chars[s.view];
       if (!c) return;
-      const status = `${s.view}|${f.status}|${s.run?.slot}`;
+      const status = `${s.view}|${f.status}|${s.run?.slot}|${f.biome}`;
       if (status !== lastStatus) { lastStatus = status; render(); return; }
       scene?.frame(dt, f.status === 'farming' ? f.cs : null, G.fighter(s.view));
       const li = levelInfo(c.xp);
-      if (refs.xp) { refs.xp.style.width = `${(li.into / li.need) * 100}%`; refs.xpTxt.textContent = `${fmtXp(li.into)} / ${li.need} XP`; refs.lv.textContent = `Lv ${li.level}`; }
-      updateSession(false);
+      if (refs.xp) { refs.xp.style.width = `${(li.into / li.need) * 100}%`; refs.xpTxt.textContent = `${fmtXp(li.into)}/${li.need}`; refs.lv.textContent = `Lv ${li.level}`; }
     },
   };
 }

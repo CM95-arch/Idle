@@ -2,8 +2,8 @@
 // Enemy strength comes from one curve by "level" L, so biomes and dungeons scale together.
 
 export const ENEMY_CURVE = {
-  hp: (L) => 650 * Math.pow(1.5, L - 1),
-  dmg: (L) => 22 * Math.pow(1.095, L - 1),   // per hit, before the player's DEF
+  hp: (L) => 1700 * Math.pow(1.5, L - 1),
+  dmg: (L) => 30 * Math.pow(1.095, L - 1),   // per hit, before the player's DEF
   def: (L) => Math.round(1.6 * (L - 1)),
   rate: 0.75,                                // attacks per second
   xp: (L) => 2 * Math.pow(1.4, L - 1),        // 2 XP per kill in the Forest, ~21 in the Godlands
@@ -13,28 +13,28 @@ export const ENEMY_CURVE = {
 const E = (name, sprite, pal, m = {}) => ({ name, sprite, pal, hp: m.hp || 1, dmg: m.dmg || 1, rate: m.rate || 1, weight: m.w || 10 });
 
 export const BIOMES = [
-  { id: 'forest', name: 'Forest', L: 1, tiers: [1, 3], potionRate: 0, sky: ['#2c4a2a', '#13200f'], ground: '#1d2f18', decor: 'tree',
+  { id: 'forest', name: 'Forest', L: 1, tiers: [1, 3], potionRate: 0, sky: ['#8cc4e0', '#3d7a48'], ground: '#5a9a40', decor: 'tree',
     enemies: [E('Thicket Rat', 'beast', { a: '#7a6a58', b: '#a89880', c: '#e04040' }), E('Green Slime', 'blob', { a: '#3f9a3a', b: '#8fe07a', c: '#1a3a1a' }, { hp: 1.2, dmg: 0.8 }), E('Bandit', 'humanoid', { a: '#6a4a2a', b: '#a07a50', c: '#c9c9c9' }, { dmg: 1.15 }), E('Wild Boar', 'beast', { a: '#5a3a24', b: '#8a6040', c: '#f0e0c0' }, { hp: 1.3 })],
     elite: E('Bandit Leader', 'humanoid', { a: '#8a2a2a', b: '#c05050', c: '#ffd34d' }) },
-  { id: 'plains', name: 'Plains', L: 2, tiers: [2, 4], potionRate: 0, sky: ['#4a5a2a', '#1f2410'], ground: '#2e3518', decor: 'grass',
+  { id: 'plains', name: 'Plains', L: 2, tiers: [2, 4], potionRate: 0, sky: ['#a8d4ea', '#7f9e48'], ground: '#9ab858', decor: 'grass',
     enemies: [E('Goblin Grunt', 'humanoid', { a: '#4a7a2a', b: '#8ab050', c: '#a07a50' }), E('Dire Wolf', 'beast', { a: '#5a5a66', b: '#9a9aa6', c: '#ffcc33' }, { dmg: 1.2, hp: 0.9 }), E('Hobgoblin', 'humanoid', { a: '#6a5a2a', b: '#a09050', c: '#c9c9c9' }, { hp: 1.25 }), E('Plains Scorpion', 'bug', { a: '#8a5a2a', b: '#c08a50', c: '#e04040' })],
     elite: E('Goblin Warlord', 'humanoid', { a: '#2a5a1a', b: '#5a9a3a', c: '#ffd34d' }) },
-  { id: 'desert', name: 'Desert', L: 3, tiers: [3, 6], potionRate: 0, sky: ['#7a5a2a', '#2a1c0c'], ground: '#4a3818', decor: 'rock',
+  { id: 'desert', name: 'Desert', L: 3, tiers: [3, 6], potionRate: 0, sky: ['#f0c890', '#c8945a'], ground: '#dcb46c', decor: 'rock',
     enemies: [E('Sand Wraith', 'ghost', { a: '#c0a070', b: '#f0e0b0', c: '#ff7040' }), E('Dune Scorpion', 'bug', { a: '#a07a3a', b: '#e0b870', c: '#3a2a1a' }, { dmg: 1.2 }), E('Desert Nomad', 'humanoid', { a: '#c0904a', b: '#f0d090', c: '#3a5ab0' }), E('Mummy', 'humanoid', { a: '#c8c0a0', b: '#f0ead0', c: '#40ff80' }, { hp: 1.35, dmg: 0.9 })],
     elite: E('Sand Devil', 'demon', { a: '#b07030', b: '#f0b060', c: '#ffef80' }) },
-  { id: 'sprite', name: 'Sprite Forest', L: 4, tiers: [4, 7], potionRate: 0, sky: ['#2c4a3a', '#0b120e'], ground: '#16261c', decor: 'tree',
+  { id: 'sprite', name: 'Sprite Forest', L: 4, tiers: [4, 7], potionRate: 0, sky: ['#9fd8d0', '#2f7a6a'], ground: '#3f8a5a', decor: 'tree',
     enemies: [E('Forest Wisp', 'wisp', { a: '#5de0ff', b: '#bff3d8', c: '#ffffff', d: '#1d6b5a' }), E('Sprite', 'wisp', { a: '#ff8ae0', b: '#ffd0f4', c: '#ffffff', d: '#7a2a6a' }, { hp: 0.85, dmg: 1.15 }), E('Treant Sapling', 'golem', { a: '#4a6a2a', b: '#7a9a4a', c: '#c0ff60' }, { hp: 1.3 }), E('Moss Golem', 'golem', { a: '#3a5a3a', b: '#6a8a5a', c: '#e0ff90' }, { hp: 1.4, dmg: 0.9 })],
     elite: E('Elder Treant', 'golem', { a: '#2a4a1a', b: '#5a8a3a', c: '#ffd34d' }) },
-  { id: 'city', name: 'Abandoned City', L: 4.7, tiers: [5, 8], potionRate: 1 / 200, sky: ['#3a3a4a', '#121218'], ground: '#24242c', decor: 'ruin',
+  { id: 'city', name: 'Abandoned City', L: 4.7, tiers: [5, 8], potionRate: 1 / 200, sky: ['#9aa4b0', '#5a6270'], ground: '#6e6e78', decor: 'ruin',
     enemies: [E('Ghoul', 'humanoid', { a: '#5a6a5a', b: '#9aaa9a', c: '#ff4040' }), E('Skeleton Archer', 'skeleton', { a: '#d8d0c0', b: '#ffffff', c: '#ff5040' }, { dmg: 1.2, hp: 0.85 }), E('Cursed Knight', 'humanoid', { a: '#3a3a4a', b: '#7a7a8a', c: '#a040ff' }, { hp: 1.35 }), E('Plague Rat', 'beast', { a: '#4a5a3a', b: '#7a9a5a', c: '#c0ff40' })],
     elite: E('Wraith Lord', 'ghost', { a: '#4a3a6a', b: '#8a7ab0', c: '#ffd34d' }) },
-  { id: 'hell', name: 'Hell', L: 6, tiers: [6, 9], potionRate: 1 / 100, sky: ['#6a1a10', '#1a0505'], ground: '#3a0e08', decor: 'flame',
+  { id: 'hell', name: 'Hell', L: 6, tiers: [6, 9], potionRate: 1 / 100, sky: ['#8a3020', '#4a140c'], ground: '#5e2414', decor: 'flame',
     enemies: [E('Imp', 'demon', { a: '#c03020', b: '#ff7050', c: '#ffef60' }, { hp: 0.85, dmg: 1.15 }), E('Hellhound', 'beast', { a: '#3a1a10', b: '#7a3a20', c: '#ff8020' }, { dmg: 1.2 }), E('Fire Demon', 'demon', { a: '#a02010', b: '#e06030', c: '#ffd040' }), E('Brimstone Golem', 'golem', { a: '#4a2a1a', b: '#8a4a2a', c: '#ff6020' }, { hp: 1.45, dmg: 0.9 })],
     elite: E('Pit Fiend', 'demon', { a: '#600a0a', b: '#b02020', c: '#ffd34d' }) },
-  { id: 'abyss', name: 'Abyss', L: 7, tiers: [7, 10], potionRate: 1 / 45, sky: ['#1a1030', '#05030a'], ground: '#120a1e', decor: 'crystal',
+  { id: 'abyss', name: 'Abyss', L: 7, tiers: [7, 10], potionRate: 1 / 45, sky: ['#3a2a5a', '#1c1034'], ground: '#2e2046', decor: 'crystal',
     enemies: [E('Void Eye', 'eye', { a: '#3a1a5a', b: '#8a5ac0', c: '#ff40a0' }, { hp: 0.9, dmg: 1.15 }), E('Abyssal Horror', 'demon', { a: '#2a1a3a', b: '#5a3a7a', c: '#40ffe0' }, { hp: 1.2 }), E('Shadow Stalker', 'ghost', { a: '#1a1a2a', b: '#4a4a6a', c: '#a080ff' }, { dmg: 1.25, hp: 0.9 }), E('Deep One', 'blob', { a: '#1a3a4a', b: '#3a7a8a', c: '#a0ffe0' }, { hp: 1.35 })],
     elite: E('Elder Horror', 'eye', { a: '#5a0a3a', b: '#a02a7a', c: '#ffd34d' }) },
-  { id: 'godlands', name: 'Godlands', L: 8, tiers: [8, 11], potionRate: 1 / 20, sky: ['#3a2a10', '#0a0804'], ground: '#241a0c', decor: 'pillar',
+  { id: 'godlands', name: 'Godlands', L: 8, tiers: [8, 11], potionRate: 1 / 20, sky: ['#e8d090', '#8a7040'], ground: '#a89060', decor: 'pillar',
     enemies: [E('Medusa', 'humanoid', { a: '#2a6a4a', b: '#5ab08a', c: '#ffd34d' }), E('Ent Ancient', 'golem', { a: '#3a2a1a', b: '#6a5a3a', c: '#90ff60' }, { hp: 1.4, dmg: 0.9 }), E('Beholder', 'eye', { a: '#6a2a2a', b: '#b05a5a', c: '#ffffff' }, { dmg: 1.2 }), E('Flying Brain', 'blob', { a: '#c070a0', b: '#f0b0d0', c: '#ff3060' }, { hp: 0.9, dmg: 1.15 }), E('Djinn', 'ghost', { a: '#2a4ab0', b: '#6a9aff', c: '#ffd34d' })],
     elite: E('Ghost God', 'ghost', { a: '#d0d0e0', b: '#ffffff', c: '#ff4040' }) },
 ];

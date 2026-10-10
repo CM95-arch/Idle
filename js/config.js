@@ -1,7 +1,7 @@
 // ★ All balance numbers live here. Change a value, reload, and the game uses it.
 // `node tools/balance.mjs` prints survival times and kill rates for reference builds.
 
-export const BUILD = '2026-10-10 · 3';
+export const BUILD = '2026-10-10 · 4';
 
 export const CONFIG = {
   tickSeconds: 0.1,            // combat simulation step (same step online and offline)
@@ -17,15 +17,15 @@ export const CONFIG = {
 
   // ---- player stat formulas (ROTMG meanings, tuned for idle) ----
   attMult: (att) => 0.5 + att / 50,               // damage multiplier
-  attacksPerSec: (dex) => 0.8 + 1.7 * (dex / 75), // before weapon rate of fire
-  hpRegen: (vit) => 1 + 0.08 * vit,               // HP per second
-  mpRegen: (wis) => 0.5 + 0.06 * wis,             // MP per second
+  attacksPerSec: (dex) => 1.5 + 6.5 * (dex / 75), // ROTMG: 8 shots/s at 75 DEX (before weapon rate of fire)
+  hpRegen: (vit) => 1 + 0.24 * vit,               // HP per second
+  mpRegen: (wis) => 0.5 + 0.12 * wis,             // MP per second
   dodgeChance: (spd) => spd / (spd + 200),        // chance an enemy hit misses
   travelSeconds: (spd) => 0.9 - spd / 200,        // walk time to the next enemy
   minDamageAfterDef: 0.15,     // DEF can never block more than 85% of a hit
   outOfCombatRegenMult: 5,     // HP/MP regen is this many times faster while walking between enemies
   walkHealPct: 0.04,           // plus this share of max HP per second while walking
-  tapDamage: 0.6,              // tapping the battle fires an extra volley at this fraction of a normal attack
+  tapDamage: 0.3,              // tapping the battle fires an extra volley at this fraction of a normal attack
   maxQueuedTaps: 3,
   startStatFraction: 0.5,      // new characters start halfway between class base and class max
 
@@ -40,7 +40,6 @@ export const CONFIG = {
   eliteDropMult: 3,
   classBias: 0.7,              // share of drops picked from gear the farming class can use
   tierWeights: [35, 30, 22, 13],     // lowest tier in the range first
-  autoEquipDefault: true,      // equip strict upgrades as they drop (can be turned off in Settings)
 
   // ---- dungeons ----
   dungeonEnemiesPerRoom: [5, 7], 

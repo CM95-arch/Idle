@@ -27,9 +27,9 @@ This works exactly like Mystic Coin:
 
 | | |
 |---|---|
-| **Farm** | Every character slot farms at the same time. Fights take about 5–10 seconds at matched gear. There's no resting: HP comes back quickly while walking to the next enemy. The simulation keeps running while the app is closed and replays the time you were away when you reopen it. A fall stops farming; nothing is lost. |
-| **Early game** | Drops are frequent in low biomes (about 1 in 3 kills in the Forest) and upgrades equip themselves (turn off in Settings). Tap the battle to fire extra shots. When the next biome is safe enough, a "Ready for …" button appears. Each biome is a big step up: an undergeared character dies within minutes. |
-| **Survival** | Estimated by running the real combat engine ahead: High = survives 8h+, Medium = 1–8h, Low = under 1h. |
+| **Farm** | Every character slot farms at the same time. Attack speed follows ROTMG (8 shots/s at 75 DEX), and fights take about 5 seconds at matched gear. HP and MP carry over when you switch biomes. There's no resting: HP comes back quickly while walking to the next enemy. The simulation keeps running while the app is closed and replays the time you were away when you reopen it. A fall stops farming; nothing is lost. |
+| **Early game** | Drops are frequent in low biomes (about 1 in 3 kills in the Forest). Tap a gear slot to pick gear in the Vault; ▲ marks upgrades. When the next biome is safe enough, a "Ready for …" button appears. Each biome is a big step up: an undergeared character dies within minutes. |
+| **Difficulty** | Estimated by running the real combat engine ahead: Low = survives 8h+, Moderate = 1–8h, High = under 1h. |
 | **Dungeons** | 3–4 rooms, then a boss (about 3–6 minutes). Combat is automatic, but in dungeons you tap the ability yourself and tap to dodge boss attacks (which stuns the boss). Dungeons are harder than the biome with the same loot. Rewards are only given on a clear. If you close the app mid-run, it plays on with worse timing. |
 | **Oryx's Castle** | Needs the Sword, Shield and Helm runes (Lost Halls, The Void, The Shatters). Entering uses them up. If you hold two, the third can be bought with Essence. |
 | **Potions** | Drop in Abandoned City (1 in 200 kills), Hell (1 in 100), Abyss (1 in 45), Godlands (1 in 20), and dungeons. Stored in the vault and drunk on any character. |

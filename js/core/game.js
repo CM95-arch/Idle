@@ -18,6 +18,7 @@ export const on = (ev, fn) => { (listeners[ev] ||= []).push(fn); return () => { 
 export const emitUi = (ev, data) => { for (const fn of listeners[ev] || []) fn(data); };
 
 export let state = null;
+let quietDiscover = false; // dungeon rewards show their own NEW tags
 
 function freshFarm() {
   return { biome: 'forest', status: 'idle', simMs: 0, rngState: (Math.random() * 2 ** 32) >>> 0, cs: null, session: null, prev: null };
@@ -30,7 +31,7 @@ export function newGame() {
     chars: Array(CONFIG.startSlots).fill(null), farms: Array.from({ length: CONFIG.startSlots }, freshFarm),
     vault: {}, found: {}, newIds: {}, exalt: {}, classBest: {}, clears: {}, run: null, lastRun: null,
     stats: { kills: 0, deaths: 0, clears: 0, potionsDrunk: 0, itemsFound: 0 },
-    view: 0, nextCharId: 1, settings: { autoEquip: CONFIG.autoEquipDefault },
+    view: 0, nextCharId: 1, settings: { sound: true },
   };
   return s;
 }
@@ -50,7 +51,7 @@ export function load() {
     void c;
   }
   for (let i = 0; i < state.slots; i++) state.farms[i] ||= freshFarm();
-  state.settings ||= { autoEquip: CONFIG.autoEquipDefault };
+  state.settings ||= {}; state.settings.sound ??= true;
   return state;
 }
 export function save() {
@@ -95,7 +96,7 @@ function grant(id, n = 1) {
   state.vault[id] = (state.vault[id] || 0) + n;
   const first = !state.found[id];
   state.found[id] = (state.found[id] || 0) + n;
-  if (first) { state.newIds[id] = true; emitUi('discover', { id }); }
+  if (first) { state.newIds[id] = true; if (!quietDiscover) emitUi('discover', { id }); }
   if (ITEMS[id].slot !== 'potion' && ITEMS[id].slot !== 'rune') state.stats.itemsFound += n;
   return first;
 }
@@ -117,7 +118,7 @@ function equipQuiet(slot, id) {
 }
 export function equip(slot, id) {
   const ok = equipQuiet(slot, id);
-  if (ok) save();
+  if (ok) { save(); emitUi('gear', { slot }); }
   return ok;
 }
 /** True when id is a higher tier than what the character wears in that slot. */
@@ -127,19 +128,12 @@ export function isUpgrade(slot, id) {
   const cur = c.equip[it.slot];
   return !cur || tierValue(it) > tierValue(ITEMS[cur]);
 }
-/** Equip a fresh drop if it's an upgrade and auto-equip is on. */
-function autoEquip(slot, id) {
-  if (!state.settings?.autoEquip || !isUpgrade(slot, id)) return false;
-  if (!equipQuiet(slot, id)) return false;
-  emitUi('upgrade', { slot, id });
-  return true;
-}
-export function setAutoEquip(on) { state.settings.autoEquip = !!on; save(); }
+
 export function unequip(slot, kind) {
   const c = state.chars[slot]; const old = c?.equip[kind];
   if (!old) return;
   state.vault[old] = (state.vault[old] || 0) + 1; c.equip[kind] = null;
-  refreshCombatCaps(slot); save();
+  refreshCombatCaps(slot); save(); emitUi('gear', { slot });
 }
 
 // ---------- potions / exaltation ----------
@@ -166,7 +160,7 @@ export function drinkPotion(slot, stat, count = 1) {
     }
     state.vault[id]--; drank++; state.stats.potionsDrunk++;
   }
-  if (drank) { refreshCombatCaps(slot); save(); }
+  if (drank) { refreshCombatCaps(slot); save(); emitUi('gear', { slot, drink: true }); }
   return drank;
 }
 
@@ -270,17 +264,36 @@ function noteLevel(c, before) {
 }
 
 // ---------- farming ----------
+/** Remember HP/MP when a character leaves combat, so switching biomes can't refill them. */
+function storeVitals(slot, cs, atMs) {
+  state.farms[slot].vitals = cs ? { hp: Math.max(0, cs.hp), mp: Math.max(0, cs.mp), atMs } : null;
+}
+/** HP/MP now: stored values plus out-of-combat recovery for the time since. */
+function currentVitals(slot, F, atMs) {
+  const f = state.farms[slot];
+  let v = f.vitals;
+  if (f.status === 'farming' && f.cs) v = { hp: f.cs.hp, mp: f.cs.mp, atMs: f.simMs };
+  else if (f.status === 'fallen') v = { hp: 0, mp: 0, atMs: f.session?.endMs ?? atMs };
+  if (!v) return { hp: F.maxHp, mp: F.maxMp };
+  const sec = Math.max(0, (atMs - v.atMs) / 1000);
+  return {
+    hp: Math.min(F.maxHp, v.hp + sec * (F.hpRegen * CONFIG.outOfCombatRegenMult + F.maxHp * CONFIG.walkHealPct)),
+    mp: Math.min(F.maxMp, v.mp + sec * F.mpRegen * CONFIG.outOfCombatRegenMult),
+  };
+}
 export function startFarming(slot, biomeId, atMs = Date.now()) {
   const f = state.farms[slot], F = fighter(slot);
   if (!F || state.run?.slot === slot) return;
+  const v = currentVitals(slot, F, atMs);
   f.biome = biomeId; f.status = 'farming'; f.simMs = atMs;
-  f.cs = newCombat(F);
+  f.cs = newCombat(F); f.cs.hp = v.hp; f.cs.mp = v.mp;
   f.session = { startMs: atMs, kills: 0, xp: 0, items: 0, potions: 0, drops: [], newFinds: 0, upgrades: 0, endMs: null };
   save();
 }
 export function stopFarming(slot) {
   const f = state.farms[slot];
   if (f.status !== 'farming') return;
+  storeVitals(slot, f.cs, f.simMs);
   f.status = 'idle'; f.session.endMs = Date.now(); f.cs = null; save();
 }
 
@@ -297,7 +310,6 @@ function farmSource(slot, emit) {
       if (rng.next() < CONFIG.itemDropChance(biome.L) * mult) {
         const id = rollItem(biome.tiers, c.cls, rng);
         if (grant(id)) f.session.newFinds++;
-        if (autoEquip(slot, id)) { f.session.upgrades = (f.session.upgrades || 0) + 1; src.dirty = true; }
         f.session.items++; f.session.drops.unshift(id); f.session.drops.length = Math.min(f.session.drops.length, 12);
         emit?.('drop', { id });
       }
@@ -358,9 +370,11 @@ export function enterDungeon(slot, dungeonId) {
   if (d.needsRunes) for (const r of d.needsRunes) state.vault[r]--;
   const f = state.farms[slot];
   const prev = f.status === 'farming' ? f.biome : null;
+  const v = currentVitals(slot, F, Date.now());
   if (f.status === 'farming') stopFarming(slot);
   f.status = 'dungeon';
   const run = createRun(dungeonId, F, (Math.random() * 2 ** 32) >>> 0);
+  run.cs.hp = v.hp; run.cs.mp = v.mp;
   state.run = { ...run, slot, startMs: Date.now(), simMs: Date.now(), prev };
   save();
   return true;
@@ -372,14 +386,16 @@ function finishRun() {
     const rw = rollRewards(r, c.cls);
     const before = levelOf(c.xp);
     c.xp += rw.xp; c.clears++; result.xp = rw.xp; noteLevel(c, before);
+    quietDiscover = true;
     for (const id of [...rw.items, ...rw.potions]) if (grant(id)) result.newIds.push(id);
-    result.upgrades = rw.items.filter((id) => autoEquip(slot, id));
+    quietDiscover = false;
     result.items = rw.items; result.potions = rw.potions;
     state.clears[r.dungeonId] = (state.clears[r.dungeonId] || 0) + 1; state.stats.clears++;
     if (d.slotReward && state.clears[r.dungeonId] === 1 && addSlot(`clear:${r.dungeonId}`)) result.slotEarned = true;
   } else { c.deaths++; state.stats.deaths++; }
   state.lastRun = result;
   state.run = null;
+  storeVitals(slot, r.cs, r.simMs);
   state.farms[slot].status = 'idle';
   if (r.prev) startFarming(slot, r.prev, r.simMs);
   save();
@@ -388,6 +404,7 @@ function finishRun() {
 export function abandonRun() {
   if (!state.run) return;
   const slot = state.run.slot, prev = state.run.prev;
+  storeVitals(slot, state.run.cs, state.run.simMs);
   state.run = null; state.farms[slot].status = 'idle';
   if (prev) startFarming(slot, prev);
   save();

@@ -17,6 +17,7 @@ export function h(tag, attrs = {}, ...kids) {
 
 // ---------- bottom sheet ----------
 let sheetClose = null;
+let layer = 100; // later sheets/dialogs always stack on top of earlier ones
 export function openSheet(build) {
   closeSheet();
   const root = $('#sheet-root');
@@ -25,6 +26,7 @@ export function openSheet(build) {
   const render = () => { sheet.replaceChildren(h('div', { class: 'grab' }), ...[].concat(build(close, render)).filter((x) => x != null && x !== false)); };
   const close = () => { scrim.remove(); sheet.remove(); if (sheetClose === close) sheetClose = null; };
   render();
+  scrim.style.zIndex = ++layer; sheet.style.zIndex = ++layer;
   root.append(scrim, sheet);
   sheetClose = close;
   return { close, render, isOpen: () => sheet.isConnected };
@@ -37,7 +39,9 @@ export function showDialog(build, { dismissable = true } = {}) {
   const ov = h('div', { class: 'overlay' });
   const close = () => ov.remove();
   const box = h('div', { class: 'dialog', role: 'dialog' });
-  box.append(...[].concat(build(close)).filter((x) => x != null && x !== false));
+  const render = () => box.replaceChildren(...[].concat(build(close, render)).filter((x) => x != null && x !== false));
+  render();
+  ov.style.zIndex = ++layer;
   ov.append(box);
   if (dismissable) ov.addEventListener('click', (e) => { if (e.target === ov) close(); });
   root.append(ov);
@@ -49,8 +53,8 @@ export function confirmDialog({ title, body, ok = 'Confirm', cancel = 'Cancel', 
       h('h2', {}, title),
       body ? h('p', { class: 'muted', style: { margin: 0, textAlign: 'center' } }, body) : null,
       h('div', { class: 'row' },
-        h('button', { class: 'btn ghost grow', onclick: () => { close(); resolve(false); } }, cancel),
-        h('button', { class: `btn grow${danger ? ' stop' : ''}`, onclick: () => { close(); resolve(true); } }, ok)),
+        h('button', { class: 'btn gray grow', onclick: () => { close(); resolve(false); } }, cancel),
+        h('button', { class: `btn grow${danger ? ' red' : ''}`, onclick: () => { close(); resolve(true); } }, ok)),
     ]);
   });
 }
