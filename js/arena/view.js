@@ -20,6 +20,11 @@ export class ArenaView {
     f.fillStyle = '#1b2210'; f.fillRect(0, 0, W, 34); // the far wall
     for (let x = 0; x < W; x += 30) { f.fillStyle = '#26301a'; f.fillRect(x, 0, 28, 30); }
   }
+  /** Screen point → world point. */
+  toWorld(clientX, clientY) {
+    const r = this.cv.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio || 1, 3);
+    return { x: ((clientX - r.left) * dpr - this.ox) / this.scale, y: ((clientY - r.top) * dpr - this.oy) / this.scale };
+  }
   fit() {
     const r = this.cv.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio || 1, 3);
     const w = Math.round(r.width * dpr), hh = Math.round(r.height * dpr);
@@ -93,6 +98,7 @@ export class ArenaView {
       const p = f.t / f.life;
       if (f.k === 'burst' || f.k === 'puff') { g.strokeStyle = f.c; g.globalAlpha = 1 - p; g.lineWidth = 3; g.beginPath(); g.arc(f.x, f.y, 6 + p * (f.k === 'burst' ? 50 : 26), 0, Math.PI * 2); g.stroke(); g.globalAlpha = 1; }
       else if (f.k === 'tele') { const boss = R.enemies.find((e) => e.boss); if (boss) { g.strokeStyle = `rgba(255,58,90,${0.4 + 0.5 * Math.sin(this.t * 25)})`; g.lineWidth = 3; g.beginPath(); g.arc(boss.x, boss.y, 50 - p * 20, 0, Math.PI * 2); g.stroke(); } }
+      else if (f.k === 'fly') { const cv = draw('bag', 3, BAG[f.kind]); const x = f.x + (h.x - f.x) * p, y = f.y + (h.y - f.y) * p - Math.sin(p * Math.PI) * 30; g.globalAlpha = 1 - p * 0.5; g.drawImage(cv, Math.round(x - cv.width / 2), Math.round(y - cv.height / 2)); g.globalAlpha = 1; }
       else if (f.k === 'pickup') { g.globalAlpha = 1 - p; text(g, f.text, f.x, f.y - 14 - p * 20, f.kind === 'white' ? '#ffffff' : f.kind === 'pink' ? '#ff9ad0' : '#e8d8a8', 10); g.globalAlpha = 1; }
       else if (f.k === 'banner' && f.text) { g.globalAlpha = Math.min(1, (1 - p) * 3); text(g, f.text, W / 2, H * 0.42, '#ffe08a', 16); g.globalAlpha = 1; }
     }

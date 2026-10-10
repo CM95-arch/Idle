@@ -20,7 +20,8 @@ function fighter() {
 }
 
 const root = document.getElementById('ar');
-let R = null, F = null, view = null, input = { dx: 0, dy: 0, cast: false }, refs = {}, over = null;
+let R = null, F = null, view = null, input = { target: null, cast: false }, refs = {}, over = null;
+const THUMB_GAP = 70; // world px between your thumb and the hero
 
 function start() {
   try { localStorage.setItem('idle-arena', JSON.stringify(setup)); } catch {}
@@ -45,19 +46,14 @@ function build() {
       h('div', { class: 'grow', style: { display: 'grid', gap: '5px' } },
         h('div', { class: 'vbar' }, refs.hp = h('i', { style: { background: '#3fbf5c' } }), refs.hpT = h('b')),
         h('div', { class: 'vbar' }, refs.mp = h('i', { style: { background: '#3d7fe0' } }), refs.mpT = h('b')),
-        h('div', { style: { fontSize: '11px', color: '#a9b4a0', fontWeight: 700 } }, 'Drag anywhere to move · your weapon fires on its own')),
+        h('div', { style: { fontSize: '11px', color: '#a9b4a0', fontWeight: 700 } }, 'Touch and hold: your hero stays just above your thumb · weapon fires on its own')),
       refs.cast = h('button', { class: 'cast', onpointerdown: (e) => { e.preventDefault(); e.stopPropagation(); input.cast = true; } }, ab.name, h('br'), `${ab.cost} MP`)),
   );
-  // relative drag: the hero follows your finger's movement, wherever you touch
-  let last = null;
-  cv.addEventListener('pointerdown', (e) => { last = { x: e.clientX, y: e.clientY }; cv.setPointerCapture(e.pointerId); });
-  cv.addEventListener('pointermove', (e) => {
-    if (!last) return;
-    const k = 1 / (view.scale / Math.min(window.devicePixelRatio || 1, 3)) * 1.25;
-    input.dx += (e.clientX - last.x) * k; input.dy += (e.clientY - last.y) * k;
-    last = { x: e.clientX, y: e.clientY };
-  });
-  const up = () => { last = null; input.dx = 0; input.dy = 0; };
+  // the hero sits just above your thumb so it's never hidden under it
+  const aim = (e) => { const p = view.toWorld(e.clientX, e.clientY); input.target = { x: p.x, y: p.y - THUMB_GAP }; };
+  cv.addEventListener('pointerdown', (e) => { cv.setPointerCapture(e.pointerId); aim(e); });
+  cv.addEventListener('pointermove', (e) => { if (input.target) aim(e); });
+  const up = () => { input.target = null; };
   cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
 }
 
@@ -74,7 +70,7 @@ function end(kind) {
   const kids = kind === 'won' ? [
     h('h2', {}, 'Snake Pit cleared!'),
     h('div', { class: 'note', style: { textAlign: 'center' } }, `${R.stats.kills} kills · ${Math.round(R.t)}s`),
-    ...(loot.length ? loot.map((b) => h('div', { class: 'lootrow' }, h('span', { class: 'bagdot', style: { background: BAGC[b.kind] } }), b.item, b.kind === 'white' ? ' ★' : '')) : [h('div', { class: 'note' }, 'You left without picking up any bags. Walk over them to collect.')]),
+    ...(loot.length ? loot.map((b) => h('div', { class: 'lootrow' }, h('span', { class: 'bagdot', style: { background: BAGC[b.kind] } }), b.item, b.kind === 'white' ? ' ★' : '')) : [h('div', { class: 'note' }, 'No bags dropped this time.')]),
   ] : kind === 'dead' ? [
     h('h2', { style: { color: '#b0302a' } }, 'You fell'),
     h('div', { class: 'note' }, `In the full game this character would restart at level 1, keep part of its potion stats, and lose what it was wearing: ${gear.join(', ')}. Bags picked up this run are lost too.`),
@@ -94,7 +90,7 @@ function menu() {
   const render = () => {
     const card = h('div', { class: 'acard' },
       h('h2', {}, 'Snake Pit'),
-      h('div', { class: 'note', style: { textAlign: 'center' } }, 'Prototype of the active dungeon: drag to dodge, your weapon fires on its own. Clear 2 rooms, then beat Stheno.'),
+      h('div', { class: 'note', style: { textAlign: 'center' } }, 'Prototype of the active dungeon: your hero follows your thumb, your weapon fires on its own, loot goes straight to your bag. Clear 2 rooms, then beat Stheno.'),
       h('div', { class: 'label' }, 'Class'),
       h('div', { class: 'opt' }, CLASSES.map((c) => h('button', { class: setup.cls === c ? 'on' : '', onclick: () => { setup.cls = c; render(); } }, CLASS[c].name))),
       h('div', { class: 'label' }, 'Weapon'),
@@ -119,7 +115,8 @@ function frame(t) {
     // keyboard movement adds to the finger movement
     const kx = (keys.has('d') || keys.has('arrowright')) - (keys.has('a') || keys.has('arrowleft'));
     const ky = (keys.has('s') || keys.has('arrowdown')) - (keys.has('w') || keys.has('arrowup'));
-    if (kx || ky) { input.dx = kx * 400 * dt; input.dy = ky * 400 * dt; }
+    if (kx || ky) input.target = { x: R.hero.x + kx * 300 * dt, y: R.hero.y + ky * 300 * dt };
+    else if (keys.size && !kx && !ky) input.target = null;
     acc += dt;
     while (acc >= 1 / 60) { acc -= 1 / 60; step(R, F, input, 1 / 60); }
     view.render(R, F, dt);

@@ -3,6 +3,7 @@
 import { makeRng } from '../core/rng.js';
 
 export const W = 360, H = 640;
+const FOLLOW_SPEED = 2600; // px/s: effectively instant, without teleporting through bullets
 const TAU = Math.PI * 2;
 
 // ---------- weapons: real Realm patterns, plus one UT per class that changes the pattern ----------
@@ -165,19 +166,18 @@ function bossAI(R, e, dt, toHero) {
 }
 
 // ---------- step ----------
-/** input: { dx, dy } finger movement since last step (px), cast: bool */
+/** input: { target: {x, y} | null } where the hero should be (world px), cast: bool */
 export function step(R, F, input, dt) {
   if (R.phase !== 'fight' && R.phase !== 'cleared') return;
   R.t += dt; R.roomT += dt;
   const h = R.hero, wt = F.weapon;
-  // movement: follow the finger, capped by SPD (Realm: 4–9.6 tiles/s)
+  // movement: the hero sits just above your thumb and snaps to it quickly
   const berserk = h.berserkUntil > R.t;
-  const maxSpeed = (4 + 5.6 * (F.spd / 75)) * 34 * (berserk && R.cls === 'warrior' ? 1.25 : 1);
-  let mx = input.dx, my = input.dy;
-  const want = Math.hypot(mx, my), cap = maxSpeed * dt;
-  if (want > cap) { mx *= cap / want; my *= cap / want; }
-  input.dx -= mx; input.dy -= my;
-  h.x = Math.max(10, Math.min(W - 10, h.x + mx)); h.y = Math.max(H * 0.25, Math.min(H - 30, h.y + my));
+  if (input.target) {
+    const tx = Math.max(10, Math.min(W - 10, input.target.x)), ty = Math.max(H * 0.2, Math.min(H - 20, input.target.y));
+    const dx = tx - h.x, dy = ty - h.y, d = Math.hypot(dx, dy), max = FOLLOW_SPEED * dt;
+    if (d <= max) { h.x = tx; h.y = ty; } else { h.x += (dx / d) * max; h.y += (dy / d) * max; }
+  }
   // regen
   h.hp = Math.min(F.maxHp, h.hp + F.hpRegen * dt);
   h.mp = Math.min(F.maxMp, h.mp + F.mpRegen * dt);
@@ -242,9 +242,10 @@ export function step(R, F, input, dt) {
   // bags: walk over them to pick up
   for (const b of R.bags) {
     b.t += dt;
-    if (Math.hypot(b.x - h.x, b.y - h.y) < 18 && !b.taken) { b.taken = true; R.loot.push(b); R.fx.push({ k: 'pickup', x: b.x, y: b.y, text: b.item, kind: b.kind, t: 0, life: 1.6 }); }
+    // loot goes straight to your inventory: the bag pops, then flies to you
+    if (b.t > 0.5 && !b.taken) { b.taken = true; R.loot.push(b); R.fx.push({ k: 'pickup', x: b.x, y: b.y, text: b.item, kind: b.kind, t: 0, life: 1.6 }); R.fx.push({ k: 'fly', x: b.x, y: b.y, kind: b.kind, t: 0, life: 0.35 }); }
   }
-  R.bags = R.bags.filter((b) => !b.taken && b.t < 20);
+  R.bags = R.bags.filter((b) => !b.taken);
 
   // room flow
   if (R.phase === 'fight' && !R.enemies.length) {
