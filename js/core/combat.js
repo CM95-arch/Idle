@@ -41,7 +41,8 @@ function shouldAutoCast(cs, F, e) {
 
 function castAbility(cs, F, e, rng, emit) {
   const ab = F.ability, fx = F.fx || {};
-  cs.mp -= abilityCost(ab);
+  cs.casts = (cs.casts || 0) + 1;
+  if (!(fx.freeCastEvery && cs.casts % fx.freeCastEvery === 0)) cs.mp -= abilityCost(ab);
   if (fx.abilityHpCost) cs.hp = Math.max(1, cs.hp - F.maxHp * fx.abilityHpCost);
   const times = fx.echo && rng.next() < fx.echo ? 2 : 1;
   for (let i = 0; i < times; i++) abilityEffect(cs, F, e, emit, i > 0);
@@ -76,6 +77,7 @@ function abilityEffect(cs, F, e, emit, echo) {
 function hitPlayer(cs, F, e, mult, rng, emit, big) {
   const fx = F.fx || {};
   if (cs.invisUntil > cs.t) { emit?.('miss', { big }); return; }
+  if (!big && fx.block && rng.next() < fx.block) { emit?.('miss', { block: true }); return; }
   if (!big && rng.next() < F.dodge) {
     if (fx.dodgeHeal) cs.hp = Math.min(F.maxHp, cs.hp + F.maxHp * fx.dodgeHeal);
     if (fx.critAfterDodge) cs.critReady = true;
@@ -106,6 +108,7 @@ function attack(cs, F, e, rng, scale, emit, tap) {
   if (fx.ramp) mult *= 1 + Math.min(fx.rampCap, fx.ramp * (cs.t - (cs.fightStart || cs.t)));
   if (fx.lowHpDmg && cs.hp < F.maxHp * 0.4) mult *= 1 + fx.lowHpDmg;
   if (fx.burstEvery && cs.attacks % fx.burstEvery === 0) mult *= fx.burstMult;
+  if (fx.luckyChance && rng.next() < fx.luckyChance) mult *= fx.luckyMult;
   const crit = cs.critReady || rng.next() < 0.08 + (fx.critChance || 0);
   cs.critReady = false;
   if (crit) mult *= 1.6 + (fx.critMult || 0);
@@ -141,6 +144,7 @@ export function step(cs, F, src, rng, emit, mode = 'auto') {
   cs.hp = Math.min(F.maxHp, cs.hp + (F.hpRegen * regen + walkHeal) * dt);
   cs.mp = Math.min(F.maxMp, cs.mp + F.mpRegen * regen * dt);
   if (cs.enemy && F.fx?.regenPct) cs.hp = Math.min(F.maxHp, cs.hp + F.maxHp * F.fx.regenPct * dt);
+  if (F.fx?.mpRegenPct) cs.mp = Math.min(F.maxMp, cs.mp + F.maxMp * F.fx.mpRegenPct * dt);
 
   let e = cs.enemy;
   if (!e) {
@@ -151,6 +155,7 @@ export function step(cs, F, src, rng, emit, mode = 'auto') {
     e = cs.enemy = spawnEnemy(tpl);
     if (e.boss) e.nextTele = cs.t + rng.range(...CONFIG.telegraphEvery) * 0.6;
     cs.pT = 0; cs.eT = rng.next() * 0.5; cs.fightStart = cs.t; cs.fightHits = 0;
+    if (cs.carry) { e.hp = Math.max(1, e.hp - cs.carry); cs.carry = 0; }
     emit?.('spawn', { enemy: e });
     return;
   }
@@ -187,6 +192,7 @@ export function step(cs, F, src, rng, emit, mode = 'auto') {
     if (fx.killHeal) cs.hp = Math.min(F.maxHp, cs.hp + F.maxHp * fx.killHeal);
     if (fx.killMp) cs.mp = Math.min(F.maxMp, cs.mp + F.maxMp * fx.killMp);
     if (fx.killHaste) cs.killHasteUntil = cs.t + fx.killHaste;
+    if (fx.killCarry) cs.carry = e.maxHp * fx.killCarry;
     src.onKill(e, rng);
     emit?.('kill', { enemy: e });
     return;

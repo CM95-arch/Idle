@@ -37,12 +37,12 @@ export function createVaultScreen(root, app) {
     const own = G.owned(id), isEq = c && Object.values(c.equip).includes(id);
     const up = known && own > 0 && c && G.isUpgrade(s.view, id);
     const potion = it.slot === 'potion' || it.slot === 'rune';
-    const cls = ['tile', it.tier === 'UT' ? 'ut' : '', known ? '' : 'unk', known && !own && !isEq ? 'none' : '', s.newIds[id] ? 'new' : ''].filter(Boolean).join(' ');
+    const cls = ['tile', isEq ? 'on' : '', it.tier === 'UT' ? 'ut' : '', known ? '' : 'unk', known && !own && !isEq ? 'none' : '', s.newIds[id] ? 'new' : ''].filter(Boolean).join(' ');
     return h('button', { class: cls, 'aria-label': known ? it.name : 'Undiscovered', onclick: () => tap(id) },
       itemIcon(id, 34, !known),
       up ? h('span', { class: 'up' }, '▲') : null,
       known && G.canFuse(id) ? h('span', { class: 'fz' }, '⇧') : null,
-      isEq ? h('span', { class: 'eq' }) : null,
+      isEq ? h('span', { class: 'eq' }, '✓') : null,
       known && !s.newIds[id] ? h('span', { class: 'tl' }, potion ? `×${own}` : tierLabel(it)) : null);
   }
 

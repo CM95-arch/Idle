@@ -70,7 +70,7 @@ export class BattleScene {
       this.fx.push({ k: 'shot', x0: E.x - 10, y0: E.y + 10, x1: P.x + 6, y1: P.y - 30, t: 0, life: 0.24, c: d.big ? '#ff4030' : '#ff8a5c', big: d.big });
       this.later(0.24, () => { this.num(P.x + 30 + jitter(), P.y - 70, `-${d.dmg}`, '#ff6b5e', d.big ? 20 : 14); this.hurtFlash = 0.15; if (d.big) this.shake = 0.35; });
     } else if (kind === 'dodge' || kind === 'miss') {
-      this.num(P.x + 30, P.y - 74, kind === 'dodge' ? 'dodge' : 'miss', '#9fd8ff', 12);
+      this.num(P.x + 30, P.y - 74, d.block ? 'block' : kind === 'dodge' ? 'dodge' : 'miss', '#9fd8ff', 12);
     } else if (kind === 'ability') {
       this.fx.push({ k: 'burst', x: d.dmg ? E.x : P.x, y: d.dmg ? E.y : P.y - 30, t: 0, life: 0.5, c: ABIL_COLOR[d.type] || '#fff' });
       if (d.dmg) this.later(0.1, () => this.num(E.x, E.y - 66, `${d.dmg}`, ABIL_COLOR[d.type], 21));
@@ -137,7 +137,7 @@ export class BattleScene {
     this.pad(E.x, E.y + sc * 6, sc * 11);
     const e = cs?.enemy;
     if (e) {
-      const big = e.boss ? sc + 2 : e.elite ? sc + 1 : sc;
+      const big = e.boss || e.event ? sc + 2 : e.elite ? sc + 1 : sc;
       const cv = draw(e.sprite, big, e.pal);
       const { w, h: hh } = mapSize(e.sprite);
       const bob = Math.sin(this.t * 3) * 2;
@@ -148,8 +148,9 @@ export class BattleScene {
       if (this.flash > 0) { g.globalCompositeOperation = 'lighter'; g.globalAlpha = 0.45; g.drawImage(cv, x, y); g.globalCompositeOperation = 'source-over'; }
       g.globalAlpha = 1;
       if (e.stunUntil > cs.t) { g.fillStyle = '#ffe08a'; g.font = '700 12px "Pixelify Sans", monospace'; g.textAlign = 'center'; g.fillText('STUNNED', E.x, y - 6); }
-      this.eName.textContent = e.name; this.eLv.textContent = e.boss ? 'BOSS' : e.elite ? '★' : (this.enemyLvText || '');
+      this.eName.textContent = e.name; this.eLv.textContent = e.boss ? 'BOSS' : e.event ? 'EVENT' : e.elite ? '★' : (this.enemyLvText || '');
       this.eBox.classList.toggle('elite', !!e.elite);
+      this.eBox.classList.toggle('event', !!e.event);
       const fr = Math.max(0, e.hp / e.maxHp);
       this.eHp.style.width = `${fr * 100}%`; this.eHp.style.background = hpColor(fr);
       this.eBox.classList.remove('hidden');

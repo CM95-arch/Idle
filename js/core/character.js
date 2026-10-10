@@ -52,7 +52,7 @@ export function fighterOf(char, state) {
   const fx = {};
   for (const id of Object.values(char.equip)) {
     for (const [k, v] of Object.entries(ITEMS[id]?.fx || {})) {
-      fx[k] = ['cheatDeath'].includes(k) ? Math.min(fx[k] ?? Infinity, v) : ['burstEvery', 'openerHits', 'rofMult', 'openerMult', 'burstMult', 'buffDur', 'critAfterDodge', 'ignoreDef', 'rampCap'].includes(k) ? Math.max(fx[k] || 0, v) : (fx[k] || 0) + v;
+      fx[k] = ['cheatDeath'].includes(k) ? Math.min(fx[k] ?? Infinity, v) : ['burstEvery', 'openerHits', 'rofMult', 'openerMult', 'burstMult', 'buffDur', 'critAfterDodge', 'ignoreDef', 'rampCap', 'luckyMult', 'freeCastEvery'].includes(k) ? Math.max(fx[k] || 0, v) : (fx[k] || 0) + v;
     }
   }
   return {

@@ -35,10 +35,23 @@ export const BIOMES = [
     enemies: [E('Void Eye', 'eye', { a: '#3a1a5a', b: '#8a5ac0', c: '#ff40a0' }, { hp: 0.9, dmg: 1.15 }), E('Abyssal Horror', 'demon', { a: '#2a1a3a', b: '#5a3a7a', c: '#40ffe0' }, { hp: 1.2 }), E('Shadow Stalker', 'ghost', { a: '#1a1a2a', b: '#4a4a6a', c: '#a080ff' }, { dmg: 1.25, hp: 0.9 }), E('Deep One', 'blob', { a: '#1a3a4a', b: '#3a7a8a', c: '#a0ffe0' }, { hp: 1.35 })],
     elite: E('Elder Horror', 'eye', { a: '#5a0a3a', b: '#a02a7a', c: '#ffd34d' }) },
   { id: 'godlands', name: 'Godlands', L: 8, tiers: [8, 11], potionRate: 1 / 20, sky: ['#e8d090', '#8a7040'], ground: '#a89060', decor: 'pillar',
-    enemies: [E('Medusa', 'humanoid', { a: '#2a6a4a', b: '#5ab08a', c: '#ffd34d' }), E('Ent Ancient', 'golem', { a: '#3a2a1a', b: '#6a5a3a', c: '#90ff60' }, { hp: 1.4, dmg: 0.9 }), E('Beholder', 'eye', { a: '#6a2a2a', b: '#b05a5a', c: '#ffffff' }, { dmg: 1.2 }), E('Flying Brain', 'blob', { a: '#c070a0', b: '#f0b0d0', c: '#ff3060' }, { hp: 0.9, dmg: 1.15 }), E('Djinn', 'ghost', { a: '#2a4ab0', b: '#6a9aff', c: '#ffd34d' })],
-    elite: E('Ghost God', 'ghost', { a: '#d0d0e0', b: '#ffffff', c: '#ff4040' }) },
+    enemies: [E('Medusa', 'humanoid', { a: '#2a6a4a', b: '#5ab08a', c: '#ffd34d' }), E('Ent Ancient', 'golem', { a: '#3a2a1a', b: '#6a5a3a', c: '#90ff60' }, { hp: 1.4, dmg: 0.9 }), E('Beholder', 'eye', { a: '#6a2a2a', b: '#b05a5a', c: '#ffffff' }, { dmg: 1.2 }), E('Flying Brain', 'blob', { a: '#c070a0', b: '#f0b0d0', c: '#ff3060' }, { hp: 0.9, dmg: 1.15 }), E('Djinn', 'ghost', { a: '#2a4ab0', b: '#6a9aff', c: '#ffd34d' }),
+      E('Slime God', 'blob', { a: '#2a8a3a', b: '#7ae07a', c: '#203a20' }, { hp: 1.3, dmg: 0.9 }), E('Sprite God', 'wisp', { a: '#ff8ae0', b: '#ffd0f4', c: '#ffffff', d: '#7a2a6a' }, { hp: 0.9, dmg: 1.15 }),
+      E('Leviathan', 'snake', { a: '#1a5a8a', b: '#4aa0d0', c: '#ffd34d' }, { hp: 1.25 }), E('Lich', 'lich', { a: '#3a2a5a', b: '#e8e0cf', c: '#ffd34d' }, { hp: 0.9, dmg: 1.2 }),
+      E('Rock Dragon', 'dragon', { a: '#6a5a4a', b: '#9a8a74', c: '#ff6020' }, { hp: 1.35, dmg: 1.05 }), E('White Demon', 'demon', { a: '#d8d8e0', b: '#ffffff', c: '#ff3030' }, { dmg: 1.15 }),
+      E('Phoenix', 'dragon', { a: '#c04010', b: '#ffb040', c: '#ffef80' }, { hp: 0.95, dmg: 1.15 }), E('Shade Knight', 'humanoid', { a: '#202030', b: '#505070', c: '#a080ff' }, { hp: 1.1 })],
+    elite: E('Ghost God', 'ghost', { a: '#d0d0e0', b: '#ffffff', c: '#ff4040' }),
+    // Event bosses: rare, beefy, generous. Each can drop its own UT.
+    events: [
+      { name: 'Cube God', sprite: 'cube', pal: { a: '#3a6ad8', b: '#9ac0ff', c: '#ffffff' }, ut: 'ut_cubic_staff' },
+      { name: 'Grand Sphinx', sprite: 'golem', pal: { a: '#c8a050', b: '#f0d890', c: '#4060ff' }, ut: 'ut_riddle_ring' },
+      { name: 'Lord of the Lost Lands', sprite: 'humanoid', pal: { a: '#4a4a5a', b: '#8a8aa0', c: '#ff4040' }, ut: 'ut_lost_plate' },
+      { name: 'Hermit God', sprite: 'eye', pal: { a: '#2a6a7a', b: '#6ab0c0', c: '#ffffff' }, ut: 'ut_hermit_shell' },
+      { name: 'Skull Shrine', sprite: 'skull', pal: { b: '#e8e0cf', c: '#ff6020' }, ut: 'ut_shrine_dagger' },
+    ] },
 ];
 export const BIOME = Object.fromEntries(BIOMES.map((b) => [b.id, b]));
+export const EVENT_BOSS = { chance: 1 / 40, hp: 6, dmg: 1.2, xp: 15, itemMult: 4, potionMult: 10, guaranteedPotions: 1, utChance: 0.04 };
 export const ELITE = { chance: 0.06, hp: 2.3, dmg: 1.4, xp: 4 };
 
 // Dungeons in increasing difficulty. L sets enemy strength; tiers is the loot range on a clear.

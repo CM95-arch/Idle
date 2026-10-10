@@ -153,6 +153,11 @@ const UT = [
   ['ut_mad_wrath', 'Mad God\u2019s Wrath', 'wand', 14, { att: 4 }, 'Madness: +35% damage and 15% double shots, but take 15% more damage.', { dmg: 0.35, doubleChance: 0.15, dmgTaken: 0.15 }, 'Pure, furious madness, pointed outward.'],
   ['ut_oryx_crown', 'Crown of the Mad God', 'helm', 14, { hp: 80 }, 'Undying: survive a killing blow once every 2 minutes; reflect 20% of damage.', { cheatDeath: 120, reflect: 0.2 }, 'Heavy is the head.'],
   ['ut_mad_ring', 'Ring of the Mad God', 'ring', 14, { hp: 100, att: 4, dex: 4 }, 'Favor: +15% damage, take 15% less damage, kills heal 5% HP.', { dmg: 0.15, dr: 0.15, killHeal: 0.05 }, 'It tightens when you think of leaving.'],
+  ['ut_cubic_staff', 'Cubic Staff', 'staff', 11, { dex: 3 }, 'Cubed: every hit has a 10% chance to deal 4× damage.', { luckyChance: 0.1, luckyMult: 4 }, 'Perfectly square, somehow.'],
+  ['ut_riddle_ring', 'Sphinx\u2019s Riddle', 'ring', 11, { wis: 6, mp: 60 }, 'Enigma: every third ability cast is free.', { freeCastEvery: 3 }, 'It asks a question. The answer is always mana.'],
+  ['ut_lost_plate', 'Lost Lord\u2019s Plate', 'heavy', 11, { def: 3 }, 'Bulwark: completely block 20% of hits.', { block: 0.2 }, 'Armor from a kingdom that sank.'],
+  ['ut_hermit_shell', 'Hermit\u2019s Shell', 'robe', 11, { wis: 4 }, 'Tidepool: regenerate 3% MP per second.', { mpRegenPct: 0.03 }, 'Something lived in it for a thousand years.'],
+  ['ut_shrine_dagger', 'Shrine Flame Dagger', 'dagger', 11, { spd: 3 }, 'Flame skulls: kills burst, dealing 30% of the enemy\u2019s max HP to the next enemy.', { killCarry: 0.3 }, 'It keeps a little of everything it burns.'],
   ['ut_final_night', 'Robe of the Final Night', 'robe', 14, { att: 5, wis: 5 }, 'Last light: deal 50% more damage while under 40% HP.', { lowHpDmg: 0.5 }, 'Stitched from the last hour before the end.'],
 ];
 for (const [id, name, type, eq, bonus, special, fx, desc] of UT) {

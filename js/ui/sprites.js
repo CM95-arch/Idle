@@ -48,6 +48,9 @@ const M = {
   eye: ['...oooooo...', '..obbbbbbo..', '.obbbbbbbbo.', 'obbbccccbbbo', 'obbcckkccbbo', 'obbcckkccbbo', 'obbbccccbbbo', '.obbbbbbbbo.', '..obbbbbbo..', '...oaoaoao..', '...o.o.o.o..'],
   snake: ['.....oooo.....', '....oaaaao....', '...oacaacao...', '...oaaaaaao...', '....obbbbo....', '..ooaaaaaoo...', '.oaaoooooaao..', 'oao.......oao.', 'oao.ooooo.oao.', '.oaoaaaaaoao..', '..oaaoooaao...', '...oo...oo....'],
   skeleton: ['....oooo....', '...obbbbo...', '...okbbko...', '...obbbbo...', '....obbo....', '..oobbbboo..', '.ob.obbo.bo.', '.ob.obbo.bo.', '....obbo....', '...ob..bo...', '...ob..bo...', '...oo..oo...'],
+  cube: ['..oooooooo..', '.obbbbbbbbo.', 'obbbbbbbbbbo', 'oaaaaaaabbbo', 'oakaaakaabbo', 'oaaaaaaabbbo', 'oacccccaabbo', 'oaaaaaaabbo.', 'oaaaaaaabo..', '.oooooooo...'],
+  dragon: ['..o.......o...', '.oao.....oao..', '.oaaooooaao...', '..oaaaaaaao...', '.oakaaaakaao..', 'oaaaaaaaaaaao.', 'oabbaaaaabbaoo', 'oabbbaaabbbaao', '.oaaaccaaaaoao', '..oaao.oaao.oo', '..ooo...ooo...'],
+  lich: ['...c.c.c...', '...ccccc...', '..obbbbbo..', '..okbbbko..', '..obbbbbo..', '...obbbo...', '..oaaaaao..', '.oaaaaaaao.', 'oaaacacaaao', '.oaaaaaaao.', '.oaaaaaaao.', '..ooooooo..'],
   // ---- scenery ----
   tree: ['...oo...', '..oaao..', '.oaabao.', '..oaao..', '.oaaaao.', 'oaabaaao', '...dd...', '...dd...'],
   rock: ['..oooo..', '.obbaao.', 'obaaaado', 'oaaaaddo', '.oooooo.'],
@@ -60,7 +63,7 @@ const M = {
 
 const BASE = { o: '#0a080c', d: '#2a2230', e: '#e5b98f', k: '#1a1418' };
 export const TIER_COLORS = (t) => (t >= 12 ? ['#b2263a', '#ff8a7a', '#ffd34d'] : t >= 10 ? ['#7b4bd1', '#c9a6ff', '#ffd34d'] : t >= 7 ? ['#2f62c9', '#8ec1ff', '#ffe08a'] : t >= 4 ? ['#2d8f73', '#8fe0c3', '#f2c14e'] : ['#8a6a4a', '#cdb08a', '#b8c0c8']);
-export const POT_COLORS = { hp: '#f0dfa6', mp: '#a98cff', att: '#e24fcf', def: '#3c3a44', spd: '#49c25c', dex: '#f28c2a', vit: '#d83b3b', wis: '#4aa3f0' };
+export const POT_COLORS = { hp: '#2ad1c2', mp: '#f2c94c', att: '#e24fcf', def: '#3c3a44', spd: '#49c25c', dex: '#f28c2a', vit: '#d83b3b', wis: '#4aa3f0' };
 const UT_COLORS = ['#c0408f', '#ff9de6', '#fff2a8'];
 
 const cache = new Map();

@@ -85,6 +85,7 @@ function withSound(screen, slotOf) {
     else if (kind === 'ability') play('ability');
     else if (kind === 'dodged') play('dodge');
     else if (kind === 'telegraph') play('tele');
+    else if (kind === 'spawn' && d.enemy?.event) { play('lootRare'); toast({ title: 'Event boss!', body: d.enemy.name, kind: 'gold' }); }
   };
   // Events carry `frac`, their position inside the 0.1s combat step; play them at that moment for a steady rhythm.
   return (kind, d) => { if (d?.frac > 0.02) setTimeout(() => show(kind, d), d.frac * 100); else show(kind, d); };

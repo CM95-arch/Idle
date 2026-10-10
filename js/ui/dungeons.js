@@ -40,7 +40,7 @@ export function createDungeonScreen(root, app) {
           h('div', {}, h('span', {}, 'Loot'), `T${d.tiers[0]}–T${d.tiers[1]} · ${CONFIG.dungeonLootRolls.join('–')} items`),
           h('div', {}, h('span', {}, 'XP'), `+${d.xp}`),
           h('div', {}, h('span', {}, 'Potions'), d.potions[1] ? `${range(d.potions)}${d.sig ? ` · often ${d.sig.toUpperCase()}` : ''}` : '—'),
-          h('div', {}, h('span', {}, 'Difficulty'), c ? diffPill(est) : '—')),
+          h('div', {}, h('span', {}, 'Danger'), c ? diffPill(est, '') : '—')),
         h('div', { class: 'label' }, 'Unique items'),
         h('div', { class: 'vgrid' }, d.uts.map((id) => h('button', { class: `tile${G.discovered(id) ? '' : ' unk'} ut`, onclick: () => openItemSheet(id) }, itemIcon(id, 30, !G.discovered(id))))),
         d.rune ? h('div', { class: 'small', style: { color: 'var(--gold-dark)', fontWeight: 800 } }, `Can drop the ${ITEMS[d.rune].name}`) : null,
@@ -145,7 +145,7 @@ export function createDungeonScreen(root, app) {
     const ab = F.ability;
     const cost = ab ? abilityCost(ab) : 1;
     const frac = Math.min(1, cs.mp / cost);
-    refs.ring.style.background = `conic-gradient(var(--mp) 0 ${frac * 100}%, #9aa3ad ${frac * 100}% 100%)`;
+    refs.ring.style.background = `conic-gradient(var(--mpbar) 0 ${frac * 100}%, #9aa3ad ${frac * 100}% 100%)`;
     refs.abtn.classList.toggle('ready', !!ab && cs.mp >= cost && !!e);
     refs.elapsed.textContent = fmtDur(r.ticks * CONFIG.tickSeconds * 1000);
   }

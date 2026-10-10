@@ -54,7 +54,7 @@ function sourceText(it) {
 }
 function hintText(it) {
   const s = sourcesOf(it);
-  if (it.tier === 'UT') return `A unique ${typeLabel(it).toLowerCase()} from ${s.dungeons[0] || 'a dungeon'}.`;
+  if (it.tier === 'UT') return `A unique ${typeLabel(it).toLowerCase()} from ${s.dungeons[0] || s.biomes[0] || 'a dungeon'}.`;
   if (it.slot === 'rune') return `Drops from ${s.dungeons[0]}.`;
   return `Found in ${s.biomes[0] || s.dungeons[0]}${s.biomes.length > 1 ? ' and beyond' : ''}.`;
 }

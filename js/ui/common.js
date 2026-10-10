@@ -12,8 +12,8 @@ export const heroColors = (cls) => CLASS[cls].colors;
 
 /** Survival estimate → difficulty label (high survival = low difficulty). */
 export const DIFF = { high: ['Low', 'diff-low'], med: ['Moderate', 'diff-mod'], low: ['High', 'diff-high'] };
-export function diffPill(est, prefix = '') {
-  if (!est) return h('span', { class: 'pill diff-calc' }, '…');
+export function diffPill(est, prefix = 'Danger: ') {
+  if (!est) return h('span', { class: 'pill diff-calc' }, `${prefix}…`);
   const [t, c] = DIFF[est.level];
   return h('span', { class: `pill ${c}` }, `${prefix}${t}`);
 }

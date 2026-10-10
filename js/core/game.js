@@ -2,7 +2,7 @@
 import { CONFIG } from '../config.js';
 import { CLASS, CLASSES, STATS, STAT_LABEL } from '../data/classes.js';
 import { ITEMS, tierLabel, tierValue } from '../data/items.js';
-import { BIOME, DUNGEON } from '../data/world.js';
+import { BIOME, DUNGEON, EVENT_BOSS } from '../data/world.js';
 import { makeRng } from './rng.js';
 import { newCombat, step } from './combat.js';
 import { newCharacter, fighterOf, levelOf } from './character.js';
@@ -317,18 +317,19 @@ function farmSource(slot, emit) {
       c.xp += e.xp; c.kills++; state.stats.kills++;
       f.session.kills++; f.session.xp += e.xp;
       noteLevel(c, before);
-      const mult = e.elite ? CONFIG.eliteDropMult : 1;
-      if (rng.next() < CONFIG.itemDropChance(biome.L) * mult) {
-        const id = rollItem(biome.tiers, c.cls, rng);
+      const give = (id) => {
         if (grant(id)) f.session.newFinds++;
-        f.session.items++; f.session.drops.unshift(id); f.session.drops.length = Math.min(f.session.drops.length, 12);
+        if (ITEMS[id].slot === 'potion') f.session.potions++; else f.session.items++;
+        f.session.drops.unshift(id); f.session.drops.length = Math.min(f.session.drops.length, 12);
         emit?.('drop', { id });
-      }
-      if (biome.potionRate && rng.next() < biome.potionRate * mult) {
-        const id = rollPotion(rng);
-        grant(id); f.session.potions++; f.session.drops.unshift(id); f.session.drops.length = Math.min(f.session.drops.length, 12);
-        emit?.('drop', { id });
-      }
+      };
+      const mult = e.event ? EVENT_BOSS.itemMult : e.elite ? CONFIG.eliteDropMult : 1;
+      if (rng.next() < CONFIG.itemDropChance(biome.L) * mult) give(rollItem(biome.tiers, c.cls, rng));
+      if (e.event) {
+        for (let i = 0; i < EVENT_BOSS.guaranteedPotions; i++) give(rollPotion(rng));
+        if (rng.next() < biome.potionRate * EVENT_BOSS.potionMult) give(rollPotion(rng));
+        if (e.ut && rng.next() < EVENT_BOSS.utChance) give(e.ut);
+      } else if (biome.potionRate && rng.next() < biome.potionRate * mult) give(rollPotion(rng));
     },
   };
   return src;
