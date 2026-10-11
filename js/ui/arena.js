@@ -66,9 +66,9 @@ export function playDungeon(info, onEnd, sound) {
     refs.mp.style.width = `${(hh.mp / F.maxMp) * 100}%`; refs.mpT.textContent = `${Math.floor(hh.mp)} / ${F.maxMp}`;
     refs.ab.classList.toggle('ready', !!ab && hh.mp >= abilityCost(ab));
     refs.rooms.replaceChildren(...Array.from({ length: R.rooms }, (_, i) => h('i', { class: i < R.room ? 'done' : i === R.room ? 'now' : '' })));
-    const boss = R.enemies.find((e) => e.boss);
-    refs.bossWrap.style.display = boss ? '' : 'none';
-    if (boss) refs.boss.style.width = `${(boss.hp / boss.maxHp) * 100}%`;
+    const bosses = R.enemies.filter((e) => e.boss); // the Tomb has three
+    refs.bossWrap.style.display = bosses.length ? '' : 'none';
+    if (bosses.length) refs.boss.style.width = `${(bosses.reduce((t, e) => t + Math.max(0, e.hp), 0) / bosses.reduce((t, e) => t + e.maxHp, 0)) * 100}%`;
     if (R.loot.length !== lastBags) {
       const fresh = R.loot.slice(lastBags);
       lastBags = R.loot.length;

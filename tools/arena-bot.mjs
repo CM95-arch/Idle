@@ -13,9 +13,11 @@ export function botRun(d, cls, g, m, seed) {
   const input = { target: null };
   let t = 0;
   while (t < 600 && !['dead', 'won'].includes(R.phase)) {
-    const e = R.enemies.reduce((a, b) => (!a || b.y > a.y ? b : a), null);
-    const ty = e ? Math.min(600, e.y + RANGE[F.weaponType] * 0.75) : 560;
-    input.target = { x: 180 + Math.sin(t * 0.9 + seed) * 130, y: ty };
+    // go after the nearest enemy that can be hurt (else just the lowest one)
+    const hurtable = R.enemies.filter((x) => !x.inv && !x.pass), pool = hurtable.length ? hurtable : R.enemies;
+    const e = pool.reduce((a, b) => (!a || Math.hypot(b.x - R.hero.x, b.y - R.hero.y) < Math.hypot(a.x - R.hero.x, a.y - R.hero.y) ? b : a), null);
+    const rg = RANGE[F.weaponType], weave = rg >= 300 ? 110 : 40;
+    input.target = { x: Math.max(20, Math.min(340, (e ? e.x : 180) + Math.sin(t * 0.9 + seed) * weave)), y: e ? Math.min(600, e.y + rg * 0.7) : 560 };
     step(R, F, input, 1 / 60); t += 1 / 60;
   }
   return { won: R.phase === 'won', t };

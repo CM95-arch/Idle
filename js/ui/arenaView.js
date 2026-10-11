@@ -58,13 +58,14 @@ export class ArenaView {
     }
     // enemies
     for (const e of R.enemies) {
-      const sc = e.boss ? 5 : 3;
+      const sc = Math.max(1, Math.round((e.boss ? 5 : 3) * (e.size || 1)));
       const cv = draw(e.sprite, sc, e.pal); const { w, h } = mapSize(e.sprite);
-      g.globalAlpha = e.stunUntil > R.t ? 0.6 : 1;
+      g.globalAlpha = e.inv ? 0.55 : e.stunUntil > R.t ? 0.6 : 1;
       g.drawImage(cv, Math.round(e.x - (w * sc) / 2), Math.round(e.y - (h * sc) / 2));
       if (e.flash > 0) { g.globalCompositeOperation = 'lighter'; g.globalAlpha = 0.6; g.drawImage(cv, Math.round(e.x - (w * sc) / 2), Math.round(e.y - (h * sc) / 2)); g.globalCompositeOperation = 'source-over'; }
       g.globalAlpha = 1;
-      if (!e.boss) {
+      if (e.inv && !e.pass) { g.strokeStyle = 'rgba(120,190,255,.7)'; g.lineWidth = 2; g.beginPath(); g.arc(e.x, e.y, e.r + 6, 0, Math.PI * 2); g.stroke(); }
+      if (!e.boss && !e.inv) {
         const bw = 24, fr = Math.max(0, e.hp / e.maxHp);
         g.fillStyle = '#111'; g.fillRect(e.x - bw / 2 - 1, e.y + e.r + 2, bw + 2, 4);
         g.fillStyle = fr > 0.5 ? '#3fbf5c' : fr > 0.2 ? '#e8b928' : '#e0483e'; g.fillRect(e.x - bw / 2, e.y + e.r + 3, bw * fr, 2);
@@ -105,8 +106,6 @@ export class ArenaView {
       // the real hitbox: a small dot, like Realm
       g.fillStyle = '#ffffff'; g.beginPath(); g.arc(h.x, h.y, 2.5, 0, Math.PI * 2); g.fill();
     }
-    // boss orbs (the Tomb Triad)
-    for (const e of R.enemies) if (e.orbs) for (const o of e.orbs) { g.fillStyle = '#000'; g.beginPath(); g.arc(o.x, o.y, 10, 0, Math.PI * 2); g.fill(); g.fillStyle = o.c; g.beginPath(); g.arc(o.x, o.y, 8, 0, Math.PI * 2); g.fill(); }
     // enemy bullets on top of everything: they're what you watch
     for (const b of R.bullets) {
       g.fillStyle = b.color; g.beginPath(); g.arc(b.x, b.y, b.r, 0, Math.PI * 2); g.fill();
@@ -117,8 +116,7 @@ export class ArenaView {
       const p = f.t / f.life;
       if (f.k === 'burst' || f.k === 'puff') { g.strokeStyle = f.c; g.globalAlpha = 1 - p; g.lineWidth = 3; g.beginPath(); g.arc(f.x, f.y, 6 + p * (f.k === 'burst' ? 50 : 26), 0, Math.PI * 2); g.stroke(); g.globalAlpha = 1; }
       else if (f.k === 'zap') { g.strokeStyle = '#8ae8ff'; g.globalAlpha = 1 - p; g.lineWidth = 2; g.beginPath(); g.moveTo(f.x0, f.y0); for (let z = 1; z <= 6; z++) g.lineTo(f.x0 + (f.x1 - f.x0) * z / 6 + (Math.random() - 0.5) * 8, f.y0 + (f.y1 - f.y0) * z / 6 + (Math.random() - 0.5) * 8); g.stroke(); g.globalAlpha = 1; }
-      else if (f.k === 'tele') { const boss = R.enemies.find((e) => e.boss); if (boss) { g.strokeStyle = `rgba(255,58,90,${0.4 + 0.5 * Math.sin(this.t * 25)})`; g.lineWidth = 3; g.beginPath(); g.arc(boss.x, boss.y, 50 - p * 20, 0, Math.PI * 2); g.stroke(); } }
-      else if (f.k === 'mark') { g.strokeStyle = `rgba(255,58,90,${0.35 + 0.45 * Math.sin(this.t * 25)})`; g.lineWidth = 2; g.beginPath(); g.arc(f.x, f.y, f.r * (1.6 - p * 0.6), 0, Math.PI * 2); g.stroke(); }
+      else if (f.k === 'tele') { const boss = R.enemies.find((e) => e.id === f.id) || R.enemies.find((e) => e.boss); if (boss) { g.strokeStyle = f.c || '#ff3a5a'; g.globalAlpha = 0.5 + 0.45 * Math.sin(this.t * 25); g.lineWidth = 3; g.beginPath(); g.arc(boss.x, boss.y, boss.r + 16 - p * 12, 0, Math.PI * 2); g.stroke(); g.globalAlpha = 1; } }
       else if (f.k === 'fly') { const cv = draw('bag', 3, BAG[bagOf(f.id)]); const x = f.x + (h.x - f.x) * p, y = f.y + (h.y - f.y) * p - Math.sin(p * Math.PI) * 30; g.globalAlpha = 1 - p * 0.5; g.drawImage(cv, Math.round(x - cv.width / 2), Math.round(y - cv.height / 2)); g.globalAlpha = 1; }
       else if (f.k === 'pickup') { const it = ITEMS[f.id]; g.globalAlpha = 1 - p; text(g, `${it.name}${typeof it.tier === 'number' ? ` T${it.tier}` : ''}`, Math.max(60, Math.min(W - 60, f.x)), f.y - 14 - p * 20, BAG_TEXT[bagOf(f.id)], 10); g.globalAlpha = 1; }
       else if (f.k === 'banner' && f.text) { g.globalAlpha = Math.min(1, (1 - p) * 3); text(g, f.text, W / 2, H * 0.42, '#ffe08a', 16); g.globalAlpha = 1; }

@@ -68,7 +68,7 @@ export const DUNGEONS = [
   D('davy', 'Davy Jones’ Locker', 2.95, 4, [1, 2], 'def', 'Davy Jones', 'ghost', { a: '#2a6a7a', b: '#6ab0c0', c: '#ffd34d', bg: '#123040' }, ['ut_drowned_saber', 'ut_ghostship']),
   D('labyrinth', 'Woodland Labyrinth', 4.2, 4, [1, 2], 'dex', 'Murderous Megamoth', 'bug', { a: '#4a6a2a', b: '#8ab050', c: '#ffef80', bg: '#1f3a1a' }, ['ut_thornheart', 'ut_mossback']),
   D('docks', 'Deadwater Docks', 5.8, 4, [1, 2], 'att', 'Jon Bilgewater the Pirate King', 'humanoid', { a: '#2a3a5a', b: '#5a7ab0', c: '#ffd34d', bg: '#14303a' }, ['ut_harpoon', 'ut_tidecaller']),
-  D('wetlands', 'Sulfurous Wetlands', 6.5, 4, [1, 2], 'vit', 'The Bog Hydra', 'snake', { a: '#6a6a1a', b: '#b0b040', c: '#ff6020', bg: '#3a3a12' }, ['ut_bog_witch', 'ut_swamp_lord']),
+  D('wetlands', 'Sulfurous Wetlands', 6.5, 4, [1, 2], 'vit', 'Heart of the Wetlands', 'blob', { a: '#6a6a1a', b: '#b0b040', c: '#ff6020', bg: '#3a3a12' }, ['ut_bog_witch', 'ut_swamp_lord']),
   D('trench', 'Ocean Trench', 7.5, 4, [2, 2], 'wis', 'Thessal the Mermaid Goddess', 'humanoid', { a: '#1a5a8a', b: '#4aa0d0', c: '#ffd34d', bg: '#0f2a4a' }, ['ut_coral_seal', 'ut_abyssal_pearl']),
   D('tomb', 'Tomb of the Ancients', 9.0, 4, [2, 2], 'hp', 'The Tomb Triad', 'golem', { a: '#a08030', b: '#e0c060', c: '#40a0ff', bg: '#4a3a14' }, ['ut_sunscorch', 'ut_scarab_plate', 'ut_pharaoh']),
   D('fungal', 'Fungal Cavern', 9.4, 4, [2, 3], 'mp', 'The Mushroom Mother', 'blob', { a: '#8a3a6a', b: '#d070b0', c: '#ffef80', bg: '#2a3a2a' }, ['ut_sporecloud', 'ut_mycelium']),
