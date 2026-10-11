@@ -32,12 +32,10 @@ function rollTier([lo, hi], rng) {
   const w = CONFIG.tierWeights;
   return rng.weighted(tiers, (t) => w[t - lo] ?? w[w.length - 1]);
 }
-/** A tiered item from a dungeon's range; most drops fit the hero's class. */
+/** A tiered item from a dungeon's range, always something the hero's class can use. */
 export function rollGear(d, cls, rng) {
   const t = rollTier(d.tiers, rng);
-  let kind;
-  if (cls && rng.next() < CONFIG.classBias) { const C = CLASS[cls]; kind = rng.pick([C.weapon, C.ability, C.armor, 'ring']); }
-  else kind = rng.pick(ALL_KINDS);
+  const kind = cls ? rng.pick([CLASS[cls].weapon, CLASS[cls].ability, CLASS[cls].armor, 'ring']) : rng.pick(ALL_KINDS);
   return kind === 'ring' ? `ring_${rng.pick(STATS)}_t${t}` : `${kind}_t${t}`;
 }
 /** Bag color for an item, Realm style. */

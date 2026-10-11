@@ -1,7 +1,7 @@
 // The dungeon run screen: a full-screen bullet-hell overlay. Touch and hold: the hero sits just above your thumb.
 import { ABILITY_TYPES } from '../data/classes.js';
 import { ITEMS } from '../data/items.js';
-import { createRun, step, arenaFighter, ABILITY_INFO } from '../core/arena.js';
+import { createRun, step, arenaFighter } from '../core/arena.js';
 import { abilityCost } from '../core/combat.js';
 import { bagOf } from '../core/loot.js';
 import { ArenaView } from './arenaView.js';
@@ -18,7 +18,7 @@ export function playDungeon(info, onEnd, sound) {
   const R = createRun(info.d, F, info.cls);
   R.runeDrop = info.runeDrop;
   R.hero.hp = Math.min(F.maxHp, info.hp); R.hero.mp = info.mp;
-  const input = { target: null, cast: false };
+  const input = { target: null };
   const refs = {};
   const cv = h('canvas');
   const view = new ArenaView(cv, info.d.pal);
@@ -37,9 +37,8 @@ export function playDungeon(info, onEnd, sound) {
       h('div', { class: 'grow', style: { display: 'grid', gap: '5px' } },
         h('div', { class: 'vbar' }, refs.hp = h('i', { style: { background: '#3fbf5c' } }), refs.hpT = h('b')),
         h('div', { class: 'vbar' }, refs.mp = h('i', { style: { background: '#3d7fe0' } }), refs.mpT = h('b')),
-        h('div', { class: 'ahint' }, 'Touch and hold to move · your weapon fires on its own')),
-      refs.cast = h('button', { class: 'cast', title: ab ? ABILITY_INFO[ab.type] : '', onpointerdown: (e) => { e.preventDefault(); e.stopPropagation(); input.cast = true; } },
-        ab ? ABILITY_TYPES[ab.type].name : '—', h('br'), ab ? `${abilityCost(ab)} MP` : '')));
+        h('div', { class: 'ahint' }, 'Touch and hold to move · weapon and ability fire on their own')),
+      refs.ab = h('div', { class: 'aab' }, ab ? ABILITY_TYPES[ab.type].name : '—', h('br'), h('small', {}, ab ? `auto · ${abilityCost(ab)} MP` : ''))));
   document.body.append(root);
   document.body.classList.add('in-arena');
 
@@ -65,7 +64,7 @@ export function playDungeon(info, onEnd, sound) {
     const hh = R.hero;
     refs.hp.style.width = `${Math.max(0, hh.hp / F.maxHp) * 100}%`; refs.hpT.textContent = `${Math.ceil(hh.hp)} / ${F.maxHp}`;
     refs.mp.style.width = `${(hh.mp / F.maxMp) * 100}%`; refs.mpT.textContent = `${Math.floor(hh.mp)} / ${F.maxMp}`;
-    refs.cast.disabled = !ab || hh.mp < abilityCost(ab);
+    refs.ab.classList.toggle('ready', !!ab && hh.mp >= abilityCost(ab));
     refs.rooms.replaceChildren(...Array.from({ length: R.rooms }, (_, i) => h('i', { class: i < R.room ? 'done' : i === R.room ? 'now' : '' })));
     const boss = R.enemies.find((e) => e.boss);
     refs.bossWrap.style.display = boss ? '' : 'none';

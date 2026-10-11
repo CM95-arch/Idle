@@ -10,13 +10,12 @@ const RANGE = { staff: 340, wand: 380, bow: 320, sword: 145, dagger: 200 };
 export function botRun(d, cls, g, m, seed) {
   const F = arenaFighter(fighterOf(referenceCharacter(cls, g, m), { exalt: {} }), cls);
   const R = createRun(d, F, cls, seed);
-  const input = { target: null, cast: false };
+  const input = { target: null };
   let t = 0;
   while (t < 600 && !['dead', 'won'].includes(R.phase)) {
     const e = R.enemies.reduce((a, b) => (!a || b.y > a.y ? b : a), null);
     const ty = e ? Math.min(600, e.y + RANGE[F.weaponType] * 0.75) : 560;
     input.target = { x: 180 + Math.sin(t * 0.9 + seed) * 130, y: ty };
-    if (R.hero.mp > F.maxMp * 0.6) input.cast = true;
     step(R, F, input, 1 / 60); t += 1 / 60;
   }
   return { won: R.phase === 'won', t };

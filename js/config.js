@@ -1,7 +1,7 @@
 // ★ All balance numbers live here. Change a value, reload, and the game uses it.
 // `node tools/balance.mjs` prints survival times and kill rates for reference builds.
 
-export const BUILD = '2026-10-10 · 18';
+export const BUILD = '2026-10-11 · 1';
 
 export const CONFIG = {
   tickSeconds: 0.1,            // combat simulation step (same step online and offline)
@@ -48,7 +48,6 @@ export const CONFIG = {
   dungeonBags: [2, 4],         // gear bags from the boss on a clear (plus what rooms drop)
   roomBagChance: 0.06,         // chance a room enemy drops a gear bag
   roomPotionChance: 0.08,      // chance a room enemy drops a potion
-  classBias: 0.7,              // share of gear drops picked from what the hero's class can use
   tierWeights: [45, 35, 20],   // lowest tier of a dungeon's range is the most common
 
   // ---- essence: salvage gear, clear dungeons, and fall; spend it to reforge UTs you've found before ----

@@ -255,7 +255,7 @@ function dropsFor(R, e) {
 }
 
 // ---------- step ----------
-/** input: { target: {x, y} | null } where the hero should be (world px), cast: bool */
+/** input: { target: {x, y} | null } where the hero should be (world px) */
 export function step(R, F, input, dt) {
   if (R.phase !== 'fight' && R.phase !== 'cleared') return;
   R.t += dt; R.roomT += dt;
@@ -268,7 +268,8 @@ export function step(R, F, input, dt) {
   }
   h.hp = Math.min(F.maxHp, h.hp + (F.hpRegen + F.maxHp * (fx.regenPct || 0)) * dt);
   h.mp = Math.min(F.maxMp, h.mp + F.mpRegen * dt);
-  if (input.cast) { castAbility(R, F); input.cast = false; }
+  // abilities fire on their own at the nearest enemy whenever there's enough MP
+  if (F.ability && R.phase === 'fight' && R.enemies.length && h.mp >= abilityCost(F.ability)) castAbility(R, F);
 
   if (R.phase === 'fight') {
     h.fireT += dt * F.aps * (h.berserkUntil > R.t ? 1.6 : 1);
