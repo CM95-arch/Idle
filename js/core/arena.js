@@ -96,9 +96,9 @@ const nearest = (R, p) => { let best = null, bd = Infinity; for (const e of R.en
 function bullet(R, x, y, ang, speed, dmg, o = {}) {
   const sp = speed * R.sc.speed;
   const b = { x, y, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, r: o.r || 5, dmg: Math.max(dmg * 0.3, dmg - R.sc.baseDef) * R.sc.hpRatio + R.sc.recDef, life: o.life || 5, color: o.color || '#ff4a6a', wave: o.wave || 0, t: 0 };
-  // optional motion: turn (rad/s curve), home/homeT (steer at you for a while), accel (px/s², clamped to min..max),
+  // optional motion (all fixed at firing; nothing steers at you): turn (rad/s curve), accel (px/s², clamped to min..max),
   // bounce (off the side walls), fuse + split (burst into a ring)
-  for (const k of ['turn', 'home', 'homeT', 'accel', 'min', 'max', 'bounce', 'fuse', 'split', 'splitSpeed', 'splitDmg']) if (o[k] != null) b[k] = o[k];
+  for (const k of ['turn', 'accel', 'min', 'max', 'bounce', 'fuse', 'split', 'splitSpeed', 'splitDmg']) if (o[k] != null) b[k] = o[k];
   if (b.accel) { b.accel *= R.sc.speed; b.min = (b.min ?? 20) * R.sc.speed; b.max = (b.max ?? 400) * R.sc.speed; }
   R.bullets.push(b);
 }
@@ -268,10 +268,11 @@ const BOSS = {
       });
     }
   },
-  // Septavius: homing skulls, then rings of ghosts that curl
+  // Septavius: skulls that swing in from the sides, then rings of ghosts that curl
   undead_lair(R, e, p, every) {
     sway(e, 0.7);
-    if (every('skull', p === 3 ? 1.4 : 1.8)) for (const s of [-1, 1]) bullet(R, e.x + s * 30, e.y, angTo(R, e.x + s * 30, e.y) + s * 0.6, 120, 44, { home: 1.8, homeT: 1.6, r: 6, color: '#d0d0f0' });
+    if (every('skull', p === 3 ? 1.4 : 1.8)) for (const s of [-1, 1]) bullet(R, e.x + s * 30, e.y, angTo(R, e.x + s * 30, e.y) + s * 0.6, 120, 44, { turn: -s * 0.45, life: 4, r: 6, color: '#d0d0f0' });
+    if (every('a', 1.3)) aimed(R, e, 2, 0.25, 190, 40, { color: '#40ffe0', r: 4 });
     if (p >= 2 && every('ring', 2.4)) { e.dir = -e.dir; ring(R, e, 12, 110, 38, e.t, { turn: 0.9 * e.dir, color: '#40ffe0', r: 5, life: 6 }); }
     if (p === 3 && every('s', 9)) summon(R, e, 2);
   },
@@ -298,11 +299,11 @@ const BOSS = {
     if (p >= 2 && every('ghost', 2.8)) ring(R, e, 16, 100, 40, e.t, { wave: 30, color: '#6ab0c0', life: 7 });
     if (p === 3 && every('a3', 1.2)) aimed(R, e, 3, 0.35, 220, 42, { color: '#ffd34d' });
   },
-  // Megamoth: flutters wildly, scattering dust; homing moths; then a flower spiral
+  // Megamoth: flutters wildly, scattering dust; moths that loop in from the sides; then a flower spiral
   labyrinth(R, e, p, every, dt) {
     e.vx = Math.sin(e.t * 2.3) * e.speed * 1.8 + Math.cos(e.t * 0.7) * 30; e.vy = Math.cos(e.t * 1.9) * 40;
     if (every('dust', p === 3 ? 1.1 : 1.5)) for (let k = 0; k < 10; k++) bullet(R, e.x, e.y, Math.PI / 2 + (R.rng.next() - 0.5) * 2.2, 70 + R.rng.next() * 90, 36, { color: '#ffef80', r: 4, life: 7 });
-    if (p >= 2 && every('moth', 2.5)) for (const s of [-1, 1]) bullet(R, e.x, e.y, angTo(R, e.x, e.y) + s * 1.2, 140, 42, { home: 2.2, homeT: 1.4, color: '#8ab050', r: 6 });
+    if (p >= 2 && every('moth', 2.5)) for (const s of [-1, 1]) bullet(R, e.x, e.y, angTo(R, e.x, e.y) + s * 1.2, 140, 42, { turn: -s * 0.8, life: 4, color: '#8ab050', r: 6 });
     if (p >= 2 && every('larva', 11)) summon(R, e, 2);
     if (p === 3) { e.spin += dt * 1.4; if (every('fl', 0.22)) for (let k = 0; k < 4; k++) { bullet(R, e.x, e.y, e.spin + k * TAU / 4, 120, 34, { color: '#4a6a2a', r: 4 }); bullet(R, e.x, e.y, -e.spin + k * TAU / 4, 120, 34, { color: '#4a6a2a', r: 4 }); } }
   },
@@ -360,11 +361,11 @@ const BOSS = {
     if (p >= 2 && every('bees', 9)) summon(R, e, 2);
     if (p === 3 && every('comb', 2.6)) ring(R, e, 20, 50, 40, e.t, { accel: 160, max: 260, color: '#b08a1a', r: 5 });
   },
-  // Malus: a turning pentagram of bullet lines, dark orbs that follow you, then an eclipse double ring
+  // Malus: a turning pentagram of bullet lines, slow weaving dark orbs, then an eclipse double ring
   cultist(R, e, p, every) {
     sway(e);
     if (every('star', p === 3 ? 1.9 : 2.3)) { e.spin += 0.35; for (let a = 0; a < 5; a++) for (let k = 0; k < 4; k++) bullet(R, e.x, e.y, e.spin + a * TAU / 5, 90 + k * 40, 42, { color: '#d03a4a', r: 5 }); }
-    if (p >= 2 && every('orb', 2.4)) aimed(R, e, 2, 0.9, 110, 48, { home: 1.5, homeT: 2.2, r: 8, color: '#c040ff' });
+    if (p >= 2 && every('orb', 2.4)) aimed(R, e, 3, 0.9, 100, 48, { wave: 40, r: 8, color: '#c040ff' });
     if (p >= 2 && every('s', 11)) summon(R, e, 2);
     if (p === 3 && every('ecl', 3.4)) warn(R, e, 0.8, () => { ring(R, e, 24, 90, 46, e.t, { color: '#ffd34d', r: 5 }); ring(R, e, 24, 170, 46, e.t + TAU / 48, { color: '#ff3a5a', r: 5 }); });
   },
@@ -412,7 +413,7 @@ const BOSS = {
     } else if (p === 2) {
       e.spin += dt * 2.2;
       if (every('sp', 0.16)) for (let k = 0; k < 4; k++) bullet(R, e.x, e.y, e.spin + k * TAU / 4, 150, 40, { color: '#8a6ab0', r: 4 });
-      if (every('orb', 2.6)) aimed(R, e, 3, 1.2, 120, 48, { home: 1.6, homeT: 1.8, r: 7, color: '#ffd34d' });
+      if (every('orb', 2.6)) aimed(R, e, 3, 1.2, 120, 48, { r: 9, color: '#ffd34d' });
       if (every('s', 10)) summon(R, e, 2);
     } else {
       if (every('rain', 2.2)) wall(R, 4, [40 + R.rng.next() * (W - 80)], 38, 180, 46, { color: '#ffd34d', r: 5 });
@@ -522,12 +523,7 @@ export function step(R, F, input, dt) {
     let x = b.x + b.vx * dt, y = b.y + b.vy * dt;
     b.x = x; b.y = y;
     if (b.wave) { const sp = Math.hypot(b.vx, b.vy) || 1; const off = Math.cos(b.t * 6) * b.wave * dt * 6; b.x += (-b.vy / sp) * off; b.y += (b.vx / sp) * off; }
-    if (b.turn || (b.home && b.t < b.homeT)) {
-      let a = Math.atan2(b.vy, b.vx), sp = Math.hypot(b.vx, b.vy);
-      if (b.turn) a += b.turn * dt;
-      if (b.home && b.t < b.homeT) { let d = Math.atan2(h.y - b.y, h.x - b.x) - a; d = Math.atan2(Math.sin(d), Math.cos(d)); a += Math.max(-b.home * dt, Math.min(b.home * dt, d)); }
-      b.vx = Math.cos(a) * sp; b.vy = Math.sin(a) * sp;
-    }
+    if (b.turn) { const a = Math.atan2(b.vy, b.vx) + b.turn * dt, sp = Math.hypot(b.vx, b.vy); b.vx = Math.cos(a) * sp; b.vy = Math.sin(a) * sp; }
     if (b.accel) { const sp = Math.hypot(b.vx, b.vy), ns = Math.max(b.min, Math.min(b.max, sp + b.accel * dt)); if (sp > 0.01) { const m = Math.max(ns, 0.01) / sp; b.vx *= m; b.vy *= m; } }
     if (b.bounce > 0 && ((b.x < b.r && b.vx < 0) || (b.x > W - b.r && b.vx > 0))) { b.vx = -b.vx; b.bounce--; }
     if (b.fuse && b.t >= b.fuse) { b.life = 0; spawned.push(b); R.fx.push({ k: 'burst', x: b.x, y: b.y, t: 0, life: 0.3, c: b.color }); continue; }
