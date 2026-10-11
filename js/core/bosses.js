@@ -233,11 +233,11 @@ const BOSSES = {
     } });
   },
 
-  // Lord Ruthven: four Coffin Creatures on the walls (immune for now) shoot and release bats while he teleports
+  // Lord Ruthven: four Coffin Creatures along the walls (immune for now) shoot and release bats while he teleports
   // around the carpet firing dagger fans and blood rings that heal him. At half HP he hides, immune, and the
   // coffins become breakable; break all four to bring him back.
   manor(R) {
-    const spots = [[180, 80], [22, 220], [338, 220], [180, 330]];
+    const spots = [[40, 70], [320, 70], [22, 250], [338, 250]];
     const e = B(R, { x: 180, y: 170, ai(R, e, dt, every) {
       const coffins = helpers(R, e, 'coffin');
       if (e.mode !== 'hide' && e.mode !== 'back' && e.hp <= e.maxHp * 0.5) {
