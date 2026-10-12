@@ -1,12 +1,33 @@
 // DOM helpers: element builder, bottom sheets, dialogs, toasts, formatting.
 export const $ = (sel, root = document) => root.querySelector(sel);
 
+// Taps: act on finger-up instead of waiting for the browser's click. iPhone Safari sometimes withholds or delays
+// that click (when the page is busy, when something under the finger changes, or on its "first tap is a hover"
+// heuristic), which made buttons feel dead. A tap is a press and release that moved less than a few pixels,
+// so scrolling still works. The browser's own click still works for keyboards, but is ignored right after a
+// tap so nothing fires twice (including a "ghost" click landing on whatever replaced the button).
+let lastTap = 0;
+export function onTap(el, fn) {
+  let id = null, sx = 0, sy = 0;
+  el.addEventListener('pointerdown', (e) => { if (e.button > 0) return; id = e.pointerId; sx = e.clientX; sy = e.clientY; });
+  el.addEventListener('pointercancel', () => { id = null; });
+  el.addEventListener('pointerup', (e) => {
+    if (e.pointerId !== id) return;
+    id = null;
+    if (el.disabled || Math.hypot(e.clientX - sx, e.clientY - sy) > 12) return;
+    lastTap = Date.now();
+    fn(e);
+  });
+  el.addEventListener('click', (e) => { if (Date.now() - lastTap < 700 || el.disabled) return; fn(e); });
+}
+
 export function h(tag, attrs = {}, ...kids) {
   const el = document.createElement(tag);
   for (const [k, v] of Object.entries(attrs || {})) {
     if (v == null || v === false) continue;
     if (k === 'class') el.className = v;
     else if (k === 'style' && typeof v === 'object') Object.assign(el.style, v);
+    else if (k === 'onclick') onTap(el, v);
     else if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
     else if (k === 'html') el.innerHTML = v;
     else el.setAttribute(k, v === true ? '' : v);
@@ -43,7 +64,7 @@ export function showDialog(build, { dismissable = true } = {}) {
   render();
   ov.style.zIndex = ++layer;
   ov.append(box);
-  if (dismissable) ov.addEventListener('click', (e) => { if (e.target === ov) close(); });
+  if (dismissable) ov.addEventListener('click', (e) => { if (e.target === ov && Date.now() - lastTap > 700) close(); });
   root.append(ov);
   return close;
 }
