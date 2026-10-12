@@ -118,6 +118,7 @@ function openSettings() {
   openSheet((close, rerender) => [
     h('div', { class: 'pixel center', style: { fontSize: '22px' } }, 'Settings'),
     h('button', { class: 'btn alt block', onclick: () => { close(); startTour(); } }, 'Replay the walkthrough'),
+    h('button', { class: 'btn alt block', onclick: () => { G.state.settings.tapDebug = !G.state.settings.tapDebug; G.save(); tapDebug(G.state.settings.tapDebug); rerender(); } }, `Tap debugger: ${G.state.settings.tapDebug ? 'On' : 'Off'}`),
     h('button', { class: 'btn alt block', onclick: () => { G.state.settings.sound = !G.state.settings.sound; setSoundEnabled(G.state.settings.sound); G.save(); rerender(); } }, `Sound: ${G.state.settings.sound ? 'On' : 'Off'}`),
     h('div', { class: 'panel', style: { fontSize: '13px', fontWeight: 700 } },
       h('div', { class: 'stat' }, h('span', {}, 'Enemies defeated'), h('b', {}, fmt(G.state.stats.kills))),
@@ -130,6 +131,22 @@ function openSettings() {
     h('div', { class: 'dim center', style: { fontSize: '11px', fontWeight: 800 } }, `Realm Idle · build ${BUILD}`),
   ]);
 }
+
+// ---------- tap debugger (Settings): shows what each touch actually reaches, to diagnose dead buttons ----------
+let dbg = null;
+function tapDebug(on) {
+  if (!on) { dbg?.el.remove(); for (const [t, f] of dbg?.ls || []) window.removeEventListener(t, f, true); dbg = null; return; }
+  if (dbg) return;
+  const el = h('div', { style: { position: 'fixed', left: '6px', right: '6px', bottom: 'calc(var(--sab) + 70px)', zIndex: 99999, pointerEvents: 'none', background: 'rgba(0,0,0,.82)', color: '#9f9', font: '11px/1.35 monospace', padding: '6px 8px', borderRadius: '8px', whiteSpace: 'pre-wrap' } });
+  const lines = [];
+  const desc = (n) => (n ? `${n.tagName?.toLowerCase()}${n.className && typeof n.className === 'string' ? `.${n.className.trim().split(/\s+/).slice(0, 2).join('.')}` : ''}${n.textContent ? ` "${n.textContent.trim().slice(0, 14)}"` : ''}` : '—');
+  const log = (t) => (e) => { const pt = e.changedTouches?.[0] || e; const top = document.elementFromPoint(pt.clientX, pt.clientY); lines.push(`${t.padEnd(10)} ${desc(e.target).padEnd(34)} top:${desc(top)}`); while (lines.length > 7) lines.shift(); el.textContent = lines.join('\n'); };
+  const ls = ['touchstart', 'touchend', 'touchcancel', 'pointercancel', 'click'].map((t) => [t, log(t)]);
+  for (const [t, f] of ls) window.addEventListener(t, f, { capture: true, passive: true });
+  document.body.append(el);
+  dbg = { el, ls };
+}
+if (G.state.settings.tapDebug) tapDebug(true);
 
 // ---------- offline earnings ----------
 function collect() {

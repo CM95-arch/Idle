@@ -1,24 +1,28 @@
 // DOM helpers: element builder, bottom sheets, dialogs, toasts, formatting.
 export const $ = (sel, root = document) => root.querySelector(sel);
 
-// Taps: act on finger-up instead of waiting for the browser's click. iPhone Safari sometimes withholds or delays
-// that click (when the page is busy, when something under the finger changes, or on its "first tap is a hover"
-// heuristic), which made buttons feel dead. A tap is a press and release that moved less than a few pixels,
-// so scrolling still works. The browser's own click still works for keyboards, but is ignored right after a
-// tap so nothing fires twice (including a "ghost" click landing on whatever replaced the button).
+// Taps. iPhone Safari often never delivers a click for a tap: inside anything scrollable (like a bottom sheet) the
+// slightest finger movement makes it start a scroll, which cancels the pointer events and swallows the click.
+// The touch events still arrive, so on touch screens a button acts on touchend when the finger stayed within a
+// few pixels of where it went down (so real scrolls don't press anything). touchend's preventDefault stops Safari's
+// late click from firing it again. Mouse and keyboard use the normal click, ignored right after a touch tap so a
+// "ghost" click can't hit whatever replaced the button.
 let lastTap = 0;
+export const recentTap = () => Date.now() - lastTap < 700;
 export function onTap(el, fn) {
-  let id = null, sx = 0, sy = 0;
-  el.addEventListener('pointerdown', (e) => { if (e.button > 0) return; id = e.pointerId; sx = e.clientX; sy = e.clientY; });
-  el.addEventListener('pointercancel', () => { id = null; });
-  el.addEventListener('pointerup', (e) => {
-    if (e.pointerId !== id) return;
-    id = null;
-    if (el.disabled || Math.hypot(e.clientX - sx, e.clientY - sy) > 12) return;
+  let sx = 0, sy = 0, down = false;
+  el.addEventListener('touchstart', (e) => { const t = e.changedTouches[0]; sx = t.clientX; sy = t.clientY; down = true; }, { passive: true });
+  el.addEventListener('touchcancel', () => { down = false; }, { passive: true });
+  el.addEventListener('touchend', (e) => {
+    if (!down) return;
+    down = false;
+    const t = e.changedTouches[0];
+    if (el.disabled || Math.hypot(t.clientX - sx, t.clientY - sy) > 12) return;
+    if (e.cancelable) e.preventDefault();
     lastTap = Date.now();
     fn(e);
   });
-  el.addEventListener('click', (e) => { if (Date.now() - lastTap < 700 || el.disabled) return; fn(e); });
+  el.addEventListener('click', (e) => { if (recentTap() || el.disabled) return; fn(e); });
 }
 
 export function h(tag, attrs = {}, ...kids) {
@@ -64,7 +68,7 @@ export function showDialog(build, { dismissable = true } = {}) {
   render();
   ov.style.zIndex = ++layer;
   ov.append(box);
-  if (dismissable) ov.addEventListener('click', (e) => { if (e.target === ov && Date.now() - lastTap > 700) close(); });
+  if (dismissable) ov.addEventListener('click', (e) => { if (e.target === ov && !recentTap()) close(); });
   root.append(ov);
   return close;
 }
