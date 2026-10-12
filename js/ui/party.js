@@ -4,7 +4,7 @@ import { SLOTS, SLOT_NAME } from '../data/gear.js';
 import { BAL } from '../data/balance.js';
 import * as G from '../core/game.js';
 import { heroStats } from '../core/heroes.js';
-import { kindFor, fits, itemScore } from '../core/items.js';
+import { kindFor, fits, itemScore, slotOf } from '../core/items.js';
 import { h, openSheet, closeSheet, toast } from './dom.js';
 import { portrait, coin, fmt, itemTile, tap } from './common.js';
 import { openItemSheet } from './gear.js';
@@ -26,7 +26,7 @@ export function openClassSheet(cls, onChange) {
     };
     const slotTile = (slot) => {
       const it = me.gear[slot];
-      const better = s.inv.some((x) => fits(cls, x) && (!it || itemScore(x) > itemScore(it)));
+      const better = s.inv.some((x) => fits(cls, x) && slotOf(x) === slot && (!it || itemScore(x) > itemScore(it)));
       return h('div', {},
         itemTile(it, { upFor: false, who: false, label: '+', onclick: () => openSlotSheet(cls, slot, () => { rerender(); onChange?.(); }) }),
         h('div', { class: 'lab' }, SLOT_NAME[slot], better ? h('span', { class: 'delta-up' }, ' ▲') : null));

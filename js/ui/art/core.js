@@ -1,20 +1,46 @@
-// Vector art helpers: SVG markup → cached images, color math, gradient defs.
-// Every character and item is built as SVG once, rasterized by the browser, then drawn on canvas or shown in the UI.
+// Vector art helpers. Every character and item is built as SVG once, then rasterized ONE time into a bitmap.
+// (Safari re-renders an SVG image from scratch every time it's painted, which on an iPhone eats the main thread
+// and swallows taps. Bitmaps are cheap to draw and paint.)
 
 const cache = new Map();
-/** An <img> for an SVG built on demand. `scale` sets the raster size relative to the viewBox. */
-export function svgImage(key, w, h, build, scale = 1.6) {
-  let img = cache.get(key);
-  if (img) return img;
-  img = new Image();
-  img.decoding = 'async';
-  const body = build();
-  img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${Math.round(w * scale)}" height="${Math.round(h * scale)}">${body}</svg>`)}`;
-  img.vw = w; img.vh = h;
-  cache.set(key, img);
-  return img;
+const queue = [];
+let pumping = false;
+function pump() {
+  if (pumping) return;
+  pumping = true;
+  const run = () => {
+    const art = queue.shift();
+    if (!art) { pumping = false; return; }
+    const cv = document.createElement('canvas');
+    cv.width = art.img.naturalWidth; cv.height = art.img.naturalHeight;
+    cv.getContext('2d').drawImage(art.img, 0, 0);
+    art.bmp = cv;
+    try { art.png = cv.toDataURL('image/png'); } catch { art.png = art.img.src; }
+    for (const el of art.waiting) el.src = art.png;
+    art.waiting = [];
+    setTimeout(run, 0); // one per task, so the page stays responsive while art warms up
+  };
+  setTimeout(run, 0);
 }
-export const ready = (img) => img && img.complete && img.naturalWidth > 0;
+/** Art built from SVG markup on demand: { bmp (canvas, for drawing), png (for <img>) } once ready. */
+export function svgImage(key, w, h, build, scale = 1.6) {
+  let art = cache.get(key);
+  if (art) return art;
+  art = { key, vw: w, vh: h, bmp: null, png: null, waiting: [], img: new Image() };
+  art.img.onload = () => { queue.push(art); pump(); };
+  art.img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${Math.round(w * scale)}" height="${Math.round(h * scale)}">${build()}</svg>`)}`;
+  cache.set(key, art);
+  return art;
+}
+export const ready = (art) => !!art?.bmp;
+/** An <img> showing the art (fills in as soon as it's rasterized). */
+export function artImg(art) {
+  const el = new Image();
+  el.decoding = 'async'; el.draggable = false;
+  if (art.png) el.src = art.png;
+  else { art.waiting.push(el); const i = queue.indexOf(art); if (i > 0) { queue.splice(i, 1); queue.unshift(art); } }
+  return el;
+}
 
 // ---- color ----
 const hex = (c) => { const n = parseInt(c.slice(1), 16); return [n >> 16, (n >> 8) & 255, n & 255]; };
@@ -34,9 +60,10 @@ export const rad = (id, s, cx = 0.5, cy = 0.5, r = 0.5) => `<radialGradient id="
 export const lit = (id, c, hi = 0.28, lo = 0.45) => lin(id, [[0, shade(c, hi)], [0.45, c], [1, shade(c, -lo)]], 0.15, 0, 0.85, 1);
 /** Polished metal: bright band near the top, dark at the bottom. */
 export const metal = (id, c) => lin(id, [[0, shade(c, 0.55)], [0.22, shade(c, 0.15)], [0.5, shade(c, -0.25)], [0.62, shade(c, 0.2)], [1, shade(c, -0.6)]], 0, 0, 0.4, 1);
-export const blur = (id, d = 3) => `<filter id="${id}" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="${d}"/></filter>`;
+export const blur = () => ''; // kept for callers; glows use gradients instead of (slow) blur filters
 /** A soft glow behind a shape. */
-export const glowDot = (g, x, y, r, c, a = 0.85) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${c}" opacity="${a}" filter="url(#${g}bl)"/>`;
+let gid = 0;
+export const glowDot = (g, x, y, r, c, a = 0.85) => { const id = `${g}gd${++gid}`; return `<radialGradient id="${id}"><stop offset="0" stop-color="${c}" stop-opacity="${a}"/><stop offset=".45" stop-color="${c}" stop-opacity="${a * 0.55}"/><stop offset="1" stop-color="${c}" stop-opacity="0"/></radialGradient><circle cx="${x}" cy="${y}" r="${r * 1.7}" fill="url(#${id})"/>`; };
 
 export const OUT = '#0c0a12'; // outline ink for every figure
 export const ol = (w = 2.2) => `stroke="${OUT}" stroke-width="${w}" stroke-linejoin="round" stroke-linecap="round"`;

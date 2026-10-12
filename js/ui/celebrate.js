@@ -4,6 +4,7 @@ import { realmName } from '../data/zones.js';
 import { h, $, fmtDur } from './dom.js';
 import { portrait, fmt, itemTile } from './common.js';
 import { heroImage } from './art/heroes.js';
+import { artImg } from './art/core.js';
 import { play } from './sound.js';
 import { abilityText } from './party.js';
 
@@ -32,7 +33,7 @@ function countUp(el, to, ms = 1100) {
 
 export function showWelcome(onStart) {
   enqueue((close) => {
-    const cv = heroImage('wizard', false).cloneNode(); cv.className = 'figure'; cv.style.height = '170px';
+    const cv = artImg(heroImage('wizard', false)); cv.className = 'figure'; cv.style.height = '170px';
     return h('div', { class: 'celebrate violet' }, h('div', { class: 'rays' }),
       h('div', { class: 'kicker', style: { color: '#d6c2ff' } }, 'Realm Idle'),
       h('div', { class: 'por' }, cv),

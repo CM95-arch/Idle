@@ -5,6 +5,7 @@ import { realmName, stageLabel, STAGE_COUNT } from '../data/zones.js';
 import * as G from '../core/game.js';
 import { h } from './dom.js';
 import { monsterImage } from './art/monsters.js';
+import { artImg } from './art/core.js';
 import { ZONES } from '../data/zones.js';
 import { fmt, tap } from './common.js';
 import { play } from './sound.js';
@@ -12,7 +13,7 @@ import { play } from './sound.js';
 export function createAscendScreen(root, { onAscend }) {
   function oryx(size) {
     const [, spec, pal] = ZONES[ZONES.length - 1].boss;
-    const out = monsterImage(spec, pal).cloneNode(); out.className = 'figure'; out.style.cssText = `height:${size}px;width:auto;margin:0 auto;display:block`;
+    const out = artImg(monsterImage(spec, pal)); out.className = 'figure'; out.style.cssText = `height:${size}px;width:auto;margin:0 auto;display:block`;
     return out;
   }
   // press and hold to Ascend, so it never happens by accident

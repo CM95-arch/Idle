@@ -161,4 +161,4 @@ if (!G.state.flags.intro) showWelcome(() => { G.state.flags.intro = true; G.save
 else { collect(); if (!G.state.flags.tour) setTimeout(() => { if (!document.querySelector('#overlay-root .overlay')) startTour(); }, 900); }
 requestAnimationFrame(frame);
 // decode every hero's art in the background so unlocks and swaps show instantly
-setTimeout(() => { for (const c of Object.keys(CLASSES)) for (const back of [false, true]) heroImage(c, back).decode?.().catch(() => {}); }, 1500);
+setTimeout(() => { for (const c of Object.keys(CLASSES)) for (const back of [false, true]) heroImage(c, back); }, 1500);

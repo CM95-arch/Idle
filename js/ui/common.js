@@ -4,6 +4,7 @@ import { BAL } from '../data/balance.js';
 import { h } from './dom.js';
 import { heroImage } from './art/heroes.js';
 import { itemImage } from './art/items.js';
+import { artImg } from './art/core.js';
 import { fmt } from './battleView.js';
 import * as G from '../core/game.js';
 import { play } from './sound.js';
@@ -11,14 +12,14 @@ import { play } from './sound.js';
 export { fmt };
 /** A class's full-figure portrait (front view), `size` px tall. */
 export function portrait(cls, size = 64, locked = false) {
-  const img = heroImage(cls, false).cloneNode();
+  const img = artImg(heroImage(cls, false));
   img.className = `figure${locked ? ' locked' : ''}`; img.alt = locked ? 'Locked class' : CLASSES[cls].name;
   img.style.height = `${size}px`; img.style.width = 'auto';
   return img;
 }
 /** A gear icon, `size` px square. */
 export function itemIcon(it, size = 34) {
-  const img = itemImage(it.kind, it.rarity).cloneNode();
+  const img = artImg(itemImage(it.kind, it.rarity));
   img.className = 'figure'; img.alt = ''; img.style.width = img.style.height = `${size}px`;
   return img;
 }

@@ -28,11 +28,11 @@ function glow(color, r) {
 }
 // a red-tinted copy of an image, for hit flashes
 const tintCache = new Map();
-function tinted(img, color) {
-  const k = `${img.src.length}|${img.src.slice(-80)}|${color}`;
+function tinted(art, color) {
+  const k = `${art.key}|${color}`;
   if (tintCache.has(k)) return tintCache.get(k);
-  const cv = document.createElement('canvas'); cv.width = img.naturalWidth; cv.height = img.naturalHeight;
-  const g = cv.getContext('2d'); g.drawImage(img, 0, 0); g.globalCompositeOperation = 'source-atop'; g.fillStyle = color; g.fillRect(0, 0, cv.width, cv.height);
+  const cv = document.createElement('canvas'); cv.width = art.bmp.width; cv.height = art.bmp.height;
+  const g = cv.getContext('2d'); g.drawImage(art.bmp, 0, 0); g.globalCompositeOperation = 'source-atop'; g.fillStyle = color; g.fillRect(0, 0, cv.width, cv.height);
   tintCache.set(k, cv);
   return cv;
 }
@@ -199,7 +199,7 @@ export class BattleView {
       const dk = v.dead ? 1 + v.dead * 0.8 : 1;
       g.globalAlpha = (v.dead ? Math.max(0, 1 - v.dead / 0.45) : 1) * appear;
       const top = feet - hh * dk - (1 - appear) * 24 + v.ky;
-      g.drawImage(img, x - (w * dk) / 2, top, w * dk, hh * dk);
+      g.drawImage(img.bmp, x - (w * dk) / 2, top, w * dk, hh * dk);
       if (v.flash > 0) { g.globalAlpha = Math.min(1, v.flash * 7) * 0.85; g.drawImage(tinted(img, '#ffffff'), x - (w * dk) / 2, top, w * dk, hh * dk); }
       g.globalAlpha = 1;
       if (!v.dead && !e.boss) bar(g, x - 20, feet + 4, 40, 4, e.hp / e.maxHp, '#e0483e');
@@ -222,7 +222,7 @@ export class BattleView {
         const breathe = 1 + Math.sin(this.t * 2.4 + i * 1.3) * 0.015, H = HERO_H * breathe, W = HERO_H * (200 / 260);
         const feet = HERO_POS[i].y + 34 - v.lunge * 9;
         g.save(); g.translate(p.x, feet); g.rotate((v.lunge * (i === 2 ? -1 : 1)) * 0.06);
-        g.drawImage(img, -W / 2, -H, W, H);
+        g.drawImage(img.bmp, -W / 2, -H, W, H);
         if (v.hurt > 0) { g.globalAlpha = Math.min(1, v.hurt * 4) * 0.7; g.drawImage(tinted(img, '#ff2a2a'), -W / 2, -H, W, H); }
         g.restore();
       }
@@ -254,7 +254,7 @@ export class BattleView {
       const x = b.x + (bagTarget.x - b.x) * easeIn(q), y = b.y + 20 - Math.sin(Math.min(1, b.t / 0.4) * Math.PI) * 26 + (bagTarget.y - b.y - 20) * easeIn(q);
       if (b.rarity >= 2) { g.globalCompositeOperation = 'lighter'; g.globalAlpha = 0.6; g.drawImage(glow(R.color, 30), x - 30, y - 30); if (b.rarity >= 4 && b.t < 0.8) { g.fillStyle = R.color; g.globalAlpha = 0.35; g.fillRect(x - 3, 0, 6, y); } g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; }
       const bag = itemImage('bag', b.rarity);
-      g.globalAlpha = 1 - q * 0.6; if (ready(bag)) g.drawImage(bag, x - 15, y - 15, 30, 30); g.globalAlpha = 1;
+      g.globalAlpha = 1 - q * 0.6; if (ready(bag)) g.drawImage(bag.bmp, x - 15, y - 15, 30, 30); g.globalAlpha = 1;
     }
     // fame coins burst, then fly to the counter
     this.coins = this.coins.filter((c) => (c.t += dt) < c.life);
