@@ -40,7 +40,7 @@ export function openClassSheet(cls, onChange) {
           h('div', { class: 'dim', style: { fontSize: '12px', marginTop: '2px' } }, C.blurb))),
       h('div', { class: 'row' }, lvBtn(1, 'Level up'), lvBtn(10, '×10'), lvBtn('max', 'Max')),
       h('div', { class: 'panel stats' },
-        stat('HP', fmt(st.hp)), stat('Attack', fmt(st.atk)), stat('Defense', fmt(st.def)), stat('Speed', `${st.spd.toFixed(2)}/s`),
+        stat('HP', fmt(st.hp)), stat('Attack', fmt(st.atk)), stat('Defense', fmt(st.def)), stat('Fire rate', `${st.spd.toFixed(1)} shots/s`),
         stat('Crit', `${Math.round(st.crit * 100)}%`), stat('Ability power', `${Math.round(st.pow * 100)}%`)),
       h('div', { class: 'panel' },
         h('div', { class: 'row between' }, h('b', {}, `✦ ${C.ability.name}`), h('small', { class: 'dim', style: { fontWeight: 800 } }, `every ${C.ability.cd}s`)),

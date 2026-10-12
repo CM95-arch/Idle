@@ -72,7 +72,7 @@ export class BattleView {
         case 'shot': {
           const h = B.heroes[ev.hero], e = byId(ev.to); if (!e) break;
           const C = CLASSES[h.cls], p = this.heroPos(B, ev.hero);
-          this.hv[ev.hero].lunge = 1;
+          this.hv[ev.hero].lunge = Math.max(this.hv[ev.hero].lunge, h.spd > 4 ? 0.45 : 1);
           this.fx.push({ k: 'bolt', x0: p.x + (i => (i === 2 ? -14 : 14))(ev.hero), y0: p.y - 44, id: e.id, t: 0, life: ev.flight, c: C.shot, crit: ev.crit, w: C.weapon });
           sound?.(C.weapon);
           break;
@@ -80,9 +80,15 @@ export class BattleView {
         case 'hit': {
           const e = byId(ev.id); if (!e) break;
           const v = this.enemyVis(e); v.flash = 0.12; v.ky = -3;
-          this.num(e.x + rand(-12, 12), e.y - 26, fmt(ev.dmg), ev.crit ? '#ffd34d' : ev.ab ? '#ffb070' : '#ffffff', ev.crit ? 15 : ev.ab ? 13 : 11, ev.crit);
+          // rapid plain hits add up into one number every ~0.25s so fast shooters don't bury the screen
+          const plain = !ev.crit && !ev.ab;
+          if (plain) v.acc = (v.acc || 0) + ev.dmg;
+          if (!plain || this.t - (v.numAt || 0) > 0.25) {
+            if (plain) { v.numAt = this.t; this.num(e.x + rand(-12, 12), e.y - 26, fmt(v.acc), '#ffffff', 11); v.acc = 0; }
+            else this.num(e.x + rand(-12, 12), e.y - 26, fmt(ev.dmg), ev.crit ? '#ffd34d' : '#ffb070', ev.crit ? 15 : 13, ev.crit);
+          }
           if (ev.crit) this.shake = Math.max(this.shake, 2);
-          for (let i = 0; i < (ev.crit ? 8 : 4); i++) this.parts.push({ x: e.x, y: e.y, vx: rand(-80, 80), vy: rand(-90, 30), t: 0, life: rand(0.25, 0.5), c: ev.crit ? '#ffd34d' : '#ffffff', s: rand(1.5, 3) });
+          for (let i = 0; i < (ev.crit ? 8 : plain ? 2 : 4); i++) this.parts.push({ x: e.x, y: e.y, vx: rand(-80, 80), vy: rand(-90, 30), t: 0, life: rand(0.25, 0.5), c: ev.crit ? '#ffd34d' : '#ffffff', s: rand(1.5, 3) });
           break;
         }
         case 'die': {

@@ -79,7 +79,7 @@ function useAbility(B, h) {
     case 'pierce': for (const e of es.slice(0, 2)) { ev.targets.push(e.id); damageEnemy(B, e, hit(dmg * p, e.def), src); } break;
     case 'execute': { const e = es.reduce((a, b) => (b.hp < a.hp ? b : a)); ev.targets.push(e.id); damageEnemy(B, e, hit(dmg * p, e.def), { ...src, crit: true }); break; }
     case 'berserk': h.buff.taunt = B.t + 4; h.buff.hasteUntil = B.t + 4; h.buff.haste = p; break;
-    case 'stun': for (const e of es) { ev.targets.push(e.id); e.stunUntil = B.t + 2 * (e.boss ? 0.5 : 1); damageEnemy(B, e, hit(dmg * p, e.def), src); } break;
+    case 'stun': for (const e of es) { ev.targets.push(e.id); e.stunUntil = B.t + 1.5 * (e.boss ? 0.5 : 1); damageEnemy(B, e, hit(dmg * p, e.def), src); } break;
     case 'dot': for (const e of es) { ev.targets.push(e.id); e.dots.push({ left: 4, dps: (dmg * p) / 4, hero: h.i }); e.slowUntil = B.t + 4; } break;
     case 'drain': { let tot = 0; for (const e of es) { ev.targets.push(e.id); const d = hit(dmg * p, e.def); tot += d; damageEnemy(B, e, d, src); } for (const o of hs) heal(B, o, Math.min(o.maxHp * 0.25, (tot * 0.15) / hs.length)); ev.heroes = hs.map((o) => o.i); break; }
     case 'poison': { const e = es.reduce((a, b) => (b.hp > a.hp ? b : a)); ev.targets.push(e.id); e.dots.push({ left: 5, dps: (dmg * p) / 5, hero: h.i }); break; }
@@ -129,7 +129,7 @@ export function stepBattle(B) {
     if (h.atkT <= 0 && e) {
       h.atkT += 1;
       const crit = B.rng.next() < h.crit;
-      const d = hit(h.atk * dmgMult(B, h) * (crit ? 2 : 1), e.def);
+      const d = hit(h.hit * dmgMult(B, h) * (crit ? 2 : 1), e.def);
       B.pending.push({ side: 'hero', to: e.id, dmg: d, crit, hero: h.i, at: B.t + HERO_FLIGHT });
       B.events.push({ k: 'shot', hero: h.i, to: e.id, crit, flight: HERO_FLIGHT });
     }
