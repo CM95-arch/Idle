@@ -29,7 +29,8 @@ export let state = fresh();
 let rng = makeRng();
 const listeners = new Set();
 export const onChange = (fn) => listeners.add(fn);
-const changed = (why) => { for (const fn of listeners) fn(why); };
+// a broken listener must never undo or hide an action that already happened
+const changed = (why) => { for (const fn of listeners) { try { fn(why); } catch (e) { setTimeout(() => { throw e; }); } } };
 
 // ---------- save ----------
 export function load() {
@@ -216,6 +217,7 @@ function settle(events) {
       if (isBoss(state.stage)) state.stats.bosses++;
       const first = state.stage > state.best;
       if (first) state.best = state.stage;
+      if (state.flags.wallAt != null && state.stage >= state.flags.wallAt) state.flags.wallAt = null;
       out.push({ k: 'clear', n: f, stage: state.stage, first });
     }
   }

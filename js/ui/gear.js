@@ -44,7 +44,7 @@ export function openItemSheet(id, onChange) {
           const cur = G.state.classes[c].gear[slot], better = !cur || itemScore(it) > itemScore(cur);
           return h('div', { class: 'panel row', style: { marginBottom: '6px', padding: '8px 10px' } }, portrait(c, 40),
             h('div', { class: 'grow' }, h('b', {}, CLASSES[c].name), h('div', { style: { fontSize: '12px', fontWeight: 800 } }, cur ? h('span', { class: better ? 'delta-up' : 'delta-down' }, better ? '▲ Better than current' : '▼ Weaker than current') : h('span', { class: 'delta-up' }, 'Empty slot'))),
-            h('button', { class: `btn sm${better ? '' : ' alt'}`, onclick: () => { G.equip(c, it.id); tap('equip'); onChange?.(); close(); } }, 'Equip'));
+            h('button', { class: `btn sm${better ? '' : ' alt'}`, onclick: () => { close(); const ok = G.equip(c, it.id); tap('equip'); toast(ok ? { title: `Equipped on ${CLASSES[c].name}`, body: cur ? `${it.name} on, ${cur.name} back in your bag.` : it.name, kind: 'gold' } : { title: 'Couldn’t equip that', body: 'It may have already been equipped.' }); onChange?.(); } }, 'Equip'));
         })) : null,
       !wornBy && !owners.length ? h('div', { class: 'panel center', style: { fontSize: '13px', fontWeight: 700 } }, h('div', { class: 'muted' }, `Worn by ${listNames(G.wearers(it))}. You haven’t unlocked ${G.wearers(it).length > 1 ? 'any of them' : 'them'} yet.`), h('div', { class: 'dim', style: { marginTop: '4px' } }, 'Keep it for later, or salvage it for Fame.')) : null,
       !wornBy && owners.length ? h('div', { class: 'dim center', style: { fontSize: '11px', fontWeight: 800 } }, `${KIND_LABEL(it)} are worn by ${listNames(G.wearers(it))}.`) : null,

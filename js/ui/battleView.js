@@ -49,7 +49,7 @@ export class BattleView {
     this.resize();
   }
   resize() {
-    const r = this.cv.getBoundingClientRect(), dpr = Math.min(3, window.devicePixelRatio || 1);
+    const r = this.cv.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1); // 2× is sharp enough and far lighter on phones
     const s = Math.min(r.width / VW, r.height / VH) || 1;
     this.scale = s; this.ox = (r.width - VW * s) / 2; this.oy = (r.height - VH * s) / 2;
     this.cv.width = Math.round(r.width * dpr); this.cv.height = Math.round(r.height * dpr); this.dpr = dpr;

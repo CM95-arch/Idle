@@ -74,7 +74,7 @@ export function openSlotSheet(cls, slot, onChange) {
         : h('div', { class: 'panel center dim' }, 'Nothing equipped'),
       h('div', { class: 'h2' }, options.length ? `In your bag (${options.length})` : 'No fitting gear in your bag yet'),
       h('div', { class: 'igrid' }, options.map((it) => h('div', {},
-        itemTile(it, { upFor: false, who: false, onclick: () => { G.equip(cls, it.id); tap('equip'); onChange?.(); close(); } }),
+        itemTile(it, { upFor: false, who: false, onclick: () => { close(); const ok = G.equip(cls, it.id); tap('equip'); if (ok) toast({ title: `Equipped on ${CLASSES[cls].name}`, body: it.name, kind: 'gold' }); onChange?.(); } }),
         h('div', { class: 'center', style: { fontSize: '10px', fontWeight: 900, marginTop: '2px' } }, !cur ? h('span', { class: 'delta-up' }, 'NEW') : itemScore(it) > itemScore(cur) ? h('span', { class: 'delta-up' }, '▲ better') : h('span', { class: 'dim' }, 'weaker'))))),
     ];
   });

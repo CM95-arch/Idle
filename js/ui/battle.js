@@ -58,7 +58,7 @@ export function createBattleScreen(root, { onFame, openClass, onDrop }) {
         refs.where = h('div', { class: 'where grow' }),
         refs.power = h('div', { class: 'power' }),
         refs.auto = h('button', { class: 'toggle', onclick: () => { G.setAutoPush(!G.state.autoPush); tap(); update(true); } }, '')),
-      refs.arena = h('div', { class: 'arena' }, cv, refs.wall = h('div', { class: 'wall hidden' })),
+      refs.arena = h('div', { class: 'arena' }, cv),
       refs.dock = h('div', { class: 'dock' },
         h('div', { class: 'lvmode' },
           h('small', { class: 'dim', style: { fontWeight: 800 } }, 'Party · hold a button to keep leveling'),
@@ -75,18 +75,17 @@ export function createBattleScreen(root, { onFame, openClass, onDrop }) {
   function patch(el, sig, build) { if (el._sig === sig) return; el._sig = sig; el.replaceChildren(...[].concat(build())); }
   function update(force) {
     if (!refs.where) return;
-    if (force) for (const el of [refs.where, refs.power, refs.wall, refs.auto, refs.mode]) el._sig = null;
+    if (force) for (const el of [refs.where, refs.power, refs.auto, refs.mode]) el._sig = null;
     const s = G.state, Z = zoneOf(s.stage), boss = isBoss(s.stage);
-    const where = `${Z.name} ${stageLabel(s.stage)}${boss ? ' ☠' : ''}`, sub = `${s.realm ? `${realmName(s.realm)} · ` : ''}${boss ? 'Boss stage' : `Best ${s.best >= 0 ? stageLabel(s.best) : '—'}`}`;
-    patch(refs.where, where + sub, () => [h('b', {}, where), h('small', {}, sub)]);
+    const walled = s.flags.wallAt != null && s.stage === s.best && s.best < G.LAST_STAGE && s.autoPush;
+    const where = `${Z.name} ${stageLabel(s.stage)}${boss ? ' ☠' : ''}`;
+    const sub = walled ? `Farming · ${stageLabel(s.flags.wallAt)} needs more power` : `${s.realm ? `${realmName(s.realm)} · ` : ''}${boss ? 'Boss stage' : `Best ${s.best >= 0 ? stageLabel(s.best) : '—'}`}`;
+    patch(refs.where, where + sub, () => [h('b', {}, where), h('small', { class: walled ? 'walled' : '' }, sub)]);
     const pw = fmt(G.partyPower()), need = G.stagePower(s.stage), ok = G.partyPower() >= need;
     patch(refs.power, `${pw}|${need}|${ok}`, () => ['⚔ ', h('span', { class: ok ? 'ok' : 'low' }, pw), h('span', { class: 'dim' }, ` / ${fmt(need)}`)]);
     refs.auto.classList.toggle('on', s.autoPush);
     patch(refs.auto, String(s.autoPush), () => (s.autoPush ? 'Auto ▶▶' : 'Farm ⟳'));
     patch(refs.mode, String(mode), () => `Level ×${MODES[mode]}`);
-    const walled = s.flags.wallAt != null && s.stage === s.best && s.best < G.LAST_STAGE;
-    refs.wall.classList.toggle('hidden', !walled);
-    if (walled) patch(refs.wall, `wall${s.flags.wallAt}`, () => [h('div', { class: 'grow' }, h('b', {}, `Stuck at ${stageLabel(s.flags.wallAt)}. `), 'Level up or equip better gear. Auto retries once you’re 8% stronger.'), h('button', { class: 'btn sm', onclick: () => { G.goToStage(G.state.best + 1); tap(); update(true); } }, 'Try now')]);
     // party cards
     const cards = [...refs.dock.querySelectorAll('.hcard')];
     const party = s.party;
@@ -127,7 +126,7 @@ export function createBattleScreen(root, { onFame, openClass, onDrop }) {
         endT = 0;
       } else if ((endT += TICK) > 1.4) { G.nextBattle(); endT = 0; update(true); }
     }
-    if (visible && view && G.battle) {
+    if (visible && view && G.battle && !document.querySelector('#overlay-root .overlay, .tour')) {
       const b = { x: VW - 24, y: VH - 8 }, c = { x: 24, y: -14 };
       view.render(G.battle, dt, c, b);
     }
