@@ -4,7 +4,7 @@ import { SLOT_NAME, EXTRA, STAT_NAME } from '../data/gear.js';
 import { BAL } from '../data/balance.js';
 import * as G from '../core/game.js';
 import { itemStats, slotOf, fits, itemScore, upgradeCost, canUpgrade, salvageValue } from '../core/items.js';
-import { h, openSheet, showDialog, toast } from './dom.js';
+import { h, openSheet, toast } from './dom.js';
 import { coin, fmt, itemTile, itemIcon, portrait, rcolor, tap } from './common.js';
 
 const listNames = (cls) => (cls.length > 2 ? `${cls.slice(0, -1).map((c) => CLASSES[c].name).join(', ')} and ${CLASSES[cls[cls.length - 1]].name}` : cls.map((c) => CLASSES[c].name).join(' and '));
@@ -59,21 +59,37 @@ export function openItemSheet(id, onChange) {
 
 export function createGearScreen(root, { onChange }) {
   let filter = 'all';
-  function salvageDialog() {
-    let max = 0, keepUp = true;
-    showDialog((close, rerender) => {
-      const pick = G.state.inv.filter((it) => it.rarity <= max && !(keepUp && Object.keys(G.state.classes).some((c) => G.isUpgradeFor(c, it))));
-      const gain = pick.reduce((a, it) => a + salvageValue(it), 0);
-      return [
-        h('h2', {}, 'Salvage'),
-        h('div', { class: 'muted center', style: { fontSize: '13px' } }, 'Turn spare gear into Fame. Worn gear is never touched.'),
-        h('div', { class: 'row', style: { justifyContent: 'center', flexWrap: 'wrap' } }, BAL.rarities.slice(0, 5).map((R, i) => h('button', { class: `chip${i === max ? ' on' : ''}`, style: { color: R.color }, onclick: () => { max = i; rerender(); } }, i ? `≤ ${R.name}` : R.name))),
-        h('button', { class: `chip${keepUp ? ' on' : ''}`, onclick: () => { keepUp = !keepUp; rerender(); } }, keepUp ? '✓ Keep upgrades for any class' : 'Keep upgrades for any class'),
-        h('div', { class: 'center', style: { fontWeight: 900 } }, `${pick.length} item${pick.length === 1 ? '' : 's'} → `, coin(gain)),
-        h('button', { class: 'btn', disabled: !pick.length, onclick: () => { const v = G.salvage(pick.map((x) => x.id)); tap('fame'); toast({ title: `+${fmt(v)} Fame`, body: `Salvaged ${pick.length} items`, kind: 'gold' }); close(); render(); onChange?.(); } }, 'Salvage'),
-        h('button', { class: 'btn alt', onclick: close }, 'Cancel'),
-      ];
-    });
+  // Salvage mode: tap tiles to pick them, then confirm. null = normal browsing.
+  let sel = null;
+  const startSalvage = () => { sel = new Set(); tap(); render(); };
+  const endSalvage = () => { sel = null; render(); };
+  function toggle(id) { if (sel.has(id)) sel.delete(id); else sel.add(id); tap(); render(); }
+  function doSalvage() {
+    const ids = [...sel].filter((id) => G.state.inv.some((x) => x.id === id));
+    if (!ids.length) return;
+    const v = G.salvage(ids); tap('fame');
+    toast({ title: `+${fmt(v)} Fame`, body: `Salvaged ${ids.length} item${ids.length === 1 ? '' : 's'}`, kind: 'gold' });
+    endSalvage(); onChange?.();
+  }
+  function tile(it) {
+    if (!sel) return itemTile(it, { onclick: () => openItemSheet(it.id, () => { render(); onChange?.(); }) });
+    const t = itemTile(it, { onclick: () => toggle(it.id) });
+    if (sel.has(it.id)) { t.classList.add('picked'); t.append(h('span', { class: 'check' }, '✓')); }
+    return t;
+  }
+  function salvageBar(items) {
+    const picked = G.state.inv.filter((it) => sel.has(it.id));
+    const gain = picked.reduce((a, it) => a + salvageValue(it), 0);
+    const allOn = items.length && items.every((it) => sel.has(it.id));
+    return h('div', { class: 'salvbar' },
+      h('div', { class: 'row' },
+        h('button', { class: 'chip', onclick: () => { for (const it of items) if (it.rarity === 0) sel.add(it.id); tap(); render(); } }, 'All Common'),
+        h('button', { class: 'chip', disabled: !items.length, onclick: () => { for (const it of items) if (allOn) sel.delete(it.id); else sel.add(it.id); tap(); render(); } }, allOn ? 'Clear shown' : 'Select shown'),
+        picked.length ? h('button', { class: 'chip', onclick: () => { sel.clear(); tap(); render(); } }, 'Clear') : null),
+      h('div', { class: 'row' },
+        h('button', { class: 'btn alt sm', onclick: endSalvage }, 'Cancel'),
+        h('button', { class: 'btn grow', disabled: !picked.length, onclick: doSalvage },
+          picked.length ? [h('span', {}, `Salvage ${picked.length}`), coin(gain)] : 'Select items')));
   }
   function render() {
     root.classList.remove('fit');
@@ -83,15 +99,16 @@ export function createGearScreen(root, { onChange }) {
     root.replaceChildren(
       h('div', { class: 'row between' }, h('div', { class: 'h1' }, 'Gear'), h('div', { class: 'chip', style: { color: s.inv.length >= G.invCap() ? 'var(--red)' : '' } }, `Bag ${s.inv.length} / ${G.invCap()}`)),
       h('div', { class: 'row', style: { overflowX: 'auto', paddingBottom: '4px' } }, FILTERS.map(([k, l]) => h('button', { class: `chip${k === filter ? ' on' : ''}`, onclick: () => { filter = k; tap(); render(); } }, l))),
-      h('div', { class: 'h2' }, items.length ? `${items.length} item${items.length === 1 ? '' : 's'} · ▲ = better for someone in your party` : ''),
-      items.length ? h('div', { class: 'igrid' }, items.map((it) => itemTile(it, { onclick: () => openItemSheet(it.id, () => { render(); onChange?.(); }) })))
+      h('div', { class: 'h2' }, sel ? 'Tap items to salvage them' : items.length ? `${items.length} item${items.length === 1 ? '' : 's'} · ▲ = better for someone in your party` : ''),
+      items.length ? h('div', { class: 'igrid' }, items.map(tile))
         : h('div', { class: 'panel center muted' }, s.inv.length ? 'Nothing in this category.' : 'Your bag is empty. Gear drops from waves and bosses.'),
-      h('div', { class: 'row', style: { marginTop: '14px' } },
-        h('button', { class: 'btn grow sm', disabled: !G.bestUpgrades(), onclick: () => { let n = 0; for (const c of s.party) n += G.equipBest(c); tap('equip'); toast({ title: n ? `Equipped ${n} upgrade${n === 1 ? '' : 's'}` : 'Nothing better to equip', kind: n ? 'gold' : '' }); render(); onChange?.(); } }, 'Equip best for party')),
-      h('div', { class: 'row', style: { marginTop: '8px' } },
-        h('button', { class: 'btn alt grow sm', onclick: salvageDialog }, 'Salvage…'),
-        h('button', { class: 'btn alt grow sm', onclick: () => { const i = AUTO.indexOf(auto); s.settings.autoSalvage = AUTO[(i + 1) % AUTO.length][0]; tap(); G.save(); render(); } }, `Auto-salvage: ${auto[1]}`)),
-      h('p', { class: 'dim center', style: { fontSize: '12px', fontWeight: 700 } }, 'When the bag is full, new drops turn straight into Fame.'));
+      sel ? salvageBar(items) : h('div', {},
+        h('div', { class: 'row', style: { marginTop: '14px' } },
+          h('button', { class: 'btn grow sm', disabled: !G.bestUpgrades(), onclick: () => { let n = 0; for (const c of s.party) n += G.equipBest(c); tap('equip'); toast({ title: n ? `Equipped ${n} upgrade${n === 1 ? '' : 's'}` : 'Nothing better to equip', kind: n ? 'gold' : '' }); render(); onChange?.(); } }, 'Equip best for party')),
+        h('div', { class: 'row', style: { marginTop: '8px' } },
+          h('button', { class: 'btn alt grow sm', disabled: !s.inv.length, onclick: startSalvage }, 'Salvage'),
+          h('button', { class: 'btn alt grow sm', onclick: () => { const i = AUTO.indexOf(auto); s.settings.autoSalvage = AUTO[(i + 1) % AUTO.length][0]; tap(); G.save(); render(); } }, `Auto-salvage: ${auto[1]}`)),
+        h('p', { class: 'dim center', style: { fontSize: '12px', fontWeight: 700 } }, 'When the bag is full, new drops turn straight into Fame.')));
     void rcolor;
   }
   return { render, frame() {} };
