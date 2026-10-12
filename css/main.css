@@ -18,6 +18,8 @@ html, body { height: 100%; margin: 0; background: var(--bg); color: var(--ink); 
 body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; touch-action: manipulation; }
 button:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+/* the button itself is always the tap target, never its text or icons (keeps taps reliable on iPhone) */
+button * { pointer-events: none; }
 img.figure { display: block; -webkit-user-drag: none; }
 img.figure.locked { filter: brightness(0) opacity(.55); }
 .ico { display: inline-grid; place-items: center; line-height: 0; }

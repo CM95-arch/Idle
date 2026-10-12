@@ -70,18 +70,23 @@ export function createBattleScreen(root, { onFame, openClass, onDrop }) {
     update(true);
   }
 
+  // Only touch the DOM when something changed. Replacing a button's insides while a finger is on it makes
+  // iPhone Safari drop the tap, so this runs four times a second but usually does nothing.
+  function patch(el, sig, build) { if (el._sig === sig) return; el._sig = sig; el.replaceChildren(...[].concat(build())); }
   function update(force) {
     if (!refs.where) return;
+    if (force) for (const el of [refs.where, refs.power, refs.wall, refs.auto, refs.mode]) el._sig = null;
     const s = G.state, Z = zoneOf(s.stage), boss = isBoss(s.stage);
-    refs.where.replaceChildren(h('b', {}, `${Z.name} ${stageLabel(s.stage)}${boss ? ' ☠' : ''}`), h('small', {}, `${s.realm ? `${realmName(s.realm)} · ` : ''}${boss ? 'Boss stage' : `Best ${s.best >= 0 ? stageLabel(s.best) : '—'}`}`));
-    const pw = G.partyPower(), need = G.stagePower(s.stage);
-    refs.power.replaceChildren('⚔ ', h('span', { class: pw >= need ? 'ok' : 'low' }, fmt(pw)), h('span', { class: 'dim' }, ` / ${fmt(need)}`));
-    refs.auto.className = `toggle${s.autoPush ? ' on' : ''}`;
-    refs.auto.textContent = s.autoPush ? 'Auto ▶▶' : 'Farm ⟳';
-    refs.mode.textContent = `Level ×${MODES[mode]}`;
+    const where = `${Z.name} ${stageLabel(s.stage)}${boss ? ' ☠' : ''}`, sub = `${s.realm ? `${realmName(s.realm)} · ` : ''}${boss ? 'Boss stage' : `Best ${s.best >= 0 ? stageLabel(s.best) : '—'}`}`;
+    patch(refs.where, where + sub, () => [h('b', {}, where), h('small', {}, sub)]);
+    const pw = fmt(G.partyPower()), need = G.stagePower(s.stage), ok = G.partyPower() >= need;
+    patch(refs.power, `${pw}|${need}|${ok}`, () => ['⚔ ', h('span', { class: ok ? 'ok' : 'low' }, pw), h('span', { class: 'dim' }, ` / ${fmt(need)}`)]);
+    refs.auto.classList.toggle('on', s.autoPush);
+    patch(refs.auto, String(s.autoPush), () => (s.autoPush ? 'Auto ▶▶' : 'Farm ⟳'));
+    patch(refs.mode, String(mode), () => `Level ×${MODES[mode]}`);
     const walled = s.flags.wallAt != null && s.stage === s.best && s.best < G.LAST_STAGE;
     refs.wall.classList.toggle('hidden', !walled);
-    if (walled) refs.wall.replaceChildren(h('div', { class: 'grow' }, h('b', {}, `Stuck at ${stageLabel(s.flags.wallAt)}. `), 'Level up or equip better gear. Auto retries once you’re 8% stronger.'), h('button', { class: 'btn sm', onclick: () => { G.goToStage(s.best + 1); tap(); update(true); } }, 'Try now'));
+    if (walled) patch(refs.wall, `wall${s.flags.wallAt}`, () => [h('div', { class: 'grow' }, h('b', {}, `Stuck at ${stageLabel(s.flags.wallAt)}. `), 'Level up or equip better gear. Auto retries once you’re 8% stronger.'), h('button', { class: 'btn sm', onclick: () => { G.goToStage(G.state.best + 1); tap(); update(true); } }, 'Try now')]);
     // party cards
     const cards = [...refs.dock.querySelectorAll('.hcard')];
     const party = s.party;
@@ -90,18 +95,18 @@ export function createBattleScreen(root, { onFame, openClass, onDrop }) {
       for (let i = 0; i < 3; i++) refs.dock.append(heroCard(party[i]));
     }
     for (const card of refs.dock.querySelectorAll('.hcard[data-cls]')) {
-      const cls = card.dataset.cls, n = MODES[mode] === 'Max' ? Math.max(1, G.affordableLevels(cls)) : MODES[mode];
-      let cost = 0; for (let i = 0; i < n; i++) cost += G.levelCostForLevel(s.classes[cls].lv + i);
+      const cls = card.dataset.cls, lv = s.classes[cls].lv, n = MODES[mode] === 'Max' ? Math.max(1, G.affordableLevels(cls)) : MODES[mode];
+      let cost = 0; for (let i = 0; i < n; i++) cost += G.levelCostForLevel(lv + i);
       const can = s.fame >= G.levelCost(cls);
-      card.querySelector('.lv').textContent = `Lv ${s.classes[cls].lv}`;
+      const lvEl = card.querySelector('.lv'); if (lvEl.textContent !== `Lv ${lv}`) lvEl.textContent = `Lv ${lv}`;
       const btn = card.querySelector('.lvbtn');
-      btn.disabled = !can;
-      btn.replaceChildren(h('span', {}, `Level up${n > 1 ? ` ×${n}` : ''}`), h('small', {}, coin(cost)));
+      if (btn.disabled !== !can) btn.disabled = !can;
+      patch(btn, `${n}|${fmt(cost)}`, () => [h('span', {}, `Level up${n > 1 ? ` ×${n}` : ''}`), h('small', {}, coin(cost))]);
       card.classList.toggle('ready', can);
-      card.querySelector('.hint')?.remove();
-      if (can && !s.flags.leveled && cls === party[0]) card.append(h('div', { class: 'hint' }, 'Tap to level up!'));
+      const wantHint = can && !s.flags.leveled && cls === party[0], hint = card.querySelector('.hint');
+      if (wantHint && !hint) card.append(h('div', { class: 'hint' }, 'Tap to level up!'));
+      else if (!wantHint && hint) hint.remove();
     }
-    void force;
   }
 
   /** Called every animation frame by main.js; runs the battle even when this screen is hidden. */
