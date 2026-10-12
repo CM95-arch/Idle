@@ -11,18 +11,24 @@ export const $ = (sel, root = document) => root.querySelector(sel);
 let lastTap = 0, touch = null;
 export const recentTap = () => Date.now() - lastTap < 700;
 const tappableAt = (x, y) => document.elementFromPoint(x, y)?.closest?.('[data-tap]') || null;
+const tappableOf = (n) => (n?.closest ? n.closest('[data-tap]') : null);
 document.addEventListener('touchstart', (e) => {
   const t = e.changedTouches[0];
-  touch = e.touches.length > 1 ? null : { x: t.clientX, y: t.clientY, el: tappableAt(t.clientX, t.clientY) };
+  // what's under the finger, plus what Safari says was touched, in case the two disagree
+  touch = e.touches.length > 1 ? null : { x: t.clientX, y: t.clientY, el: tappableAt(t.clientX, t.clientY), tg: tappableOf(e.target) };
 }, { capture: true, passive: true });
+// the page must never scroll; if Safari nudges it anyway, put it back so taps line up with what you see
+window.addEventListener('scroll', () => { if (window.scrollX || window.scrollY) window.scrollTo(0, 0); }, { passive: true });
 document.addEventListener('touchcancel', () => { touch = null; }, { capture: true, passive: true });
 document.addEventListener('touchend', (e) => {
   const s = touch; touch = null;
-  if (!s?.el) return;
+  if (!s || (!s.el && !s.tg)) return;
   const t = e.changedTouches[0];
   if (Math.hypot(t.clientX - s.x, t.clientY - s.y) > 12) return;
-  const el = tappableAt(t.clientX, t.clientY);
-  if (el !== s.el || el.disabled || !el.isConnected) return;
+  const at = tappableAt(t.clientX, t.clientY);
+  // trust the geometry when it agrees; otherwise the element Safari says was touched (if it's still on screen)
+  const el = at && (at === s.el || at === s.tg) ? at : s.tg;
+  if (!el || el.disabled || !el.isConnected) return;
   if (e.cancelable) e.preventDefault();
   lastTap = Date.now();
   el._tap(e);

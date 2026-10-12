@@ -4,7 +4,7 @@ import { SLOTS, SLOT_NAME } from '../data/gear.js';
 import { BAL } from '../data/balance.js';
 import * as G from '../core/game.js';
 import { heroStats } from '../core/heroes.js';
-import { kindFor, fits, itemScore, slotOf } from '../core/items.js';
+import { kindFor, fits, itemScore, slotOf, canUpgrade, upgradeCost } from '../core/items.js';
 import { h, openSheet, closeSheet, toast } from './dom.js';
 import { portrait, coin, fmt, itemTile, tap } from './common.js';
 import { openItemSheet } from './gear.js';
@@ -68,9 +68,15 @@ export function openSlotSheet(cls, slot, onChange) {
     const options = s.inv.filter((it) => it.kind === kind).sort((a, b) => itemScore(b) - itemScore(a));
     return [
       h('div', { class: 'pixel center', style: { fontSize: '20px' } }, `${CLASSES[cls].name} · ${SLOT_NAME[slot]}`),
-      cur ? h('div', { class: 'panel row' }, itemTile(cur, { upFor: false, who: false, onclick: () => openItemSheet(cur.id, () => { rerender(); onChange?.(); }) }),
-        h('div', { class: 'grow' }, h('b', { style: { color: G.CLASSES && BAL.rarities[cur.rarity].color } }, cur.name), h('div', { class: 'dim', style: { fontSize: '12px', fontWeight: 800 } }, `Equipped · tap to upgrade`)),
-        h('button', { class: 'btn alt sm', onclick: () => { if (G.unequip(cls, slot)) { tap(); rerender(); onChange?.(); } } }, 'Remove'))
+      cur ? h('div', { class: 'panel', style: { display: 'grid', gap: '10px' } },
+        h('div', { class: 'row' },
+          h('div', { style: { width: '64px', flex: 'none' } }, itemTile(cur, { upFor: false, who: false, onclick: () => openItemSheet(cur.id, () => { rerender(); onChange?.(); }) })),
+          h('div', { class: 'grow' }, h('b', { style: { color: BAL.rarities[cur.rarity].color } }, `${cur.name}${cur.up ? ` +${cur.up}` : ''}`),
+            h('div', { class: 'dim', style: { fontSize: '12px', fontWeight: 800 } }, `Equipped · upgrades ${cur.up} / ${BAL.rarities[cur.rarity].maxUp} · tap the icon for stats`))),
+        h('div', { class: 'row' },
+          h('button', { class: 'btn grow sm', disabled: !canUpgrade(cur) || s.fame < upgradeCost(cur), onclick: () => { if (G.upgrade(cur.id)) { tap('upgrade'); rerender(); onChange?.(); } } },
+            canUpgrade(cur) ? [h('span', {}, `Upgrade to +${cur.up + 1}`), coin(upgradeCost(cur))] : 'Fully upgraded'),
+          h('button', { class: 'btn alt sm', onclick: () => { if (G.unequip(cls, slot)) { tap(); rerender(); onChange?.(); } else toast({ title: 'Your bag is full', body: 'Salvage something first.' }); } }, 'Remove')))
         : h('div', { class: 'panel center dim' }, 'Nothing equipped'),
       h('div', { class: 'h2' }, options.length ? `In your bag (${options.length})` : 'No fitting gear in your bag yet'),
       h('div', { class: 'igrid' }, options.map((it) => h('div', {},
