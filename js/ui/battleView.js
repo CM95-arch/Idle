@@ -164,6 +164,13 @@ export class BattleView {
       if (r.k === 'fame') { const e = B.enemies.find((x) => x.id === r.id) || { x: 180, y: 120 }; for (let i = 0; i < Math.min(6, 2 + Math.floor(Math.log10(r.n + 1))); i++) this.coins.push({ x: e.x + rand(-10, 10), y: e.y + rand(-10, 10), vx: rand(-90, 90), vy: rand(-140, -60), t: -i * 0.03, life: 0.95 }); }
       if (r.k === 'drop') {
         const e = [...B.enemies].reverse().find((x) => x.hp <= 0) || { x: 180, y: 140 };
+        if (r.salvaged) {
+          // auto-salvaged (or the bag was full): it bursts straight into Fame
+          for (let i = 0; i < 5; i++) this.coins.push({ x: e.x + rand(-8, 8), y: e.y + rand(-8, 8), vx: rand(-110, 110), vy: rand(-160, -70), t: -i * 0.03, life: 0.95 });
+          this.num(e.x, e.y - 40, `+${fmt(r.salvaged)}`, BAL.rarities[r.it.rarity].color, 11);
+          sound?.('fame');
+          continue;
+        }
         this.bags.push({ x: e.x, y: e.y, t: 0, rarity: r.it.rarity, salvaged: r.salvaged, life: r.unique ? (r.exalted ? 3.4 : 2.6) : 1.5, ex: r.exalted });
         if (r.unique) {
           // the white bag: a pillar of light, a flash, and a chime you learn to love

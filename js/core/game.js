@@ -150,6 +150,14 @@ export function upgrade(itemId) {
   changed('gear');
   return true;
 }
+/** Change the auto-salvage level, and apply it to what's already in the bag. Returns { n, fame }. */
+export function setAutoSalvage(level) {
+  state.settings.autoSalvage = level;
+  const ids = state.inv.filter(autoSalvages).map((it) => it.id);
+  const fame = ids.length ? salvage(ids) : 0;
+  save(); changed('gear');
+  return { n: ids.length, fame };
+}
 export function salvage(ids) {
   let got = 0;
   for (const id of ids) {
@@ -213,9 +221,16 @@ function rollUnique(stage, boss) {
   return { it, salvaged: 0, unique: true, first, exalted: !!U.exalted };
 }
 /** Put a drop in the bag (or turn it into Fame if the bag is full or it's set to auto-salvage). */
+// auto-salvage never eats a Unique, or an upgrade for someone in the party
+const autoSalvages = (it) => !it.u && it.rarity <= state.settings.autoSalvage && !state.party.some((c) => isUpgradeFor(c, it));
 function stash(it) {
   state.stats.items++;
-  if (it.rarity <= state.settings.autoSalvage || state.inv.length >= invCap()) { const v = salvageValue(it); gainFame(v, false); return { it, salvaged: v }; }
+  const auto = autoSalvages(it);
+  if (auto || state.inv.length >= invCap()) {
+    const v = salvageValue(it); gainFame(v, false);
+    if (auto) { const A = (state.stats.auto ||= { n: 0, fame: 0 }); A.n++; A.fame += v; }
+    return { it, salvaged: v };
+  }
   state.inv.push(it);
   return { it, salvaged: 0 };
 }

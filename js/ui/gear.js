@@ -113,8 +113,17 @@ export function createGearScreen(root, { onChange }) {
         h('button', { class: 'btn alt block sm', style: { marginTop: '8px' }, onclick: openCollection }, `✦ Uniques found: ${Object.keys(s.uniques).length} / ${UNIQUES.length}`),
         h('div', { class: 'row', style: { marginTop: '8px' } },
           h('button', { class: 'btn alt grow sm', disabled: !s.inv.length, onclick: startSalvage }, 'Salvage'),
-          h('button', { class: 'btn alt grow sm', onclick: () => { const i = AUTO.indexOf(auto); s.settings.autoSalvage = AUTO[(i + 1) % AUTO.length][0]; tap(); G.save(); render(); } }, `Auto-salvage: ${auto[1]}`)),
-        h('p', { class: 'dim center', style: { fontSize: '12px', fontWeight: 700 } }, 'When the bag is full, new drops turn straight into Fame.')));
+          h('button', { class: `btn ${auto[0] >= 0 ? '' : 'alt '}grow sm`, onclick: () => {
+            const next = AUTO[(AUTO.indexOf(auto) + 1) % AUTO.length];
+            const r = G.setAutoSalvage(next[0]); tap(r.n ? 'fame' : 'tap');
+            toast(next[0] < 0 ? { title: 'Auto-salvage off', body: 'Every drop goes into your bag.' }
+              : { title: `Auto-salvage: ${next[1]}`, body: r.n ? `Salvaged ${r.n} item${r.n === 1 ? '' : 's'} already in your bag for +${fmt(r.fame)} Fame.` : 'Nothing in your bag to salvage right now.', kind: 'gold' });
+            render(); onChange?.();
+          } }, `Auto-salvage: ${auto[1]}`)),
+        h('p', { class: 'dim center', style: { fontSize: '12px', fontWeight: 700 } },
+          auto[0] >= 0 ? `New ${auto[1] === 'Common' ? 'Common' : `${auto[1].replace('≤ ', '')} and lower`} drops turn straight into Fame, unless they’re an upgrade for someone in your party. Uniques are never salvaged.` : 'Tap Auto-salvage to turn low-rarity drops straight into Fame.',
+          s.stats.auto?.n ? h('div', { class: 'gold', style: { marginTop: '4px' } }, `Auto-salvaged so far: ${fmt(s.stats.auto.n)} items, +${fmt(s.stats.auto.fame)} Fame`) : null,
+          h('div', { style: { marginTop: '4px' } }, 'When the bag is full, new drops turn into Fame too.'))));
     void rcolor;
   }
   return { render, frame() {} };
