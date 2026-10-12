@@ -1,8 +1,7 @@
-// Original placeholder pixel art, drawn from tiny text maps. Your own sprites replace these later:
-// drop a PNG named after the item id into assets/items/ and list it in js/data/artManifest.js.
+// Pixel art drawn from tiny text maps, cached as canvases.
 // Map letters: o = outline, a = main, b = light, c = accent, d = dark, e = skin, k = eyes. "." is empty.
-import { ITEMS } from '../data/items.js';
-import { ART } from '../data/artManifest.js';
+import { KINDS } from '../data/gear.js';
+import { BAL } from '../data/balance.js';
 
 const M = {
   // ---- items ----
@@ -62,10 +61,6 @@ const M = {
 };
 
 const BASE = { o: '#0a080c', d: '#2a2230', e: '#e5b98f', k: '#1a1418' };
-export const TIER_COLORS = (t) => (t >= 18 ? ['#e8e8f0', '#ffffff', '#ffd34d'] : t >= 15 ? ['#1a9aa8', '#7cf0ff', '#ffffff'] : t >= 12 ? ['#b2263a', '#ff8a7a', '#ffd34d'] : t >= 10 ? ['#7b4bd1', '#c9a6ff', '#ffd34d'] : t >= 7 ? ['#2f62c9', '#8ec1ff', '#ffe08a'] : t >= 4 ? ['#2d8f73', '#8fe0c3', '#f2c14e'] : ['#8a6a4a', '#cdb08a', '#b8c0c8']);
-export const POT_COLORS = { hp: '#2ad1c2', mp: '#f2c94c', att: '#e24fcf', def: '#3c3a44', spd: '#49c25c', dex: '#f28c2a', vit: '#d83b3b', wis: '#4aa3f0' };
-const UT_COLORS = ['#c0408f', '#ff9de6', '#fff2a8'];
-
 const cache = new Map();
 export function draw(map, scale, colors, silhouette = false) {
   const key = `${map}|${scale}|${JSON.stringify(colors)}|${silhouette}`;
@@ -84,48 +79,29 @@ export function draw(map, scale, colors, silhouette = false) {
   return cv;
 }
 export const mapSize = (map) => ({ w: Math.max(...M[map].map((r) => r.length)), h: M[map].length });
+export const hasMap = (map) => !!M[map];
 
+// item colors by rarity: main, light, accent
+const RAR = [
+  ['#7c838c', '#b9c0c9', '#e6e9ed'], ['#2f8a3c', '#5fd16a', '#c6ffb0'], ['#2463b8', '#4aa3ff', '#bfe2ff'],
+  ['#6a2fb8', '#b05cff', '#f0d0ff'], ['#c46a10', '#ffb02e', '#fff0a0'], ['#b81f48', '#ff4f7a', '#ffd34d'],
+];
+export const rarityColor = (r) => BAL.rarities[r].color;
 export function itemColors(it) {
-  if (it.slot === 'potion') return { c: POT_COLORS[it.potStat], b: '#ffffff', d: '#cfc7b8' };
-  if (it.slot === 'rune') return { b: '#e9d9a8', c: '#8a5a1a' };
-  const [a, b, c] = it.tier === 'UT' ? UT_COLORS : TIER_COLORS(it.tier);
-  if (it.type === 'poison') return { a: '#cfc7b8', b: '#e9ffe0', c: it.tier === 'UT' ? '#ff6ad5' : a };
-  if (it.type === 'ring') return { a, b, c: it.tier === 'UT' ? c : POT_COLORS[it.ringStat] || c };
-  return { a, b, c };
+  const [a, b, c] = RAR[it.rarity];
+  return it.kind === 'ring' ? { a, b, c: { hp: '#2ad1c2', atk: '#e24fcf', def: '#8a8a9a' }[it.ring] || c } : { a, b, c };
 }
-const itemMap = (it) => (it.slot === 'potion' ? 'potion' : it.slot === 'rune' ? 'rune' : it.type);
-
-/** A DOM node for an item icon. size is the rendered CSS size in px. */
-export function itemIcon(id, size = 32, silhouette = false) {
-  const it = ITEMS[id];
-  if (ART.has(id)) {
-    const img = new Image(); img.src = `assets/items/${id}.png`; img.alt = '';
-    img.className = 'spr'; img.width = size; img.height = size;
-    if (silhouette) img.style.filter = 'brightness(0) opacity(.75)';
-    return img;
-  }
-  const cv = draw(itemMap(it), 4, itemColors(it), silhouette);
+/** A DOM canvas for an item icon at a CSS size. */
+export function itemIcon(it, size = 32) {
+  const cv = draw(it.kind in M ? it.kind : KINDS[it.kind].slot, 4, itemColors(it));
   const out = cv.cloneNode(); out.getContext('2d').drawImage(cv, 0, 0);
   out.className = 'spr'; out.style.width = out.style.height = `${size}px`;
   return out;
 }
-export const itemCanvas = (id) => draw(itemMap(ITEMS[id]), 4, itemColors(ITEMS[id]));
-
-const SHAPE = { wizard: 'hat', sorcerer: 'hat', priest: 'hood', necromancer: 'hood', archer: 'hood', huntress: 'hood', rogue: 'hood', assassin: 'hood', warrior: 'helm', knight: 'helm', paladin: 'helm' };
-export function heroCanvas(cls, colors, back = false, scale = 4) {
-  return draw(`${SHAPE[cls]}_${back ? 'b' : 'f'}`, scale, colors);
-}
-export function heroIcon(cls, colors, size = 32) {
-  const cv = heroCanvas(cls, colors, false, 4);
+export function heroCanvas(look, colors, back = false, scale = 4) { return draw(`${look}_${back ? 'b' : 'f'}`, scale, colors); }
+export function heroIcon(look, colors, size = 32, silhouette = false) {
+  const cv = draw(`${look}_f`, 4, colors, silhouette);
   const out = cv.cloneNode(); out.getContext('2d').drawImage(cv, 0, 0);
   out.className = 'spr'; out.style.height = `${size}px`; out.style.width = 'auto';
   return out;
-}
-export function bagColor(id) {
-  const it = ITEMS[id];
-  if (it.tier === 'UT') return { a: '#f4f4f8', b: '#ffffff' };
-  if (it.slot === 'potion') return { a: '#3a6ad8', b: '#8ab0ff' };
-  if (it.slot === 'rune') return { a: '#d9a441', b: '#ffe08a' };
-  const t = it.tier;
-  return t >= 15 ? { a: '#e8e8f0', b: '#ffffff' } : t >= 11 ? { a: '#3ac8d8', b: '#9af0ff' } : t >= 8 ? { a: '#7a3ac0', b: '#b88aff' } : t >= 5 ? { a: '#c04a8a', b: '#ff9ad0' } : { a: '#7a5a3a', b: '#b08a5a' };
 }

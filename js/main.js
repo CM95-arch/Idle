@@ -1,174 +1,130 @@
-// Boot, navigation, the frame loop, sounds and offline catch-up.
+// Boots the game: top bar, tabs, the frame loop, saving, and offline earnings.
 import { BUILD } from './config.js';
-import { ITEMS } from './data/items.js';
-import { slotType } from './core/character.js';
-import { BIOME } from './data/world.js';
 import * as G from './core/game.js';
-import { $, h, showDialog, confirmDialog, toast, fmtDur, fmtNum, fmtXp } from './ui/dom.js';
-import { itemIcon } from './ui/sprites.js';
-import { renderTopBar } from './ui/common.js';
-import { createFarmScreen } from './ui/farm.js';
-import { createDungeonScreen } from './ui/dungeons.js';
-import { createVaultScreen } from './ui/vault.js';
-import { createCharacterScreen } from './ui/character.js';
+import { h, $, openSheet, confirmDialog, toast } from './ui/dom.js';
 import { initSound, setSoundEnabled, play } from './ui/sound.js';
-
-const TABS = [
-  ['farm', 'Farm', '<path d="M4 20 18 6l2-2M14 4h6v6M7 13l4 4M5 19l2-2"/>'],
-  ['dungeons', 'Dungeons', '<path d="M4 21V10l8-6 8 6v11M9 21v-6h6v6"/>'],
-  ['vault', 'Vault', '<rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 11h18M10 11v3h4v-3"/>'],
-  ['character', 'Character', '<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/>'],
-];
+import { fmt, tap } from './ui/common.js';
+import { createBattleScreen } from './ui/battle.js';
+import { createPartyScreen, openClassSheet } from './ui/party.js';
+import { createGearScreen } from './ui/gear.js';
+import { createMapScreen } from './ui/map.js';
+import { createAscendScreen } from './ui/ascend.js';
+import { showWelcome, showOffline, showUnlock, showAscended } from './ui/celebrate.js';
 
 G.load();
 initSound(G.state.settings.sound);
-let tab = 'farm';
-try { const t = sessionStorage.getItem('idle-tab'); if (TABS.some(([id]) => id === t)) tab = t; } catch {}
-let catching = false;
 
-const app = {
-  nav(id) { tab = id; try { sessionStorage.setItem('idle-tab', id); } catch {} showTab(); },
-  refresh() { showTab(); },
-  refreshTop() { renderTop(); },
-  sound: (name) => play(name),
+// ---------- top bar ----------
+const fameEl = h('b', { class: 'tnum' }, '0'), rateEl = h('small', {}, '');
+const fameBox = h('div', { class: 'fame' }, h('span', { class: 'coin' }), h('div', {}, fameEl, rateEl));
+const realmEl = h('div', { class: 'realm-tag grow' });
+$('#topbar').append(fameBox, realmEl, h('button', { class: 'iconbtn', 'aria-label': 'Settings', onclick: openSettings }, '⚙'));
+const recent = []; // fame earned in the last minute, for the rate readout
+function onFame(n) {
+  recent.push([performance.now(), n]);
+  fameBox.classList.remove('bump'); void fameBox.offsetWidth; fameBox.classList.add('bump');
+  if (Math.random() < 0.35) play('fame');
+}
+function updateTop() {
+  fameEl.textContent = fmt(G.state.fame);
+  const now = performance.now();
+  while (recent.length && now - recent[0][0] > 60000) recent.shift();
+  const per = recent.reduce((a, [, n]) => a + n, 0) * (60000 / Math.max(10000, now - (recent[0]?.[0] ?? now)));
+  rateEl.textContent = recent.length ? `${fmt(per)} / min` : 'Fame';
+  realmEl.textContent = G.state.realm ? `Realm ${['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'][G.state.realm] || G.state.realm + 1}` : '';
+}
+
+// ---------- screens ----------
+const TABS = [
+  ['battle', '⚔', 'Battle'], ['party', '🛡', 'Party'], ['gear', '🎒', 'Gear'], ['map', '🗺', 'Map'], ['ascend', '✦', 'Ascend'],
+];
+let current = 'battle';
+const screens = {
+  battle: createBattleScreen($('#scr-battle'), { onFame, openClass: (c) => openClassSheet(c, refresh) }),
+  party: createPartyScreen($('#scr-party')),
+  gear: createGearScreen($('#scr-gear'), { onChange: refresh }),
+  map: createMapScreen($('#scr-map'), { goBattle: () => go('battle') }),
+  ascend: createAscendScreen($('#scr-ascend'), { onAscend: (P) => { showAscended(P); go('battle'); } }),
 };
-const screens = {};
-screens.farm = createFarmScreen($('#scr-farm'), app);
-screens.dungeons = createDungeonScreen($('#scr-dungeons'), app);
-screens.vault = createVaultScreen($('#scr-vault'), app);
-screens.character = createCharacterScreen($('#scr-character'), app);
-
-function renderTop() { renderTopBar($('#topbar'), { onChange: () => showTab(), onSettings: settings }); }
-function renderTabs() {
-  const hasNew = Object.keys(G.state.newIds).length > 0;
-  $('#tabs').replaceChildren(...TABS.map(([id, label, svg]) => {
-    const b = h('button', { class: `tab${id === tab ? ' on' : ''}`, onclick: () => app.nav(id), 'aria-label': label });
-    b.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${svg}</svg><span>${label}</span>${id === 'vault' && hasNew ? '<i class="badge"></i>' : ''}${id === 'dungeons' && G.state.run ? '<i class="badge"></i>' : ''}`;
-    return b;
-  }));
+const tabEls = {};
+$('#tabs').append(...TABS.map(([id, icon, label]) => (tabEls[id] = h('button', { class: 'tab', onclick: () => { tap(); go(id); } }, h('span', { class: 'ti' }, icon), h('span', {}, label)))));
+function go(id) {
+  current = id;
+  for (const [k] of TABS) $(`#scr-${k}`).classList.toggle('hidden', k !== id);
+  screens.battle.show(id === 'battle');
+  if (id !== 'battle') screens[id].render();
+  updateTabs();
 }
-function showTab() {
-  for (const [id] of TABS) $(`#scr-${id}`).classList.toggle('hidden', id !== tab);
-  screens[tab].render();
-  renderTop(); renderTabs();
+function refresh() {
+  if (current !== 'battle') screens[current].render();
+  screens.battle.update(true);
+  updateTabs();
 }
-
-function settings() {
-  showDialog((close, rerender) => [
-    h('h2', {}, 'Settings'),
-    h('button', { class: 'btn gray', onclick: () => { G.state.settings.sound = !G.state.settings.sound; setSoundEnabled(G.state.settings.sound); G.save(); rerender(); } }, `Sound: ${G.state.settings.sound ? 'On' : 'Off'}`),
-    h('button', { class: 'btn gray', onclick: async () => {
-      const code = G.exportSave();
-      try { await navigator.clipboard.writeText(code); toast({ title: 'Save code copied' }); } catch { showDialog((c2) => [h('h2', {}, 'Save code'), h('textarea', { readonly: true, style: { height: '140px' } }, code), h('button', { class: 'btn', onclick: c2 }, 'Done')]); }
-    } }, 'Copy save code'),
-    h('button', { class: 'btn gray', onclick: () => {
-      close(); let text = '';
-      showDialog((c2) => [h('h2', {}, 'Load a save'), h('textarea', { id: 'import-save', placeholder: 'Paste a save code', oninput: (e) => { text = e.target.value; }, style: { height: '140px' } }),
-        h('button', { class: 'btn', onclick: () => { try { G.importSave(text); c2(); location.reload(); } catch (e) { toast({ title: 'Could not load that save', body: e.message, kind: 'bad' }); } } }, 'Load save')]);
-    } }, 'Load a save code'),
-    h('button', { class: 'btn red', onclick: async () => { if (await confirmDialog({ title: 'Erase everything?', body: 'Deletes all characters, items and progress on this device.', ok: 'Erase', danger: true })) { G.resetGame(); location.reload(); } } }, 'Erase save'),
-    h('div', { class: 'small muted', style: { textAlign: 'center', fontWeight: 700 } }, `Build ${BUILD} · ${fmtNum(G.state.stats.kills)} kills · ${G.state.stats.clears} clears`),
-    h('button', { class: 'btn', onclick: close }, 'Done'),
-  ]);
+function updateTabs() {
+  for (const [k] of TABS) tabEls[k].classList.toggle('on', k === current);
+  const ups = G.bestUpgrades();
+  setBadge('gear', ups ? `${ups}` : '');
+  setBadge('ascend', G.canAscend() ? '!' : '', true);
+  tabEls.ascend.classList.toggle('locked', !G.canAscend() && !G.state.ascensions);
+}
+function setBadge(k, text, gold) {
+  let b = tabEls[k].querySelector('.badge');
+  if (!text) { b?.remove(); return; }
+  if (!b) { b = h('span', { class: `badge${gold ? ' gold' : ''}` }); tabEls[k].append(b); }
+  b.textContent = text;
 }
 
 // ---------- events from the game ----------
-const weaponOf = (slot) => { const c = G.state.chars[slot]; return c ? slotType(c.cls, 'weapon') : 'staff'; };
-function withSound(screen, slotOf) {
-  const show = (kind, d) => {
-    screen.emit(kind, d);
-    if (kind === 'attack') play(weaponOf(slotOf()));
-    else if (kind === 'hurt' && d.big) play('hurt');
-    else if (kind === 'drop') play(ITEMS[d.id].tier === 'UT' ? 'lootRare' : 'loot');
-    else if (kind === 'ability') play('ability');
-    else if (kind === 'dodged') play('dodge');
-    else if (kind === 'telegraph') play('tele');
-    else if (kind === 'spawn' && d.enemies?.some((x) => x.event)) { play('lootRare'); toast({ title: 'Event boss!', body: d.enemies.find((x) => x.event).name, kind: 'gold' }); }
-  };
-  // Events carry `frac`, their position inside the 0.1s combat step; play them at that moment for a steady rhythm.
-  return (kind, d) => { if (d?.frac > 0.02) setTimeout(() => show(kind, d), d.frac * 100); else show(kind, d); };
-}
-const farmEmit = withSound(screens.farm, () => G.state.view);
-
-G.on('toast', (t) => { if (!catching) toast(t); });
-G.on('discover', ({ id }) => { if (!catching && ITEMS[id].slot !== 'potion') toast({ title: ITEMS[id].tier === 'UT' ? 'Unique item!' : 'New item', body: ITEMS[id].name, icon: itemIcon(id, 28), kind: ITEMS[id].tier === 'UT' ? 'gold' : '' }); renderTabs(); });
-G.on('levelup', ({ name, level }) => {
-  if (catching) return;
-  play('levelup');
-  const host = tab === 'farm' ? $('#scr-farm .scene') : null;
-  if (host) { const el = h('div', { class: 'lvlup' }, `Level ${level}!`); host.append(el); setTimeout(() => el.remove(), 1700); } else toast({ title: `${name} reached level ${level}` });
-  renderTop();
+G.onChange((why) => {
+  if (why?.unlock) showUnlock(why.unlock, why.joined, (c) => openClassSheet(c, refresh));
+  if (why === 'gear' || why === 'party' || why?.unlock || why === 'ascend') { screens.battle.update(true); updateTabs(); }
 });
-G.on('retreated', ({ slot, biome }) => { if (!catching) { toast({ title: `${G.state.chars[slot].name} retreated`, body: `From the ${BIOME[biome].name}. Send them back in when ready.`, kind: 'bad' }); play('hurt'); } renderTop(); });
-G.on('runEnd', () => { renderTabs(); renderTop(); });
-G.on('changed', () => showTab());
-G.on('gear', (d) => { if (!d.drink) play('equip'); screens[tab].render(); renderTop(); });
-G.on('estimates', () => { if (tab === 'farm') screens[tab].render(); });
 
-// ---------- catch-up after time away ----------
-function snapshot() {
-  return G.state.farms.map((f, i) => ({ status: f.status, kills: f.session?.kills || 0, xp: f.session?.xp || 0, items: f.session?.items || 0, potions: f.session?.potions || 0, finds: f.session?.newFinds || 0, start: f.session?.startMs, name: G.state.chars[i]?.name }));
-}
-async function catchUp() {
-  const total = G.ticksBehind();
-  if (total < 1500) return;
-  catching = true;
-  const awayMs = Date.now() - G.state.savedAt;
-  const before = snapshot();
-  const box = h('div', { class: 'boot' }, h('div', {}, h('div', { class: 'h1' }, 'Welcome back'), h('p', { style: { color: '#b8c2cd' } }, `Catching up ${fmtDur(awayMs)}…`), h('div', { class: 'bar xpbar', style: { width: '220px', margin: '0 auto' } }, h('i', { id: 'cu-bar', style: { width: '0%' } }))));
-  if (total > 40000) $('#app').append(box);
-  while (G.ticksBehind() > 0) {
-    const now = Date.now();
-    let budget = 120000;
-    for (let i = 0; i < G.state.slots && budget > 0; i++) budget -= G.advanceFarm(i, now, budget);
-    const left = G.ticksBehind();
-    const bar = document.getElementById('cu-bar'); if (bar) bar.style.width = `${Math.min(100, (1 - left / total) * 100)}%`;
-    if (left > 0) await new Promise((r) => setTimeout(r, 0));
-  }
-  box.remove();
-  catching = false;
-  G.save();
-  const after = snapshot();
-  const lines = [];
-  after.forEach((a, i) => {
-    const b = before[i];
-    if (!a.name) return;
-    const same = a.start === b.start;
-    const kills = a.kills - (same ? b.kills : 0), potions = a.potions - (same ? b.potions : 0), xp = a.xp - (same ? b.xp : 0);
-    if (kills <= 0 && a.status === b.status) return;
-    const f = G.state.farms[i];
-    lines.push(h('div', { class: 'panel small' },
-      h('div', { class: 'row between' }, h('b', {}, a.name), h('b', { style: { color: a.status === 'retreated' ? 'var(--red)' : 'var(--green)' } }, a.status === 'retreated' ? `Retreated from ${BIOME[f.biome].name}` : BIOME[f.biome].name)),
-      h('div', { class: 'muted tnum', style: { fontWeight: 700 } }, `${fmtNum(kills)} kills · +${fmtXp(xp)} XP${potions ? ` · ${fmtNum(potions)} potions` : ''}`),
-      a.status === 'retreated' && f.session?.endMs ? h('div', { style: { color: 'var(--red)', fontWeight: 700 } }, `Retreated after ${fmtDur(f.session.endMs - f.session.startMs)}: waiting for you`) : null));
-  });
-  if (lines.length && awayMs > 60000) showDialog((close) => [h('div', { class: 'banner' }, h('h2', {}, `Away for ${fmtDur(awayMs)}`)), ...lines, h('button', { class: 'btn', onclick: close }, 'Nice')]);
-  showTab();
+// ---------- settings ----------
+function openSettings() {
+  tap();
+  openSheet((close, rerender) => [
+    h('div', { class: 'pixel center', style: { fontSize: '22px' } }, 'Settings'),
+    h('button', { class: 'btn alt block', onclick: () => { G.state.settings.sound = !G.state.settings.sound; setSoundEnabled(G.state.settings.sound); G.save(); rerender(); } }, `Sound: ${G.state.settings.sound ? 'On' : 'Off'}`),
+    h('div', { class: 'panel', style: { fontSize: '13px', fontWeight: 700 } },
+      h('div', { class: 'stat' }, h('span', {}, 'Enemies defeated'), h('b', {}, fmt(G.state.stats.kills))),
+      h('div', { class: 'stat' }, h('span', {}, 'Stages cleared'), h('b', {}, fmt(G.state.stats.clears))),
+      h('div', { class: 'stat' }, h('span', {}, 'Bosses slain'), h('b', {}, fmt(G.state.stats.bosses))),
+      h('div', { class: 'stat' }, h('span', {}, 'Fame earned'), h('b', {}, fmt(G.state.stats.fameEarned))),
+      h('div', { class: 'stat' }, h('span', {}, 'Offline limit'), h('b', {}, `${G.offlineCapH()}h`))),
+    h('div', { class: 'panel dim', style: { fontSize: '12px', fontWeight: 700 } }, 'Gold (for extra bag space, offline time and party slots) arrives with the store in a later update. Everything in the game can be earned with Fame.'),
+    h('button', { class: 'btn red block', onclick: async () => { if (await confirmDialog({ title: 'Erase all progress?', body: 'This deletes your save on this device. It cannot be undone.', ok: 'Erase', danger: true })) { G.resetAll(); close(); location.reload(); } } }, 'Erase progress'),
+    h('div', { class: 'dim center', style: { fontSize: '11px', fontWeight: 800 } }, `Realm Idle · build ${BUILD}`),
+  ]);
 }
 
-// ---------- frame loop ----------
-let last = performance.now(), lastSave = Date.now(), lastTop = 0;
+// ---------- offline earnings ----------
+function collect() {
+  const r = G.collectOffline();
+  if (r) showOffline(r, () => { onFame(r.fame); refresh(); });
+}
+
+// ---------- loop ----------
+let last = performance.now(), saveT = 0;
 function frame(t) {
   const dt = Math.min(0.1, (t - last) / 1000); last = t;
-  if (!catching) {
-    const now = Date.now();
-    const s = G.state;
-    for (let i = 0; i < s.slots; i++) G.advanceFarm(i, now, 600, tab === 'farm' && i === s.view ? farmEmit : null);
-    if (!document.body.classList.contains('in-arena')) screens[tab].frame(dt);
-    if (now - lastTop > 2000) { lastTop = now; renderTop(); }
-    if (now - lastSave > 5000) { G.save(); lastSave = now; }
-  }
+  screens.battle.frame(dt);
+  updateTop();
+  if ((saveT += dt) > 10) { saveT = 0; G.save(); }
   requestAnimationFrame(frame);
 }
 
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'hidden') G.save();
-  else catchUp();
+  if (document.hidden) G.save();
+  else { last = performance.now(); collect(); refresh(); }
 });
 window.addEventListener('pagehide', () => G.save());
+window.addEventListener('resize', () => screens.battle.resize());
 
-showTab();
-catchUp().then(() => requestAnimationFrame(frame));
-if ('serviceWorker' in navigator && location.protocol !== 'file:') navigator.serviceWorker.register('sw.js').catch(() => {});
-// Developer hook for testing from the browser console.
-window.idle = G;
+if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+
+go('battle');
+if (!G.state.flags.intro) showWelcome(() => { G.state.flags.intro = true; G.save(); });
+else collect();
+requestAnimationFrame(frame);
+void toast;

@@ -3,13 +3,13 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
-  <meta name="theme-color" content="#222a35" />
+  <meta name="theme-color" content="#0e0b14" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Idle Realm" />
-  <meta name="description" content="An idle fantasy RPG: farm biomes, clear dungeons, max your stats." />
-  <title>Idle Realm</title>
+  <meta name="apple-mobile-web-app-title" content="Realm Idle" />
+  <meta name="description" content="An idle RPG: lead a party of heroes across the Realm to Oryx, then Ascend." />
+  <title>Realm Idle</title>
   <link rel="icon" href="assets/icons/icon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png" />
   <link rel="manifest" href="manifest.webmanifest" />
@@ -21,17 +21,18 @@
   <div id="app" class="shell">
     <header class="topbar" id="topbar"></header>
     <main id="screens">
-      <section class="screen" id="scr-farm"></section>
-      <section class="screen hidden" id="scr-dungeons"></section>
-      <section class="screen hidden" id="scr-vault"></section>
-      <section class="screen hidden" id="scr-character"></section>
+      <section class="screen" id="scr-battle"></section>
+      <section class="screen hidden" id="scr-party"></section>
+      <section class="screen hidden" id="scr-gear"></section>
+      <section class="screen hidden" id="scr-map"></section>
+      <section class="screen hidden" id="scr-ascend"></section>
     </main>
     <nav class="tabs" id="tabs"></nav>
     <div id="sheet-root"></div>
     <div id="toast-root"></div>
     <div id="overlay-root"></div>
   </div>
-  <noscript>Idle Realm needs JavaScript.</noscript>
+  <noscript>Realm Idle needs JavaScript.</noscript>
   <script type="module" src="js/main.js"></script>
 </body>
 </html>

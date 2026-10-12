@@ -1,12 +1,10 @@
 {
-  "name": "idle-realm",
+  "name": "realm-idle",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "balance": "node tools/balance.mjs",
-    "balance:dungeons": "node tools/arena-bot.mjs",
-    "balance:bosses": "node tools/boss-check.mjs"
+    "sim": "node tools/sim.mjs"
   }
 }

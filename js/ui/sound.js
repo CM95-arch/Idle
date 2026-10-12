@@ -48,8 +48,20 @@ const SOUNDS = {
   tele: () => tone('square', 440, 440, 0.12, 0.04),
   ability: () => { tone('sawtooth', 200, 900, 0.18, 0.05); hiss(0.2, 0.05, 1200, 400); },
   equip: () => { hiss(0.03, 0.08, 2500, 2000, 2); tone('triangle', 500, 700, 0.06, 0.05); },
+  tap: () => tone('sine', 880, 660, 0.05, 0.05),
+  kill: () => { tone('square', 300 * jit(), 120, 0.08, 0.035); hiss(0.08, 0.05, 1200, 300); },
+  fame: () => tone('triangle', 1320 * jit(), 1760, 0.06, 0.03),
+  boss: () => { tone('sawtooth', 160, 90, 0.35, 0.06); hiss(0.3, 0.06, 600, 200); },
+  bossWarn: () => [0, 0.22, 0.44].forEach((d) => tone('square', 220, 200, 0.16, 0.05, ctx.currentTime + d)),
+  bossDie: () => { [196, 262, 330, 392, 523].forEach((f, i) => tone('square', f, f, 0.22, 0.05, ctx.currentTime + i * 0.09)); hiss(0.6, 0.08, 3000, 200); },
+  clear: () => [523, 659, 784, 1047].forEach((f, i) => tone('triangle', f, f, 0.14, 0.06, ctx.currentTime + i * 0.06)),
+  fall: () => tone('sawtooth', 300, 60, 0.4, 0.06),
+  upgrade: () => { tone('triangle', 660, 990, 0.1, 0.07); tone('sine', 1320, 1320, 0.12, 0.05, ctx.currentTime + 0.08); },
+  unlock: () => [392, 494, 587, 784, 988].forEach((f, i) => tone('triangle', f, f, 0.25, 0.07, ctx.currentTime + i * 0.1)),
+  ascend: () => { [262, 330, 392, 523, 659, 784, 1047].forEach((f, i) => tone('triangle', f, f, 0.5, 0.06, ctx.currentTime + i * 0.12)); hiss(1.4, 0.05, 200, 4000, 0.6); },
+  coinCount: () => tone('square', 1500 * jit(), 1500, 0.03, 0.025),
 };
-const GAP = { staff: 0.06, wand: 0.06, sword: 0.08, dagger: 0.07, bow: 0.07, hurt: 0.1 };
+const GAP = { staff: 0.06, wand: 0.06, sword: 0.08, dagger: 0.07, bow: 0.07, hurt: 0.1, kill: 0.05, fame: 0.05, coinCount: 0.04, loot: 0.08 };
 const jit = () => 0.92 + Math.random() * 0.16;
 
 export function play(name) {
