@@ -37,7 +37,7 @@ export const CLASSES = {
   warrior: {
     name: 'Warrior', role: 'tank', look: 'helm', weapon: 'sword', armor: 'heavy', abilityItem: 'helm',
     colors: { a: '#7a2a24', b: '#b8483c', c: '#c9c9d1' }, shot: '#ffffff',
-    base: { hp: 193, atk: 14.7, def: 6, spd: 4 },
+    base: { hp: 185, atk: 13, def: 6, spd: 4 },
     ability: { name: 'Berserk', cd: 9, fx: 'berserk', pow: 0.8, desc: 'Draws every attack and swings {p}% faster for 4s.' },
     unlock: { needs: { rogue: 5 } },
     blurb: 'The front line. Takes the hits so others don’t.',
@@ -46,8 +46,8 @@ export const CLASSES = {
   knight: {
     name: 'Knight', role: 'tank', look: 'helm', weapon: 'sword', armor: 'heavy', abilityItem: 'shield',
     colors: { a: '#3c4a6a', b: '#8a9bc4', c: '#d9d9e6' }, shot: '#9ec2ff',
-    base: { hp: 185, atk: 7, def: 8, spd: 3 },
-    ability: { name: 'Shield Bash', cd: 8, fx: 'stun', pow: 1.5, desc: 'Hits every enemy for {p}% damage and stuns them for 1.5s.' },
+    base: { hp: 165, atk: 7, def: 8, spd: 3 },
+    ability: { name: 'Shield Bash', cd: 8, fx: 'stun', pow: 1.5, desc: 'Hits every enemy for {p}% damage and stuns them for 1.2s.' },
     unlock: { needs: { warrior: 20, priest: 20 } },
     blurb: 'An unbreakable wall that stuns the whole wave.',
   },

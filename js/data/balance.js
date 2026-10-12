@@ -5,10 +5,12 @@ export const BAL = {
   levelCostBase: 8, levelCostGrowth: 1.17,              // Fame to go from lv to lv+1 = base × growth^(lv-1)
   levelCost: (lv) => Math.round(BAL.levelCostBase * BAL.levelCostGrowth ** (lv - 1)),
   partySize: 3,
+  tankGuard: 0.2,         // tanks take this much less damage from every hit
+  tankFallback: 0.35,     // below this share of HP a tank stops drawing fire
   waveHeal: 0.35,          // heroes recover this share of max HP between waves
   // ---- enemies ----
   stageGrowth: 1.16,       // enemy HP/ATK grows this much per stage
-  enemyBase: { hp: 34, atk: 5.2, armor: 0.05 }, // armor: damage share blocked, +5% per zone
+  enemyBase: { hp: 34, atk: 5.5, armor: 0.05 }, // armor: damage share blocked, +5% per zone
   waves: 3, perWave: 3,
   powerScale: 4,           // stage power requirement = this × √(enemy HP × ATK), calibrated with the fight sim
   bossHp: 9, bossAtk: 1.6, // boss multipliers over a normal enemy of its stage

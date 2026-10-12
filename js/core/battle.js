@@ -17,7 +17,8 @@ export function enemyStats(stage, realm) {
 // Armor is a share of damage: enemies have a flat armor share per zone (def is 0..0.4); heroes' DEF is weighed
 // against the attacker's ATK, so it stays useful at every stage without ever making anyone immune.
 const hit = (atk, def) => atk * (1 - def);
-const heroArmor = (h, eatk) => h.def / (h.def + 2.5 * eatk);
+// tanks also shrug off a flat share of every hit (Guard), since they draw most of the fire
+const heroArmor = (h, eatk) => 1 - (1 - h.def / (h.def + 2.5 * eatk)) * (h.role === 'tank' ? 1 - BAL.tankGuard : 1);
 
 export function createBattle(stage, realm, heroStats, seed = (Math.random() * 2 ** 32) >>> 0) {
   const B = {
@@ -51,9 +52,12 @@ function frontEnemy(B) { return alive(B.enemies)[0]; }
 function enemyTarget(B) {
   const hs = alive(B.heroes);
   if (!hs.length) return null;
-  const taunt = hs.find((h) => h.buff.taunt > B.t) || hs.find((h) => h.role === 'tank');
+  // a tank draws most of the fire, but only while it's healthy: badly hurt, it falls back and the hits spread out
+  const steady = hs.filter((h) => h.hp > h.maxHp * BAL.tankFallback);
+  const taunt = steady.find((h) => h.buff.taunt > B.t) || steady.find((h) => h.role === 'tank');
   if (taunt && B.rng.next() < 0.8) return taunt;
-  return B.rng.next() < 0.6 ? hs[0] : hs[B.rng.int(0, hs.length - 1)];
+  const pool = steady.length ? steady : hs;
+  return pool[B.rng.int(0, pool.length - 1)];
 }
 function damageEnemy(B, e, d, src) {
   if (e.hp <= 0) return;
@@ -79,7 +83,7 @@ function useAbility(B, h) {
     case 'pierce': for (const e of es.slice(0, 2)) { ev.targets.push(e.id); damageEnemy(B, e, hit(dmg * p, e.def), src); } break;
     case 'execute': { const e = es.reduce((a, b) => (b.hp < a.hp ? b : a)); ev.targets.push(e.id); damageEnemy(B, e, hit(dmg * p, e.def), { ...src, crit: true }); break; }
     case 'berserk': h.buff.taunt = B.t + 4; h.buff.hasteUntil = B.t + 4; h.buff.haste = p; break;
-    case 'stun': for (const e of es) { ev.targets.push(e.id); e.stunUntil = B.t + 1.5 * (e.boss ? 0.5 : 1); damageEnemy(B, e, hit(dmg * p, e.def), src); } break;
+    case 'stun': for (const e of es) { ev.targets.push(e.id); e.stunUntil = B.t + 1.2 * (e.boss ? 0.5 : 1); damageEnemy(B, e, hit(dmg * p, e.def), src); } break;
     case 'dot': for (const e of es) { ev.targets.push(e.id); e.dots.push({ left: 4, dps: (dmg * p) / 4, hero: h.i }); e.slowUntil = B.t + 4; } break;
     case 'drain': { let tot = 0; for (const e of es) { ev.targets.push(e.id); const d = hit(dmg * p, e.def); tot += d; damageEnemy(B, e, d, src); } for (const o of hs) heal(B, o, Math.min(o.maxHp * 0.25, (tot * 0.15) / hs.length)); ev.heroes = hs.map((o) => o.i); break; }
     case 'poison': { const e = es.reduce((a, b) => (b.hp > a.hp ? b : a)); ev.targets.push(e.id); e.dots.push({ left: 5, dps: (dmg * p) / 5, hero: h.i }); break; }
