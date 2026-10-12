@@ -30,8 +30,12 @@ export function coin(n) { return h('span', { class: 'cost' }, h('i', { class: 'm
 export function itemTile(it, opts = {}) {
   if (!it) return h('button', { class: 'itile empty', onclick: opts.onclick }, opts.label || '');
   const up = opts.upFor !== false && G.state.party.some((c) => G.isUpgradeFor(c, it));
-  return h('button', { class: `itile r${it.rarity}`, style: { '--rc': rcolor(it.rarity) }, onclick: opts.onclick, 'aria-label': it.name },
+  // who can wear it: a class in the party first, then any class you own
+  const who = opts.who === false ? null : G.wearers(it).sort((a, b) => (G.state.party.includes(b) - G.state.party.includes(a)) || (!!G.state.classes[b] - !!G.state.classes[a]))[0];
+  const usable = who && G.state.classes[who];
+  return h('button', { class: `itile r${it.rarity}${usable || opts.who === false ? '' : ' unusable'}`, style: { '--rc': rcolor(it.rarity) }, onclick: opts.onclick, 'aria-label': `${it.name}${who ? `, for ${CLASSES[who].name}` : ''}` },
     itemIcon(it, opts.size || 40),
+    who && it.kind !== 'ring' ? h('span', { class: 'who' }, portrait(who, 20, !usable)) : null,
     up ? h('span', { class: 'up' }, '▲') : null,
     it.up ? h('span', { class: 'plus' }, `+${it.up}`) : null,
     h('span', { class: 'lvl' }, `${it.ilvl + 1}`));

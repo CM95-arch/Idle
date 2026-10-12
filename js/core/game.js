@@ -160,6 +160,18 @@ export function isUpgradeFor(cls, it) {
   return !cur || itemScore(it) > itemScore(cur) * 1.001;
 }
 export const upgradeOwners = (it) => Object.keys(state.classes).filter((c) => isUpgradeFor(c, it));
+/** Every class (owned or not) that can wear an item. */
+export const wearers = (it) => Object.keys(CLASSES).filter((c) => fits(c, it));
+/** Put the best piece from the bag into each of a class's slots. Returns how many pieces changed. */
+export function equipBest(cls) {
+  let n = 0;
+  for (const slot of SLOTS) {
+    const cur = state.classes[cls].gear[slot];
+    const best = state.inv.filter((it) => fits(cls, it) && slotOf(it) === slot).sort((a, b) => itemScore(b) - itemScore(a))[0];
+    if (best && (!cur || itemScore(best) > itemScore(cur) * 1.001)) { equip(cls, best.id); n++; }
+  }
+  return n;
+}
 export function bestUpgrades() {
   let n = 0;
   for (const it of state.inv) if (state.party.some((c) => isUpgradeFor(c, it))) n++;

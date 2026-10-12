@@ -11,6 +11,8 @@ import { createMapScreen } from './ui/map.js';
 import { createAscendScreen } from './ui/ascend.js';
 import { showWelcome, showOffline, showUnlock, showAscended } from './ui/celebrate.js';
 import { icon } from './ui/icons.js';
+import { runTour, touring } from './ui/tour.js';
+import { CLASSES } from './data/classes.js';
 
 G.load();
 initSound(G.state.settings.sound);
@@ -41,7 +43,7 @@ const TABS = [
 ];
 let current = 'battle';
 const screens = {
-  battle: createBattleScreen($('#scr-battle'), { onFame, openClass: (c) => openClassSheet(c, refresh) }),
+  battle: createBattleScreen($('#scr-battle'), { onFame, openClass: (c) => openClassSheet(c, refresh), onDrop: firstDropTip }),
   party: createPartyScreen($('#scr-party')),
   gear: createGearScreen($('#scr-gear'), { onChange: refresh }),
   map: createMapScreen($('#scr-map'), { goBattle: () => go('battle') }),
@@ -81,11 +83,36 @@ G.onChange((why) => {
   if (why === 'gear' || why === 'party' || why?.unlock || why === 'ascend') { screens.battle.update(true); updateTabs(); }
 });
 
+// ---------- walkthrough ----------
+const tab = (k) => () => tabEls[k];
+const TOUR = [
+  { title: 'Welcome, hero', text: 'A quick tour of how everything works. It takes about half a minute.', before: () => go('battle') },
+  { target: () => fameBox, title: 'Fame', text: 'Your one currency. You earn it from every enemy, every cleared stage, salvaged gear, and even while you’re away. Spend it to grow stronger.' },
+  { target: () => $('.arena'), title: 'The battle', text: 'Your party fights on its own. Each stage is three waves of enemies, and every tenth stage is a boss. Attacks, abilities and loot all happen automatically.' },
+  { target: () => $('.stagebar .power'), title: 'Power', text: 'Your party’s strength against what this stage needs. Green means you should win. Red means level up or gear up first.' },
+  { target: () => $('.stagebar .toggle'), title: 'Auto or Farm', text: 'Auto moves on to the next stage after every win. Switch to Farm to stay on one stage and keep earning.' },
+  { target: () => $('.hcard[data-cls] .lvbtn'), title: 'Level up', text: 'Spend Fame to level a hero for more HP and damage. Hold the button to keep leveling. Tap a hero’s portrait for their stats, ability and gear.' },
+  { target: () => $('.lvmode .chip'), title: 'Level ×1, ×10, Max', text: 'Tap to switch how many levels each press buys.' },
+  { target: tab('party'), title: 'Party', text: 'All your classes. Leveling unlocks new ones: Wizard level 5 unlocks the Priest, and so on. Up to three fight at once, and you can swap them any time.' },
+  { target: tab('gear'), title: 'Gear', text: 'Loot lands here. Each class wears its own kinds: Wizards use staves, robes, spells and rings. A small portrait shows who can wear each item, ▲ marks an upgrade, and “Equip best” does it all for you. Spare gear salvages into Fame.' },
+  { target: tab('map'), title: 'Map', text: 'The whole Realm, from the Beaches to Oryx’s Castle. Tap any stage you’ve cleared to farm it.' },
+  { target: tab('ascend'), title: 'Ascend', text: 'Defeat Oryx the Mad God to Ascend: start over in a harder Realm with permanent bonuses that keep stacking.' },
+  { title: 'While you’re away', text: 'Your party keeps fighting for up to 8 hours when the game is closed. Come back to collect what they earned. Good luck, hero.', done: 'Begin' },
+];
+function startTour() { if (touring()) return; runTour(TOUR, () => { G.state.flags.tour = true; G.save(); }); }
+function firstDropTip(it) {
+  if (G.state.flags.tipGear || touring() || document.querySelector('#overlay-root .overlay') || current === 'gear') return;
+  G.state.flags.tipGear = true; G.save();
+  const fit = G.wearers(it).filter((c) => G.state.classes[c]);
+  runTour([{ target: tab('gear'), title: 'You found gear!', text: `Open Gear to equip it${fit.length ? ` on your ${fit.map((c) => CLASSES[c].name).join(' or ')}` : ''}. Tap an item to see its stats, or use “Equip best” to put on all your upgrades at once.` }]);
+}
+
 // ---------- settings ----------
 function openSettings() {
   tap();
   openSheet((close, rerender) => [
     h('div', { class: 'pixel center', style: { fontSize: '22px' } }, 'Settings'),
+    h('button', { class: 'btn alt block', onclick: () => { close(); startTour(); } }, 'Replay the walkthrough'),
     h('button', { class: 'btn alt block', onclick: () => { G.state.settings.sound = !G.state.settings.sound; setSoundEnabled(G.state.settings.sound); G.save(); rerender(); } }, `Sound: ${G.state.settings.sound ? 'On' : 'Off'}`),
     h('div', { class: 'panel', style: { fontSize: '13px', fontWeight: 700 } },
       h('div', { class: 'stat' }, h('span', {}, 'Enemies defeated'), h('b', {}, fmt(G.state.stats.kills))),
@@ -125,7 +152,7 @@ window.addEventListener('resize', () => screens.battle.resize());
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
 
 go('battle');
-if (!G.state.flags.intro) showWelcome(() => { G.state.flags.intro = true; G.save(); });
-else collect();
+if (!G.state.flags.intro) showWelcome(() => { G.state.flags.intro = true; G.save(); setTimeout(startTour, 400); });
+else { collect(); if (!G.state.flags.tour) setTimeout(() => { if (!document.querySelector('#overlay-root .overlay')) startTour(); }, 900); }
 requestAnimationFrame(frame);
 void toast;

@@ -5,7 +5,7 @@ import { BAL } from '../data/balance.js';
 import * as G from '../core/game.js';
 import { heroStats } from '../core/heroes.js';
 import { kindFor, fits, itemScore } from '../core/items.js';
-import { h, openSheet, closeSheet } from './dom.js';
+import { h, openSheet, closeSheet, toast } from './dom.js';
 import { portrait, coin, fmt, itemTile, tap } from './common.js';
 import { openItemSheet } from './gear.js';
 
@@ -28,7 +28,7 @@ export function openClassSheet(cls, onChange) {
       const it = me.gear[slot];
       const better = s.inv.some((x) => fits(cls, x) && (!it || itemScore(x) > itemScore(it)));
       return h('div', {},
-        itemTile(it, { upFor: false, label: '+', onclick: () => openSlotSheet(cls, slot, () => { rerender(); onChange?.(); }) }),
+        itemTile(it, { upFor: false, who: false, label: '+', onclick: () => openSlotSheet(cls, slot, () => { rerender(); onChange?.(); }) }),
         h('div', { class: 'lab' }, SLOT_NAME[slot], better ? h('span', { class: 'delta-up' }, ' ▲') : null));
     };
     return [
@@ -45,7 +45,10 @@ export function openClassSheet(cls, onChange) {
       h('div', { class: 'panel' },
         h('div', { class: 'row between' }, h('b', {}, `✦ ${C.ability.name}`), h('small', { class: 'dim', style: { fontWeight: 800 } }, `every ${C.ability.cd}s`)),
         h('div', { class: 'muted', style: { fontSize: '13px', marginTop: '4px' } }, abilityText(cls, st.pow))),
+      h('div', { class: 'row between' }, h('div', { class: 'h2', style: { margin: 0 } }, 'Gear'),
+        h('button', { class: 'btn sm', disabled: !s.inv.some((x) => G.isUpgradeFor(cls, x)), onclick: () => { const n = G.equipBest(cls); tap('equip'); toast({ title: n ? `Equipped ${n} upgrade${n === 1 ? '' : 's'}` : 'Nothing better in your bag', kind: n ? 'gold' : '' }); rerender(); onChange?.(); } }, 'Equip best')),
       h('div', { class: 'gslots' }, SLOTS.map(slotTile)),
+      h('div', { class: 'dim center', style: { fontSize: '11px', fontWeight: 800 } }, `${C.name}s wear ${{ staff: 'staves', wand: 'wands', bow: 'bows', dagger: 'daggers', sword: 'swords' }[C.weapon]}, ${{ robe: 'robes', leather: 'leather armor', heavy: 'heavy armor' }[C.armor]}, ${{ spell: 'spells', tome: 'tomes', quiver: 'quivers', cloak: 'cloaks', helm: 'helms', shield: 'shields', trap: 'traps', skull: 'skulls', poison: 'poisons', seal: 'seals', scepter: 'scepters' }[C.abilityItem]} and rings. Tap a slot to choose.`),
       inParty
         ? h('button', { class: 'btn alt block', disabled: s.party.length <= 1, onclick: () => { G.removeFromParty(cls); tap(); onChange?.(); close(); } }, s.party.length <= 1 ? 'Your only hero' : 'Remove from party')
         : s.party.length < BAL.partySize
@@ -65,13 +68,13 @@ export function openSlotSheet(cls, slot, onChange) {
     const options = s.inv.filter((it) => it.kind === kind).sort((a, b) => itemScore(b) - itemScore(a));
     return [
       h('div', { class: 'pixel center', style: { fontSize: '20px' } }, `${CLASSES[cls].name} · ${SLOT_NAME[slot]}`),
-      cur ? h('div', { class: 'panel row' }, itemTile(cur, { upFor: false, onclick: () => openItemSheet(cur.id, () => { rerender(); onChange?.(); }) }),
+      cur ? h('div', { class: 'panel row' }, itemTile(cur, { upFor: false, who: false, onclick: () => openItemSheet(cur.id, () => { rerender(); onChange?.(); }) }),
         h('div', { class: 'grow' }, h('b', { style: { color: G.CLASSES && BAL.rarities[cur.rarity].color } }, cur.name), h('div', { class: 'dim', style: { fontSize: '12px', fontWeight: 800 } }, `Equipped · tap to upgrade`)),
         h('button', { class: 'btn alt sm', onclick: () => { if (G.unequip(cls, slot)) { tap(); rerender(); onChange?.(); } } }, 'Remove'))
         : h('div', { class: 'panel center dim' }, 'Nothing equipped'),
       h('div', { class: 'h2' }, options.length ? `In your bag (${options.length})` : 'No fitting gear in your bag yet'),
       h('div', { class: 'igrid' }, options.map((it) => h('div', {},
-        itemTile(it, { upFor: false, onclick: () => { G.equip(cls, it.id); tap('equip'); onChange?.(); close(); } }),
+        itemTile(it, { upFor: false, who: false, onclick: () => { G.equip(cls, it.id); tap('equip'); onChange?.(); close(); } }),
         h('div', { class: 'center', style: { fontSize: '10px', fontWeight: 900, marginTop: '2px' } }, !cur ? h('span', { class: 'delta-up' }, 'NEW') : itemScore(it) > itemScore(cur) ? h('span', { class: 'delta-up' }, '▲ better') : h('span', { class: 'dim' }, 'weaker'))))),
     ];
   });

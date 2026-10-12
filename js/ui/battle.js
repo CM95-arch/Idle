@@ -10,7 +10,7 @@ import { play } from './sound.js';
 
 const MODES = [1, 10, 'Max'];
 
-export function createBattleScreen(root, { onFame, openClass }) {
+export function createBattleScreen(root, { onFame, openClass, onDrop }) {
   let view = null, cv = null, acc = 0, endT = 0, mode = 0, refs = {}, slow = 0, visible = true;
 
   function levelCount(cls) {
@@ -117,6 +117,7 @@ export function createBattleScreen(root, { onFame, openClass }) {
           if (r.k === 'fame') onFame(r.n);
           if (r.k === 'clear') { onFame(r.n); if (r.first && isBoss(r.stage)) toast({ title: `${zoneOf(r.stage).boss[0]} defeated!`, body: r.stage === G.LAST_STAGE ? 'Oryx has fallen. You can Ascend!' : `${zoneOf(r.stage + 1).name} is open.`, kind: 'gold' }); }
           if (r.k === 'drop' && r.salvaged) onFame(r.salvaged);
+          if (r.k === 'drop' && !r.salvaged) onDrop?.(r.it);
         }
         endT = 0;
       } else if ((endT += TICK) > 1.4) { G.nextBattle(); endT = 0; update(true); }

@@ -7,6 +7,9 @@ import { itemStats, slotOf, fits, itemScore, upgradeCost, canUpgrade, salvageVal
 import { h, openSheet, showDialog, toast } from './dom.js';
 import { coin, fmt, itemTile, itemIcon, portrait, rcolor, tap } from './common.js';
 
+const listNames = (cls) => (cls.length > 2 ? `${cls.slice(0, -1).map((c) => CLASSES[c].name).join(', ')} and ${CLASSES[cls[cls.length - 1]].name}` : cls.map((c) => CLASSES[c].name).join(' and '));
+const PLURAL = { staff: 'Staves', wand: 'Wands', bow: 'Bows', dagger: 'Daggers', sword: 'Swords', robe: 'Robes', leather: 'Leather armor', heavy: 'Heavy armor', ring: 'Rings', spell: 'Spells', tome: 'Tomes', quiver: 'Quivers', cloak: 'Cloaks', helm: 'Helms', shield: 'Shields', trap: 'Traps', skull: 'Skulls', poison: 'Poisons', seal: 'Seals', scepter: 'Scepters' };
+const KIND_LABEL = (it) => PLURAL[it.kind] || it.kind;
 const FILTERS = [['all', 'All'], ['weapon', 'Weapons'], ['ability', 'Abilities'], ['armor', 'Armor'], ['ring', 'Rings']];
 const AUTO = [[-1, 'Off'], [0, 'Common'], [1, '≤ Uncommon'], [2, '≤ Rare']];
 
@@ -43,7 +46,8 @@ export function openItemSheet(id, onChange) {
             h('div', { class: 'grow' }, h('b', {}, CLASSES[c].name), h('div', { style: { fontSize: '12px', fontWeight: 800 } }, cur ? h('span', { class: better ? 'delta-up' : 'delta-down' }, better ? '▲ Better than current' : '▼ Weaker than current') : h('span', { class: 'delta-up' }, 'Empty slot'))),
             h('button', { class: `btn sm${better ? '' : ' alt'}`, onclick: () => { G.equip(c, it.id); tap('equip'); onChange?.(); close(); } }, 'Equip'));
         })) : null,
-      !wornBy && !owners.length ? h('div', { class: 'panel dim center', style: { fontSize: '13px' } }, 'None of your classes can wear this yet.') : null,
+      !wornBy && !owners.length ? h('div', { class: 'panel center', style: { fontSize: '13px', fontWeight: 700 } }, h('div', { class: 'muted' }, `Worn by ${listNames(G.wearers(it))}. You haven’t unlocked ${G.wearers(it).length > 1 ? 'any of them' : 'them'} yet.`), h('div', { class: 'dim', style: { marginTop: '4px' } }, 'Keep it for later, or salvage it for Fame.')) : null,
+      !wornBy && owners.length ? h('div', { class: 'dim center', style: { fontSize: '11px', fontWeight: 800 } }, `${KIND_LABEL(it)} are worn by ${listNames(G.wearers(it))}.`) : null,
       h('div', { class: 'row' },
         h('button', { class: 'btn grow', disabled: !canUpgrade(it) || G.state.fame < upgradeCost(it), onclick: () => { if (G.upgrade(it.id)) { tap('upgrade'); rerender(); onChange?.(); } } },
           canUpgrade(it) ? [h('span', {}, `Upgrade to +${it.up + 1}`), coin(upgradeCost(it))] : 'Fully upgraded'),
@@ -83,6 +87,8 @@ export function createGearScreen(root, { onChange }) {
       items.length ? h('div', { class: 'igrid' }, items.map((it) => itemTile(it, { onclick: () => openItemSheet(it.id, () => { render(); onChange?.(); }) })))
         : h('div', { class: 'panel center muted' }, s.inv.length ? 'Nothing in this category.' : 'Your bag is empty. Gear drops from waves and bosses.'),
       h('div', { class: 'row', style: { marginTop: '14px' } },
+        h('button', { class: 'btn grow sm', disabled: !G.bestUpgrades(), onclick: () => { let n = 0; for (const c of s.party) n += G.equipBest(c); tap('equip'); toast({ title: n ? `Equipped ${n} upgrade${n === 1 ? '' : 's'}` : 'Nothing better to equip', kind: n ? 'gold' : '' }); render(); onChange?.(); } }, 'Equip best for party')),
+      h('div', { class: 'row', style: { marginTop: '8px' } },
         h('button', { class: 'btn alt grow sm', onclick: salvageDialog }, 'Salvage…'),
         h('button', { class: 'btn alt grow sm', onclick: () => { const i = AUTO.indexOf(auto); s.settings.autoSalvage = AUTO[(i + 1) % AUTO.length][0]; tap(); G.save(); render(); } }, `Auto-salvage: ${auto[1]}`)),
       h('p', { class: 'dim center', style: { fontSize: '12px', fontWeight: 700 } }, 'When the bag is full, new drops turn straight into Fame.'));
