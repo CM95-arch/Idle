@@ -42,7 +42,7 @@ export function createBattleScreen(root, { onFame, openClass }) {
     holdable(btn, () => doLevel(cls, card));
     card.append(
       h('span', { class: 'role' }, ROLES[C.role]),
-      h('button', { class: 'por', onclick: () => openClass(cls), 'aria-label': `${C.name} details` }, portrait(cls, 44)),
+      h('button', { class: 'por', onclick: () => openClass(cls), 'aria-label': `${C.name} details` }, portrait(cls, 66)),
       h('div', { class: 'nm' }, C.name),
       h('div', { class: 'lv' }, ''),
       btn);

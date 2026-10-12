@@ -5,8 +5,7 @@ import { BAL } from '../data/balance.js';
 import * as G from '../core/game.js';
 import { itemStats, slotOf, fits, itemScore, upgradeCost, canUpgrade, salvageValue } from '../core/items.js';
 import { h, openSheet, showDialog, toast } from './dom.js';
-import { itemIcon } from './sprites.js';
-import { coin, fmt, itemTile, portrait, rcolor, tap } from './common.js';
+import { coin, fmt, itemTile, itemIcon, portrait, rcolor, tap } from './common.js';
 
 const FILTERS = [['all', 'All'], ['weapon', 'Weapons'], ['ability', 'Abilities'], ['armor', 'Armor'], ['ring', 'Rings']];
 const AUTO = [[-1, 'Off'], [0, 'Common'], [1, '≤ Uncommon'], [2, '≤ Rare']];
@@ -31,7 +30,7 @@ export function openItemSheet(id, onChange) {
     const owners = Object.keys(G.state.classes).filter((c) => fits(c, it));
     return [
       h('div', { class: 'row' },
-        h('div', { class: `itile r${it.rarity}`, style: { '--rc': R.color, width: '72px' } }, itemIcon(it, 48)),
+        h('div', { class: `itile r${it.rarity}`, style: { '--rc': R.color, width: '72px' } }, itemIcon(it, 56)),
         h('div', { class: 'grow' },
           h('div', { style: { fontWeight: 900, fontSize: '18px', color: R.color } }, `${it.name}${it.up ? ` +${it.up}` : ''}`),
           h('div', { class: 'muted', style: { fontWeight: 800, fontSize: '12px' } }, `${R.name} ${SLOT_NAME[slot]} · item level ${it.ilvl + 1}`),
@@ -40,7 +39,7 @@ export function openItemSheet(id, onChange) {
       !wornBy && owners.length ? h('div', {}, h('div', { class: 'h2', style: { marginTop: 0 } }, 'Equip on'),
         ...owners.map((c) => {
           const cur = G.state.classes[c].gear[slot], better = !cur || itemScore(it) > itemScore(cur);
-          return h('div', { class: 'panel row', style: { marginBottom: '6px', padding: '8px 10px' } }, portrait(c, 26),
+          return h('div', { class: 'panel row', style: { marginBottom: '6px', padding: '8px 10px' } }, portrait(c, 40),
             h('div', { class: 'grow' }, h('b', {}, CLASSES[c].name), h('div', { style: { fontSize: '12px', fontWeight: 800 } }, cur ? h('span', { class: better ? 'delta-up' : 'delta-down' }, better ? '▲ Better than current' : '▼ Weaker than current') : h('span', { class: 'delta-up' }, 'Empty slot'))),
             h('button', { class: `btn sm${better ? '' : ' alt'}`, onclick: () => { G.equip(c, it.id); tap('equip'); onChange?.(); close(); } }, 'Equip'));
         })) : null,

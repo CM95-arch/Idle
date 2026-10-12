@@ -3,7 +3,11 @@
 import { CLASSES } from '../data/classes.js';
 import { zoneOf } from '../data/zones.js';
 import { BAL } from '../data/balance.js';
-import { draw, mapSize, heroCanvas, itemColors } from './sprites.js';
+import { heroImage } from './art/heroes.js';
+import { monsterImage } from './art/monsters.js';
+import { itemImage, RARITY_SHADES } from './art/items.js';
+import { backdrop } from './art/scenes.js';
+import { ready } from './art/core.js';
 
 export const VW = 360, VH = 430;
 export const HERO_POS = [{ x: 180, y: 335 }, { x: 92, y: 362 }, { x: 268, y: 362 }];
@@ -22,38 +26,17 @@ function glow(color, r) {
   glowCache.set(k, cv);
   return cv;
 }
-// zone backdrop, painted once per zone
-const bgCache = new Map();
-function backdrop(Z) {
-  if (bgCache.has(Z.id)) return bgCache.get(Z.id);
-  const cv = document.createElement('canvas'); cv.width = VW; cv.height = VH;
-  const g = cv.getContext('2d');
-  const sky = g.createLinearGradient(0, 0, 0, VH);
-  sky.addColorStop(0, Z.bg[2]); sky.addColorStop(0.45, Z.bg[1]); sky.addColorStop(1, Z.bg[0]);
-  g.fillStyle = sky; g.fillRect(0, 0, VW, VH);
-  // checker floor tiles, like the Realm's ground
-  let seed = Z.id.length * 977;
-  const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-  for (let y = 0; y < VH; y += 20) for (let x = 0; x < VW; x += 20) {
-    g.fillStyle = `rgba(${rnd() < 0.5 ? '255,255,255' : '0,0,0'},${0.03 + rnd() * 0.05})`;
-    g.fillRect(x, y, 20, 20);
-  }
-  for (let i = 0; i < 14; i++) {
-    const m = Z.deco[i % Z.deco.length], sc = 3, cvs = draw(m, sc, { a: shade(Z.ground, -30), b: shade(Z.ground, 25), c: Z.bg[2], d: shade(Z.ground, -60) });
-    const x = rnd() * (VW - 30), y = 20 + rnd() * (VH - 60);
-    if (Math.abs(x - 180) < 120 && y > 260) continue; // keep the party clear
-    g.globalAlpha = 0.55; g.drawImage(cvs, Math.round(x), Math.round(y)); g.globalAlpha = 1;
-  }
-  const vig = g.createRadialGradient(VW / 2, VH / 2, VH * 0.25, VW / 2, VH / 2, VH * 0.75);
-  vig.addColorStop(0, 'rgba(0,0,0,0)'); vig.addColorStop(1, 'rgba(0,0,0,0.45)');
-  g.fillStyle = vig; g.fillRect(0, 0, VW, VH);
-  bgCache.set(Z.id, cv);
+// a red-tinted copy of an image, for hit flashes
+const tintCache = new Map();
+function tinted(img, color) {
+  const k = `${img.src.length}|${img.src.slice(-80)}|${color}`;
+  if (tintCache.has(k)) return tintCache.get(k);
+  const cv = document.createElement('canvas'); cv.width = img.naturalWidth; cv.height = img.naturalHeight;
+  const g = cv.getContext('2d'); g.drawImage(img, 0, 0); g.globalCompositeOperation = 'source-atop'; g.fillStyle = color; g.fillRect(0, 0, cv.width, cv.height);
+  tintCache.set(k, cv);
   return cv;
 }
-function shade(hex, amt) {
-  const n = parseInt(hex.slice(1), 16), c = (v) => Math.max(0, Math.min(255, v + amt));
-  return `#${((c(n >> 16) << 16) | (c((n >> 8) & 255) << 8) | c(n & 255)).toString(16).padStart(6, '0')}`;
-}
+const HERO_H = 116, ENEMY_SIZE = 110, BOSS_SIZE = 186;
 
 export class BattleView {
   constructor(canvas) {
@@ -90,7 +73,7 @@ export class BattleView {
           const h = B.heroes[ev.hero], e = byId(ev.to); if (!e) break;
           const C = CLASSES[h.cls], p = this.heroPos(B, ev.hero);
           this.hv[ev.hero].lunge = 1;
-          this.fx.push({ k: 'bolt', x0: p.x, y0: p.y - 18, id: e.id, t: 0, life: ev.flight, c: C.shot, crit: ev.crit, w: C.weapon });
+          this.fx.push({ k: 'bolt', x0: p.x + (i => (i === 2 ? -14 : 14))(ev.hero), y0: p.y - 44, id: e.id, t: 0, life: ev.flight, c: C.shot, crit: ev.crit, w: C.weapon });
           sound?.(C.weapon);
           break;
         }
@@ -187,9 +170,9 @@ export class BattleView {
     const sx = (Math.random() - 0.5) * this.shake, sy = (Math.random() - 0.5) * this.shake;
     this.shake = Math.max(0, this.shake - dt * 30);
     g.setTransform(this.dpr * this.scale, 0, 0, this.dpr * this.scale, this.dpr * (this.ox + sx), this.dpr * (this.oy + sy));
-    g.imageSmoothingEnabled = false;
     const Z = zoneOf(B.stage);
-    g.drawImage(backdrop(Z), 0, 0);
+    g.imageSmoothingEnabled = true;
+    g.drawImage(backdrop(Z.id), 0, 0, VW, VH);
     // ambient motes
     for (const m of this.motes) {
       m.y -= m.v * dt; m.x += Math.sin(this.t + m.p) * 6 * dt;
@@ -205,20 +188,22 @@ export class BattleView {
       if (v.dead) v.dead += dt;
       if (v.dead > 0.45) continue;
       v.flash = Math.max(0, v.flash - dt); v.ky *= 0.8;
-      const sc = e.boss ? 6 : 4, cv = draw(e.sprite, sc, e.pal), { w, h } = mapSize(e.sprite);
-      const appear = Math.min(1, (this.t - v.born) / 0.35);
-      const bob = Math.sin(this.t * 2 + v.ph) * (e.boss ? 3 : 2);
-      const x = e.x, y = e.y + bob + v.ky - (1 - appear) * 30;
-      // shadow
-      g.fillStyle = 'rgba(0,0,0,.28)'; g.beginPath(); g.ellipse(x, e.y + (h * sc) / 2 + 2, (w * sc) / 2.4, 5, 0, 0, TAU); g.fill();
-      if (e.boss) { g.globalCompositeOperation = 'lighter'; g.globalAlpha = 0.35 + 0.15 * Math.sin(this.t * 3); g.drawImage(glow('#ff3a5a', 70), x - 70, y - 70); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; }
-      const dScale = v.dead ? 1 + v.dead * 1.2 : 1;
-      g.globalAlpha = (v.dead ? 1 - v.dead / 0.45 : 1) * appear;
-      g.drawImage(cv, Math.round(x - (w * sc * dScale) / 2), Math.round(y - (h * sc * dScale) / 2), w * sc * dScale, h * sc * dScale);
-      if (v.flash > 0) { g.globalCompositeOperation = 'lighter'; g.globalAlpha = 0.8; g.drawImage(cv, Math.round(x - (w * sc) / 2), Math.round(y - (h * sc) / 2)); g.globalCompositeOperation = 'source-over'; }
+      const img = monsterImage(e.sprite, e.pal);
+      if (!ready(img)) continue;
+      const size = e.boss ? BOSS_SIZE : ENEMY_SIZE, feet = e.y + (e.boss ? 70 : 40);
+      const appear = Math.min(1, (this.t - v.born) / 0.4);
+      const breathe = 1 + Math.sin(this.t * 2.2 + v.ph) * 0.018, hitSq = v.flash > 0 ? 0.93 : 1;
+      const x = e.x, w = size * (hitSq > 0 ? 1 / Math.sqrt(hitSq) : 1), hh = size * breathe * hitSq;
+      g.fillStyle = 'rgba(0,0,0,.35)'; g.beginPath(); g.ellipse(x, feet - 2, size * 0.28, size * 0.05, 0, 0, TAU); g.fill();
+      if (e.boss) { g.globalCompositeOperation = 'lighter'; g.globalAlpha = 0.22 + 0.1 * Math.sin(this.t * 3); g.drawImage(glow('#ff3a5a', 90), x - 90, feet - size * 0.55 - 90); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; }
+      const dk = v.dead ? 1 + v.dead * 0.8 : 1;
+      g.globalAlpha = (v.dead ? Math.max(0, 1 - v.dead / 0.45) : 1) * appear;
+      const top = feet - hh * dk - (1 - appear) * 24 + v.ky;
+      g.drawImage(img, x - (w * dk) / 2, top, w * dk, hh * dk);
+      if (v.flash > 0) { g.globalAlpha = Math.min(1, v.flash * 7) * 0.85; g.drawImage(tinted(img, '#ffffff'), x - (w * dk) / 2, top, w * dk, hh * dk); }
       g.globalAlpha = 1;
-      if (!v.dead && !e.boss) bar(g, x - 18, y + (h * sc) / 2 + 5, 36, 4, e.hp / e.maxHp, '#e0483e');
-      if (stunned.has(e.id) && !v.dead) for (let k = 0; k < 3; k++) { const a = this.t * 4 + (k * TAU) / 3; star(g, x + Math.cos(a) * 16, y - (h * sc) / 2 - 6 + Math.sin(a) * 4, '#ffe08a'); }
+      if (!v.dead && !e.boss) bar(g, x - 20, feet + 4, 40, 4, e.hp / e.maxHp, '#e0483e');
+      if (stunned.has(e.id) && !v.dead) for (let k = 0; k < 3; k++) { const a = this.t * 4 + (k * TAU) / 3; star(g, x + Math.cos(a) * 18, top - 4 + Math.sin(a) * 4, '#ffe08a'); }
     }
     for (const id of [...this.ev.keys()]) if (!B.enemies.some((e) => e.id === id)) this.ev.delete(id);
 
@@ -230,13 +215,17 @@ export class BattleView {
       if (h.dead) { g.globalAlpha = 0.35; }
       if (v.aura > 0 || v.cast > 0) { g.globalCompositeOperation = 'lighter'; g.globalAlpha = Math.min(1, v.aura + v.cast) * (0.5 + 0.2 * Math.sin(this.t * 10)); g.drawImage(glow(v.cast > 0 ? C.shot : v.auraColor, 40), p.x - 40, p.y - 44); g.globalAlpha = h.dead ? 0.35 : 1; g.globalCompositeOperation = 'source-over'; }
       const rar = h.gearRarity ?? 0;
-      if (rar >= 3 && !h.dead) { g.globalCompositeOperation = 'lighter'; g.globalAlpha = 0.25 + 0.1 * Math.sin(this.t * 2 + i); g.drawImage(glow(BAL.rarities[rar].color, 34), p.x - 34, p.y - 38); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; }
-      const cv = heroCanvas(C.look, C.colors, true, 4);
-      g.drawImage(cv, Math.round(p.x - cv.width / 2), Math.round(p.y - cv.height / 2));
-      if (v.hurt > 0) { g.globalCompositeOperation = 'lighter'; g.globalAlpha = v.hurt * 3; g.drawImage(draw(`${C.look}_b`, 4, { a: '#ff2020', b: '#ff4040', c: '#ff6060', d: '#ff2020', e: '#ff4040', k: '#ff0000', o: '#400000' }), Math.round(p.x - cv.width / 2), Math.round(p.y - cv.height / 2)); g.globalCompositeOperation = 'source-over'; }
-      // weapon, colored by its rarity
-      const wcv = draw(C.weapon, 2, h.weaponRarity >= 0 ? itemColors({ kind: C.weapon, rarity: h.weaponRarity }) : { a: '#6a5a4a', b: '#9a8a7a', c: '#c0b0a0' });
-      g.drawImage(wcv, Math.round(p.x + 10), Math.round(p.y - 14 - v.lunge * 4));
+      if (rar >= 3 && !h.dead) { g.globalCompositeOperation = 'lighter'; g.globalAlpha = 0.25 + 0.1 * Math.sin(this.t * 2 + i); g.drawImage(glow(BAL.rarities[rar].color, 40), p.x - 40, p.y - 52); g.globalAlpha = h.dead ? 0.35 : 1; g.globalCompositeOperation = 'source-over'; }
+      const gem = h.weaponRarity >= 0 ? RARITY_SHADES[h.weaponRarity][1] : null;
+      const img = heroImage(h.cls, true, gem);
+      if (ready(img)) {
+        const breathe = 1 + Math.sin(this.t * 2.4 + i * 1.3) * 0.015, H = HERO_H * breathe, W = HERO_H * (200 / 260);
+        const feet = HERO_POS[i].y + 34 - v.lunge * 9;
+        g.save(); g.translate(p.x, feet); g.rotate((v.lunge * (i === 2 ? -1 : 1)) * 0.06);
+        g.drawImage(img, -W / 2, -H, W, H);
+        if (v.hurt > 0) { g.globalAlpha = Math.min(1, v.hurt * 4) * 0.7; g.drawImage(tinted(img, '#ff2a2a'), -W / 2, -H, W, H); }
+        g.restore();
+      }
       g.globalAlpha = 1;
       if (!h.dead) {
         bar(g, p.x - 20, HERO_POS[i].y + 30, 40, 5, h.hp / h.maxHp, h.hp / h.maxHp > 0.5 ? '#3fbf5c' : h.hp / h.maxHp > 0.25 ? '#e8b928' : '#e0483e');
@@ -264,8 +253,8 @@ export class BattleView {
       const R = BAL.rarities[b.rarity], q = Math.max(0, (b.t - 0.8) / 0.7);
       const x = b.x + (bagTarget.x - b.x) * easeIn(q), y = b.y + 20 - Math.sin(Math.min(1, b.t / 0.4) * Math.PI) * 26 + (bagTarget.y - b.y - 20) * easeIn(q);
       if (b.rarity >= 2) { g.globalCompositeOperation = 'lighter'; g.globalAlpha = 0.6; g.drawImage(glow(R.color, 30), x - 30, y - 30); if (b.rarity >= 4 && b.t < 0.8) { g.fillStyle = R.color; g.globalAlpha = 0.35; g.fillRect(x - 3, 0, 6, y); } g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; }
-      const cv = draw('bag', 3, { a: R.color, b: shade(R.color, 50) });
-      g.globalAlpha = 1 - q * 0.6; g.drawImage(cv, Math.round(x - cv.width / 2), Math.round(y - cv.height / 2)); g.globalAlpha = 1;
+      const bag = itemImage('bag', b.rarity);
+      g.globalAlpha = 1 - q * 0.6; if (ready(bag)) g.drawImage(bag, x - 15, y - 15, 30, 30); g.globalAlpha = 1;
     }
     // fame coins burst, then fly to the counter
     this.coins = this.coins.filter((c) => (c.t += dt) < c.life);
@@ -300,7 +289,7 @@ export class BattleView {
       const inT = Math.min(1, b.t / 0.18), out = Math.min(1, (b.life - b.t) / 0.3);
       g.globalAlpha = Math.min(inT, out);
       const s = (b.big ? 34 : 24) * (1 + (1 - inT) * 0.6);
-      g.font = `900 ${Math.round(s)}px 'Pixelify Sans', Nunito, sans-serif`; g.textAlign = 'center';
+      g.font = `900 ${Math.round(s)}px Cinzel, Georgia, serif`; g.textAlign = 'center';
       g.lineWidth = 6; g.strokeStyle = 'rgba(0,0,0,.8)'; g.strokeText(b.text, VW / 2, 215); g.fillStyle = b.c; g.fillText(b.text, VW / 2, 215);
     }
     g.globalAlpha = 1;
@@ -313,11 +302,28 @@ export class BattleView {
       case 'bolt': {
         const e = B.enemies.find((x) => x.id === f.id) || { x: f.x1 ?? 180, y: f.y1 ?? 100 };
         f.x1 = e.x; f.y1 = e.y;
-        const x = f.x0 + (e.x - f.x0) * p, y = f.y0 + (e.y - f.y0) * p, r = f.crit ? 14 : 10;
-        const wob = f.w === 'staff' ? Math.sin(p * 9) * 6 : 0;
-        for (let k = 1; k <= 3; k++) { const q = Math.max(0, p - k * 0.06); g.globalAlpha = 0.35 / k; g.drawImage(glow(f.c, r), f.x0 + (e.x - f.x0) * q - r + wob, f.y0 + (e.y - f.y0) * q - r); }
-        g.globalAlpha = 1; g.drawImage(glow(f.c, r), x - r + wob, y - r);
-        g.fillStyle = '#ffffff'; g.fillRect(x - 1.5 + wob, y - 1.5, 3, 3);
+        const x = f.x0 + (e.x - f.x0) * p, y = f.y0 + (e.y - f.y0) * p, ang = Math.atan2(e.y - f.y0, e.x - f.x0);
+        if (f.w === 'bow' || f.w === 'dagger') {
+          // arrows and thrown blades: a bright streak with a glint at the tip
+          const len = f.w === 'bow' ? 26 : 14;
+          g.globalAlpha = 0.5; g.strokeStyle = f.c; g.lineWidth = f.crit ? 5 : 3; g.lineCap = 'round';
+          g.beginPath(); g.moveTo(x - Math.cos(ang) * len * 1.8, y - Math.sin(ang) * len * 1.8); g.lineTo(x, y); g.stroke();
+          g.globalAlpha = 1; g.strokeStyle = '#ffffff'; g.lineWidth = 1.6;
+          g.beginPath(); g.moveTo(x - Math.cos(ang) * len, y - Math.sin(ang) * len); g.lineTo(x, y); g.stroke();
+          g.drawImage(glow(f.c, 8), x - 8, y - 8);
+        } else if (f.w === 'sword') {
+          // a crescent of force
+          g.save(); g.translate(x, y); g.rotate(ang + Math.PI / 2);
+          g.globalAlpha = 0.9; g.strokeStyle = f.c; g.lineWidth = f.crit ? 5 : 3.5;
+          g.beginPath(); g.arc(0, 8, f.crit ? 18 : 14, Math.PI * 1.15, Math.PI * 1.85); g.stroke();
+          g.globalAlpha = 0.5; g.lineWidth = 9; g.beginPath(); g.arc(0, 8, f.crit ? 18 : 14, Math.PI * 1.2, Math.PI * 1.8); g.stroke();
+          g.restore();
+        } else {
+          const r = f.crit ? 15 : 11, wob = f.w === 'staff' ? Math.sin(p * 9) * 6 : 0;
+          for (let k = 1; k <= 4; k++) { const q = Math.max(0, p - k * 0.05); g.globalAlpha = 0.4 / k; g.drawImage(glow(f.c, r), f.x0 + (e.x - f.x0) * q - r + wob, f.y0 + (e.y - f.y0) * q - r); }
+          g.globalAlpha = 1; g.drawImage(glow(f.c, r), x - r + wob, y - r);
+          g.fillStyle = '#ffffff'; g.beginPath(); g.arc(x + wob, y, 2.2, 0, TAU); g.fill();
+        }
         break;
       }
       case 'ebolt': {

@@ -3,7 +3,7 @@ import { CLASSES, ROLES } from '../data/classes.js';
 import { realmName } from '../data/zones.js';
 import { h, $, fmtDur } from './dom.js';
 import { portrait, fmt, itemTile } from './common.js';
-import { draw } from './sprites.js';
+import { heroImage } from './art/heroes.js';
 import { play } from './sound.js';
 import { abilityText } from './party.js';
 
@@ -32,7 +32,7 @@ function countUp(el, to, ms = 1100) {
 
 export function showWelcome(onStart) {
   enqueue((close) => {
-    const cv = draw('hat_f', 9, CLASSES.wizard.colors); cv.className = 'spr';
+    const cv = heroImage('wizard', false).cloneNode(); cv.className = 'figure'; cv.style.height = '170px';
     return h('div', { class: 'celebrate violet' }, h('div', { class: 'rays' }),
       h('div', { class: 'kicker', style: { color: '#d6c2ff' } }, 'Realm Idle'),
       h('div', { class: 'por' }, cv),
@@ -61,7 +61,7 @@ export function showOffline(r, onCollect) {
 export function showUnlock(cls, joined, onSee) {
   enqueue((close) => {
     const C = CLASSES[cls];
-    const big = portrait(cls, 96);
+    const big = portrait(cls, 150);
     play('unlock');
     return h('div', { class: 'celebrate' }, h('div', { class: 'rays' }),
       h('div', { class: 'kicker' }, 'New class unlocked'),

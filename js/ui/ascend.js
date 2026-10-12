@@ -4,14 +4,15 @@ import { CLASSES } from '../data/classes.js';
 import { realmName, stageLabel, STAGE_COUNT } from '../data/zones.js';
 import * as G from '../core/game.js';
 import { h } from './dom.js';
-import { draw } from './sprites.js';
+import { monsterImage } from './art/monsters.js';
+import { ZONES } from '../data/zones.js';
 import { fmt, tap } from './common.js';
 import { play } from './sound.js';
 
 export function createAscendScreen(root, { onAscend }) {
   function oryx(size) {
-    const cv = draw('dragon', size, { a: '#3a2a4a', b: '#8a6ab0', c: '#ffd34d' });
-    const out = cv.cloneNode(); out.getContext('2d').drawImage(cv, 0, 0); out.className = 'spr'; out.style.margin = '0 auto';
+    const [, spec, pal] = ZONES[ZONES.length - 1].boss;
+    const out = monsterImage(spec, pal).cloneNode(); out.className = 'figure'; out.style.cssText = `height:${size}px;width:auto;margin:0 auto;display:block`;
     return out;
   }
   // press and hold to Ascend, so it never happens by accident
@@ -40,7 +41,7 @@ export function createAscendScreen(root, { onAscend }) {
     root.replaceChildren(
       h('div', { class: 'h1' }, 'Ascend'),
       h('div', { class: 'asc-hero' },
-        oryx(9),
+        oryx(170),
         h('h2', {}, ready ? 'Oryx has fallen' : 'Defeat Oryx'),
         h('div', { class: 'muted', style: { fontWeight: 700, fontSize: '13px' } }, ready
           ? `Ascend to ${realmName(P.realm)}: a harder Realm that pays ${BAL.realmFame}× the Fame, with permanent bonuses that stack forever.`

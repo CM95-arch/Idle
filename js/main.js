@@ -10,6 +10,7 @@ import { createGearScreen } from './ui/gear.js';
 import { createMapScreen } from './ui/map.js';
 import { createAscendScreen } from './ui/ascend.js';
 import { showWelcome, showOffline, showUnlock, showAscended } from './ui/celebrate.js';
+import { icon } from './ui/icons.js';
 
 G.load();
 initSound(G.state.settings.sound);
@@ -18,7 +19,7 @@ initSound(G.state.settings.sound);
 const fameEl = h('b', { class: 'tnum' }, '0'), rateEl = h('small', {}, '');
 const fameBox = h('div', { class: 'fame' }, h('span', { class: 'coin' }), h('div', {}, fameEl, rateEl));
 const realmEl = h('div', { class: 'realm-tag grow' });
-$('#topbar').append(fameBox, realmEl, h('button', { class: 'iconbtn', 'aria-label': 'Settings', onclick: openSettings }, '⚙'));
+$('#topbar').append(fameBox, realmEl, h('button', { class: 'iconbtn', 'aria-label': 'Settings', onclick: openSettings }, icon('settings', 20)));
 const recent = []; // fame earned in the last minute, for the rate readout
 function onFame(n) {
   recent.push([performance.now(), n]);
@@ -36,7 +37,7 @@ function updateTop() {
 
 // ---------- screens ----------
 const TABS = [
-  ['battle', '⚔', 'Battle'], ['party', '🛡', 'Party'], ['gear', '🎒', 'Gear'], ['map', '🗺', 'Map'], ['ascend', '✦', 'Ascend'],
+  ['battle', 'Battle'], ['party', 'Party'], ['gear', 'Gear'], ['map', 'Map'], ['ascend', 'Ascend'],
 ];
 let current = 'battle';
 const screens = {
@@ -47,7 +48,7 @@ const screens = {
   ascend: createAscendScreen($('#scr-ascend'), { onAscend: (P) => { showAscended(P); go('battle'); } }),
 };
 const tabEls = {};
-$('#tabs').append(...TABS.map(([id, icon, label]) => (tabEls[id] = h('button', { class: 'tab', onclick: () => { tap(); go(id); } }, h('span', { class: 'ti' }, icon), h('span', {}, label)))));
+$('#tabs').append(...TABS.map(([id, label]) => (tabEls[id] = h('button', { class: 'tab', onclick: () => { tap(); go(id); } }, h('span', { class: 'ti' }, icon(id, 22)), h('span', {}, label)))));
 function go(id) {
   current = id;
   for (const [k] of TABS) $(`#scr-${k}`).classList.toggle('hidden', k !== id);

@@ -33,7 +33,7 @@ export function openClassSheet(cls, onChange) {
     };
     return [
       h('div', { class: 'row' },
-        h('div', { style: { width: '72px', display: 'grid', placeItems: 'center' } }, portrait(cls, 64)),
+        h('div', { style: { width: '92px', display: 'grid', placeItems: 'center' } }, portrait(cls, 118)),
         h('div', { class: 'grow' },
           h('div', { class: 'pixel', style: { fontSize: '24px' } }, C.name),
           h('div', { class: 'muted', style: { fontWeight: 800, fontSize: '13px' } }, `${ROLES[C.role]} · Level ${me.lv}`),
@@ -51,7 +51,7 @@ export function openClassSheet(cls, onChange) {
         : s.party.length < BAL.partySize
           ? h('button', { class: 'btn block', onclick: () => { G.setParty(s.party.length, cls); tap('equip'); onChange?.(); rerender(); } }, 'Add to party')
           : h('div', {}, h('div', { class: 'h2', style: { marginTop: '4px' } }, 'Swap into the party for…'),
-            h('div', { class: 'row' }, s.party.map((p, i) => h('button', { class: 'btn alt grow sm', onclick: () => { G.setParty(i, cls); tap('equip'); onChange?.(); rerender(); } }, portrait(p, 20), CLASSES[p].name)))),
+            h('div', { class: 'row' }, s.party.map((p, i) => h('button', { class: 'btn alt grow sm', onclick: () => { G.setParty(i, cls); tap('equip'); onChange?.(); rerender(); } }, portrait(p, 30), CLASSES[p].name)))),
     ];
   });
   return sheet;
@@ -84,14 +84,14 @@ export function createPartyScreen(root) {
     const slots = [0, 1, 2].map((i) => {
       const cls = s.party[i];
       if (!cls) return h('div', { class: 'ccard', style: { borderStyle: 'dashed', justifyContent: 'center', minHeight: '120px' } }, h('small', {}, 'Empty'), h('small', { class: 'dim' }, 'Add a class below'));
-      return h('button', { class: 'ccard inparty', onclick: () => openClassSheet(cls, render) }, h('div', { class: 'por' }, portrait(cls, 44)), h('b', {}, CLASSES[cls].name), h('small', {}, `Lv ${s.classes[cls].lv} · ${ROLES[CLASSES[cls].role]}`));
+      return h('button', { class: 'ccard inparty', onclick: () => openClassSheet(cls, render) }, h('div', { class: 'por' }, portrait(cls, 76)), h('b', {}, CLASSES[cls].name), h('small', {}, `Lv ${s.classes[cls].lv} · ${ROLES[CLASSES[cls].role]}`));
     });
     const cards = CLASS_IDS.map((cls) => {
       const C = CLASSES[cls], me = s.classes[cls];
-      if (me) return h('button', { class: `ccard${s.party.includes(cls) ? ' inparty' : ''}`, onclick: () => openClassSheet(cls, render) }, h('div', { class: 'por' }, portrait(cls, 40)), h('b', {}, C.name), h('small', {}, `Lv ${me.lv} · ${ROLES[C.role]}`));
+      if (me) return h('button', { class: `ccard${s.party.includes(cls) ? ' inparty' : ''}`, onclick: () => openClassSheet(cls, render) }, h('div', { class: 'por' }, portrait(cls, 76)), h('b', {}, C.name), h('small', {}, `Lv ${me.lv} · ${ROLES[C.role]}`));
       const needs = Object.entries(C.unlock.needs);
       const prog = Math.min(...needs.map(([k, lv]) => Math.min(1, (s.classes[k]?.lv || 0) / lv)));
-      return h('div', { class: 'ccard locked' }, h('div', { class: 'por' }, portrait(cls, 40, true)), h('b', {}, C.name),
+      return h('div', { class: 'ccard locked' }, h('div', { class: 'por' }, portrait(cls, 76, true)), h('b', {}, C.name),
         h('div', { class: 'req' }, needs.map(([k, lv]) => `${CLASSES[k].name} ${lv}`).join(' + ')),
         h('div', { class: 'pbar' }, h('i', { style: { width: `${prog * 100}%` } })));
     });

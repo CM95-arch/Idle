@@ -3,6 +3,10 @@ import { ZONES, STAGES_PER_ZONE, stageLabel, isBoss, realmName } from '../data/z
 import * as G from '../core/game.js';
 import { h } from './dom.js';
 import { fmt, tap } from './common.js';
+import { backdrop } from './art/scenes.js';
+
+const thumbs = new Map();
+const thumb = (id) => { if (!thumbs.has(id)) thumbs.set(id, backdrop(id).toDataURL('image/jpeg', 0.7)); return thumbs.get(id); };
 
 export function createMapScreen(root, { goBattle }) {
   function render() {
@@ -16,8 +20,8 @@ export function createMapScreen(root, { goBattle }) {
           'aria-label': `Stage ${stageLabel(st)}`, onclick: () => { G.goToStage(st); tap(); goBattle(); } }, isBoss(st) ? '☠' : `${k + 1}`);
       });
       const cleared = Math.max(0, Math.min(STAGES_PER_ZONE, s.best + 1 - first));
-      return h('div', { class: `zone${open ? '' : ' locked'}`, style: { background: `linear-gradient(135deg, ${Z.bg[1]}, ${Z.bg[2]})` } },
-        h('div', { class: 'row between' }, h('h3', {}, Z.name), h('small', { style: { fontWeight: 900, color: '#fff', opacity: 0.85 } }, open ? `${cleared}/${STAGES_PER_ZONE}` : '🔒')),
+      return h('div', { class: `zone${open ? '' : ' locked'}`, style: { backgroundImage: `url(${thumb(Z.id)})`, backgroundSize: 'cover', backgroundPosition: 'center 35%' } },
+        h('div', { class: 'row between' }, h('h3', {}, Z.name), h('small', { style: { fontWeight: 900, color: '#fff', opacity: 0.85 } }, open ? `${cleared}/${STAGES_PER_ZONE}` : 'Locked')),
         h('div', { class: 'nodes' }, nodes),
         h('div', { style: { marginTop: '8px', fontSize: '12px', fontWeight: 800, color: '#fff', opacity: 0.85 } }, `Boss: ${Z.boss[0]} · needs ⚔ ${fmt(G.stagePower(first + STAGES_PER_ZONE - 1))}`));
     });

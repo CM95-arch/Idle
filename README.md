@@ -26,6 +26,7 @@ Plain HTML/CSS/JavaScript, no build step. Save it to the iPhone home screen from
 - `js/core/game.js`: the save and every action (leveling, gear, rewards, offline, Ascension).
 - `js/core/heroes.js`, `items.js`: hero stats and party power; items.
 - `js/ui/battleView.js`: the battle renderer (effects, numbers, loot, banners).
+- `js/ui/art/`: all the art, as vector SVG built in code: `heroes.js` (11 classes, front and back), `monsters.js` (enemy and boss archetypes), `items.js` (gear icons by rarity), `scenes.js` (zone backdrops), `core.js` (shading helpers).
 - `js/ui/*.js`: the screens (battle, party, gear, map, ascend) and celebration overlays.
 
 ## Tools

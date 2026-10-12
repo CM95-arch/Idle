@@ -1,27 +1,27 @@
 // The Realm, from the beaches to Oryx. Ten stages per zone; the tenth is a boss.
-// Enemy looks use the sprite maps in ui/sprites.js; `pal` colors them, `bg` paints the zone.
+// Enemies are [name, art, palette]: art is an archetype from ui/art/monsters.js plus options; `pal` colors it.
 export const ZONES = [
   { id: 'beach', name: 'Beaches', bg: ['#f2d79a', '#e0b86a', '#3fb6c8'], ground: '#e9cf8c', deco: ['rock', 'grass'],
-    enemies: [['Pirate', 'humanoid', { a: '#3a6ab0', b: '#f0d0a0', c: '#ffd34d' }], ['Crab', 'beast', { a: '#d8503a', b: '#ff9070', c: '#ffffff' }], ['Sand Slime', 'blob', { a: '#d8b860', b: '#f8e0a0', c: '#ffffff' }]],
-    boss: ['Kraken King', 'eye', { a: '#a03a5a', b: '#e07090', c: '#ffe08a' }] },
+    enemies: [['Pirate', ['humanoid', { hat: 'bandana', weapon: 'blade', skin: '#b88a6a' }], { a: '#2c4a78', b: '#a02a2a', c: '#ffd34d' }], ['Giant Crab', ['crab'], { a: '#b8402c', b: '#e07050', c: '#ffe08a' }], ['Sand Slime', ['slime'], { a: '#c8a04a', b: '#f0d890', c: '#2a1a0a' }]],
+    boss: ['Kraken King', ['kraken'], { a: '#6a2a5a', b: '#c070a0', c: '#ffe08a' }] },
   { id: 'lowlands', name: 'Lowlands', bg: ['#8fce6a', '#5fa84a', '#3a7a3a'], ground: '#7fbf5a', deco: ['tree', 'grass'],
-    enemies: [['Hobbit Mage', 'humanoid', { a: '#7a5a2a', b: '#c0a070', c: '#5de0ff' }], ['Goblin', 'beast', { a: '#4a8a3a', b: '#8ad070', c: '#ff4040' }], ['Snake', 'snake', { a: '#6a8a2a', b: '#c6d96a', c: '#ffde3d' }]],
-    boss: ['Dwarf King', 'golem', { a: '#8a5a3a', b: '#d0a070', c: '#ffd34d' }] },
+    enemies: [['Hobbit Mage', ['humanoid', { hat: 'hood', weapon: 'staff', skin: '#c9a080' }], { a: '#5a4a2a', b: '#a08050', c: '#5de0ff' }], ['Goblin', ['humanoid', { hat: 'horns', weapon: 'blade', skin: '#6a8a3a' }], { a: '#4a3a2a', b: '#7a5a3a', c: '#ff4040' }], ['Viper', ['serpent'], { a: '#4a6a24', b: '#c6c96a', c: '#ffde3d' }]],
+    boss: ['Dwarf King', ['humanoid', { hat: 'crown', weapon: 'axe', skin: '#c08a6a', big: true }], { a: '#6a3a24', b: '#c09040', c: '#ffd34d' }] },
   { id: 'midlands', name: 'Midlands', bg: ['#6aa05a', '#4a7a4a', '#2a4a3a'], ground: '#5a8a4a', deco: ['tree', 'rock'],
-    enemies: [['Orc Warrior', 'humanoid', { a: '#4a6a2a', b: '#8aa05a', c: '#c0c0c0' }], ['Dark Elf', 'humanoid', { a: '#3a2a4a', b: '#7a6a9a', c: '#ff40ff' }], ['Skeleton', 'skeleton', { a: '#d0d0c0', b: '#f0f0e0', c: '#ff4040' }]],
-    boss: ['Lich', 'lich', { a: '#4a2a6a', b: '#d0d0f0', c: '#40ffe0' }] },
+    enemies: [['Orc Warrior', ['humanoid', { hat: 'helm', weapon: 'axe', skin: '#5a7a3a' }], { a: '#3a3a2a', b: '#6a6a4a', c: '#ff5a3a' }], ['Dark Elf', ['humanoid', { hat: 'hood', weapon: 'spear', skin: '#8a7aa0' }], { a: '#2a2240', b: '#5a4a7a', c: '#ff40ff' }], ['Skeleton', ['skeleton'], { a: '#d8d2bc', b: '#f0ead8', c: '#ff4040' }]],
+    boss: ['Lich', ['lich'], { a: '#2a1a40', b: '#d8d2c0', c: '#40ffe0' }] },
   { id: 'highlands', name: 'Highlands', bg: ['#8a9aa0', '#5a6a70', '#2a3a40'], ground: '#7a8a8a', deco: ['rock', 'ruin'],
-    enemies: [['Ogre', 'golem', { a: '#7a6a4a', b: '#b0a070', c: '#ff8040' }], ['Werewolf', 'beast', { a: '#5a4a3a', b: '#9a8a7a', c: '#ffde3d' }], ['Ghost', 'ghost', { a: '#8a8ab0', b: '#d0d0f0', c: '#40ffe0' }]],
-    boss: ['Ent Ancient', 'golem', { a: '#3a5a2a', b: '#6a8a4a', c: '#a0ff60' }] },
+    enemies: [['Ogre', ['humanoid', { hat: 'none', weapon: 'axe', skin: '#9a8a5a', big: true }], { a: '#5a4a30', b: '#8a7050', c: '#ff8040' }], ['Stone Golem', ['golem'], { a: '#7a7a7a', b: '#a0a0a0', c: '#ffb040' }], ['Wraith', ['ghost'], { a: '#8a8ab0', b: '#d0d0f0', c: '#40ffe0' }]],
+    boss: ['Ent Ancient', ['golem', { tree: true, big: true }], { a: '#4a3a24', b: '#4a7a2a', c: '#a0ff60' }] },
   { id: 'godlands', name: 'Godlands', bg: ['#5a4a7a', '#3a2a5a', '#1a1030'], ground: '#4a3a6a', deco: ['crystal', 'ruin'],
-    enemies: [['Medusa', 'snake', { a: '#3a8a6a', b: '#7ad0a0', c: '#ffde3d' }], ['Beholder', 'eye', { a: '#7a2a5a', b: '#d060a0', c: '#ffffff' }], ['Flying Brain', 'blob', { a: '#d070b0', b: '#ffa0e0', c: '#ffffff' }]],
-    boss: ['Grand Sphinx', 'demon', { a: '#c0a040', b: '#f0d070', c: '#40a0ff' }] },
+    enemies: [['Medusa', ['serpent', { hood: true }], { a: '#2a6a5a', b: '#d0b060', c: '#ffde3d' }], ['Beholder', ['beholder'], { a: '#6a2a4a', b: '#d060a0', c: '#ff4040' }], ['Flying Brain', ['slime'], { a: '#b0608a', b: '#ffa0d0', c: '#ffffff' }]],
+    boss: ['Grand Sphinx', ['sphinx'], { a: '#b08a3a', b: '#d8b070', c: '#d0a030' }] },
   { id: 'approach', name: 'Castle Approaches', bg: ['#5a4a4a', '#3a2a2a', '#1a1010'], ground: '#4a3a3a', deco: ['pillar', 'flame'],
-    enemies: [['Oryx Guard', 'humanoid', { a: '#3a2a4a', b: '#8a6ab0', c: '#ffd34d' }], ['Stone Gargoyle', 'demon', { a: '#6a6a6a', b: '#a0a0a0', c: '#ff4040' }], ['Insect Swarm', 'bug', { a: '#5a3a1a', b: '#a07040', c: '#ffde3d' }]],
-    boss: ['Stone Guardians', 'golem', { a: '#8a8a90', b: '#d0d0d8', c: '#40a0ff' }] },
+    enemies: [['Oryx Guard', ['humanoid', { hat: 'helm', weapon: 'spear', skin: '#a08070' }], { a: '#2a2036', b: '#6a4a8a', c: '#ffd34d' }], ['Stone Gargoyle', ['demon'], { a: '#6a6a70', b: '#4a4a52', c: '#ff4040' }], ['Scarab', ['insect'], { a: '#3a4a2a', b: '#6a7a3a', c: '#ffde3d' }]],
+    boss: ['Stone Guardian', ['golem', { big: true, crown: true }], { a: '#8a8a92', b: '#b0b0b8', c: '#40a0ff' }] },
   { id: 'castle', name: 'Oryx’s Castle', bg: ['#3a2a4a', '#2a1a3a', '#100818'], ground: '#2a1d3a', deco: ['pillar', 'flame'],
-    enemies: [['Henchman of Oryx', 'humanoid', { a: '#5a0a1a', b: '#a02a3a', c: '#ffd34d' }], ['Royal Golem', 'golem', { a: '#4a3a6a', b: '#8a6ab0', c: '#ffd34d' }], ['Mad God Servant', 'demon', { a: '#2a1a3a', b: '#6a4a8a', c: '#ff40ff' }]],
-    boss: ['Oryx the Mad God', 'dragon', { a: '#3a2a4a', b: '#8a6ab0', c: '#ffd34d' }] },
+    enemies: [['Henchman of Oryx', ['humanoid', { hat: 'horns', weapon: 'blade', skin: '#8a6a7a' }], { a: '#4a0a1a', b: '#8a1a2a', c: '#ffd34d' }], ['Royal Golem', ['golem', { crown: true }], { a: '#4a3a6a', b: '#8a6ab0', c: '#ffd34d' }], ['Mad God Servant', ['demon'], { a: '#2a1a3a', b: '#4a2a5a', c: '#ff40ff' }]],
+    boss: ['Oryx the Mad God', ['oryx'], { a: '#3a2a4a', b: '#4a1a2a', c: '#d8a830' }] },
 ];
 export const STAGES_PER_ZONE = 10;
 export const STAGE_COUNT = ZONES.length * STAGES_PER_ZONE;
