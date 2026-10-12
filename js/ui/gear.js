@@ -3,8 +3,12 @@ import { CLASSES } from '../data/classes.js';
 import { SLOT_NAME, EXTRA, STAT_NAME } from '../data/gear.js';
 import { BAL } from '../data/balance.js';
 import * as G from '../core/game.js';
-import { itemStats, slotOf, fits, itemScore, upgradeCost, canUpgrade, salvageValue } from '../core/items.js';
+import { itemStats, slotOf, fits, itemScore, upgradeCost, canUpgrade, salvageValue, ilvlOf, uniqueOf } from '../core/items.js';
 import { h, openSheet, toast } from './dom.js';
+import { UNIQUES } from '../data/uniques.js';
+import { ZONES } from '../data/zones.js';
+import { itemImage } from './art/items.js';
+import { artImg } from './art/core.js';
 import { coin, fmt, itemTile, itemIcon, portrait, rcolor, tap } from './common.js';
 
 const listNames = (cls) => (cls.length > 2 ? `${cls.slice(0, -1).map((c) => CLASSES[c].name).join(', ')} and ${CLASSES[cls[cls.length - 1]].name}` : cls.map((c) => CLASSES[c].name).join(' and '));
@@ -36,8 +40,9 @@ export function openItemSheet(id, onChange) {
         h('div', { class: `itile r${it.rarity}`, style: { '--rc': R.color, width: '72px' } }, itemIcon(it, 56)),
         h('div', { class: 'grow' },
           h('div', { style: { fontWeight: 900, fontSize: '18px', color: R.color } }, `${it.name}${it.up ? ` +${it.up}` : ''}`),
-          h('div', { class: 'muted', style: { fontWeight: 800, fontSize: '12px' } }, `${R.name} ${SLOT_NAME[slot]} · item level ${it.ilvl + 1}`),
+          h('div', { class: 'muted', style: { fontWeight: 800, fontSize: '12px' } }, `${R.name} ${SLOT_NAME[slot]} · item level ${ilvlOf(it) + 1}`),
           wornBy ? h('div', { class: 'gold', style: { fontWeight: 800, fontSize: '12px' } }, `Worn by ${CLASSES[wornBy].name}`) : null)),
+      uniqueOf(it) ? h('div', { class: 'panel ufx' }, h('b', {}, '✦ Unique effect'), h('div', { style: { fontSize: '14px', fontWeight: 700, marginTop: '2px' } }, uniqueOf(it).desc), h('div', { class: 'dim', style: { fontSize: '11px', fontWeight: 800, marginTop: '4px' } }, 'Grows with you: always as strong as gear from just behind your best stage. Kept when you Ascend (upgrades reset).')) : null,
       h('div', { class: 'panel stats', style: { gridTemplateColumns: '1fr' } }, statRows(it)),
       !wornBy && owners.length ? h('div', {}, h('div', { class: 'h2', style: { marginTop: 0 } }, 'Equip on'),
         ...owners.map((c) => {
@@ -84,7 +89,7 @@ export function createGearScreen(root, { onChange }) {
     return h('div', { class: 'salvbar' },
       h('div', { class: 'row' },
         h('button', { class: 'chip', onclick: () => { for (const it of items) if (it.rarity === 0) sel.add(it.id); tap(); render(); } }, 'All Common'),
-        h('button', { class: 'chip', disabled: !items.length, onclick: () => { for (const it of items) if (allOn) sel.delete(it.id); else sel.add(it.id); tap(); render(); } }, allOn ? 'Clear shown' : 'Select shown'),
+        h('button', { class: 'chip', disabled: !items.length, onclick: () => { for (const it of items) if (allOn) sel.delete(it.id); else if (!it.u) sel.add(it.id); tap(); render(); } }, allOn ? 'Clear shown' : 'Select shown'),
         picked.length ? h('button', { class: 'chip', onclick: () => { sel.clear(); tap(); render(); } }, 'Clear') : null),
       h('div', { class: 'row' },
         h('button', { class: 'btn alt sm', onclick: endSalvage }, 'Cancel'),
@@ -105,6 +110,7 @@ export function createGearScreen(root, { onChange }) {
       sel ? salvageBar(items) : h('div', {},
         h('div', { class: 'row', style: { marginTop: '14px' } },
           h('button', { class: 'btn grow sm', disabled: !G.bestUpgrades(), onclick: () => { let n = 0; for (const c of s.party) n += G.equipBest(c); tap('equip'); toast({ title: n ? `Equipped ${n} upgrade${n === 1 ? '' : 's'}` : 'Nothing better to equip', kind: n ? 'gold' : '' }); render(); onChange?.(); } }, 'Equip best for party')),
+        h('button', { class: 'btn alt block sm', style: { marginTop: '8px' }, onclick: openCollection }, `✦ Uniques found: ${Object.keys(s.uniques).length} / ${UNIQUES.length}`),
         h('div', { class: 'row', style: { marginTop: '8px' } },
           h('button', { class: 'btn alt grow sm', disabled: !s.inv.length, onclick: startSalvage }, 'Salvage'),
           h('button', { class: 'btn alt grow sm', onclick: () => { const i = AUTO.indexOf(auto); s.settings.autoSalvage = AUTO[(i + 1) % AUTO.length][0]; tap(); G.save(); render(); } }, `Auto-salvage: ${auto[1]}`)),
@@ -112,4 +118,28 @@ export function createGearScreen(root, { onChange }) {
     void rcolor;
   }
   return { render, frame() {} };
+}
+
+/** Every Unique in the game: the ones you've found, and silhouettes of the rest with where they drop. */
+export function openCollection() {
+  tap();
+  openSheet(() => {
+    const found = G.state.uniques;
+    return [
+      h('div', { class: 'pixel center', style: { fontSize: '22px' } }, 'Uniques'),
+      h('div', { class: 'muted center', style: { fontSize: '13px', fontWeight: 700 } }, `${Object.keys(found).length} of ${UNIQUES.length} found. Each zone boss guards its own; its other enemies drop them very rarely.`),
+      ...ZONES.map((Z, zi) => h('div', {},
+        h('div', { class: 'h2' }, `${Z.name} · ${Z.boss[0]}`),
+        ...UNIQUES.filter((U) => U.zone === zi).map((U) => {
+          const has = found[U.id];
+          const icon = artImg(itemImage(U.kind, 6)); icon.style.width = '44px';
+          return h('div', { class: 'panel row', style: { marginBottom: '6px', padding: '8px 10px', alignItems: 'flex-start' } },
+            h('div', { class: `itile r6${has ? '' : ' locked'}`, style: { width: '56px', flex: 'none', '--rc': '#fff' } }, icon),
+            h('div', { class: 'grow' },
+              h('b', { style: { color: has ? '#ffffff' : 'var(--ink-3)' } }, has ? U.name : '???'),
+              h('div', { style: { fontSize: '12px', fontWeight: 700, color: has ? 'var(--ink-2)' : 'var(--ink-3)' } }, has ? U.desc : `Not found yet · ${KIND_LABEL({ kind: U.kind })}`),
+              has ? h('div', { class: 'dim', style: { fontSize: '11px', fontWeight: 800 } }, `Found ×${has}`) : null));
+        }))),
+    ];
+  });
 }

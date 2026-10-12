@@ -54,9 +54,10 @@ export function createAscendScreen(root, { onAscend }) {
         h('div', { class: 'stat' }, h('span', {}, 'Ascensions'), h('b', {}, `${s.ascensions}`)), h('div', { class: 'stat' }, h('span', {}, 'Realm'), h('b', {}, realmName(s.realm)))),
       h('div', { class: 'h2' }, 'What Ascending resets'),
       h('div', { class: 'panel', style: { fontSize: '13px', fontWeight: 700, lineHeight: 1.5 } },
-        h('div', {}, '↺ Stage progress, Fame and all gear'),
+        h('div', {}, '↺ Stage progress, Fame and all gear except Uniques'),
         h('div', {}, `↺ Class levels drop to a quarter (at least ${BAL.realmStartLevel(P.realm)}): `, h('span', { class: 'muted' }, Object.entries(P.levels).map(([c, lv]) => `${CLASSES[c].name} ${s.classes[c].lv}→${lv}`).join(', '))),
-        h('div', { class: 'gold' }, '✓ Every class you’ve unlocked, and all bonuses above')),
+        h('div', { class: 'gold' }, '✓ Every class you’ve unlocked, and all bonuses above'),
+        h('div', { style: { color: '#ffffff' } }, '✦ Your Uniques, worn ones staying on (their upgrades reset)')),
       h('div', { style: { marginTop: '14px' } }, ready ? holdButton(`Hold to Ascend to ${realmName(P.realm)}`, () => { play('ascend'); G.ascend(); onAscend?.(P); render(); }) : h('button', { class: 'btn violet block', disabled: true }, '🔒 Defeat Oryx first')));
     void tap;
   }

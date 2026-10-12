@@ -2,10 +2,11 @@
 import { BAL } from '../data/balance.js';
 import { CLASSES, CLASS_IDS } from '../data/classes.js';
 import { SLOTS } from '../data/gear.js';
-import { STAGE_COUNT, isBoss } from '../data/zones.js';
+import { STAGE_COUNT, STAGES_PER_ZONE, ZONES, isBoss } from '../data/zones.js';
+import { UNIQUES } from '../data/uniques.js';
 import { makeRng } from './rng.js';
 import { heroStats, powerOf } from './heroes.js';
-import { makeItem, rollRarity, kindFor, slotOf, fits, upgradeCost, canUpgrade, salvageValue, itemScore } from './items.js';
+import { makeItem, makeUnique, setUniqueLevel, rollRarity, kindFor, slotOf, fits, upgradeCost, canUpgrade, salvageValue, itemScore } from './items.js';
 import { createBattle, stepBattle, simulate, enemyStats } from './battle.js';
 
 const KEY = 'realm-idle-save-v1';
@@ -22,6 +23,7 @@ function fresh() {
     lastSeen: Date.now(), created: Date.now(),
     stats: { kills: 0, clears: 0, fameEarned: 0, bosses: 0, items: 0, played: 0 },
     settings: { sound: true, autoSalvage: -1 }, // auto-salvage drops at or below this rarity (-1 = off)
+    uniques: {}, // Unique id → how many you've found
     flags: {},
   };
 }
@@ -39,13 +41,14 @@ export function load() {
     if (raw) state = { ...fresh(), ...JSON.parse(raw) };
   } catch { state = fresh(); }
   rng = makeRng(state.seed);
+  syncUniques();
   return state;
 }
 export function save() {
   state.seed = rng.s; state.lastSeen = Date.now();
   try { localStorage.setItem(KEY, JSON.stringify(state)); } catch { /* storage full or blocked */ }
 }
-export function resetAll() { state = fresh(); rng = makeRng(state.seed); save(); changed('reset'); }
+export function resetAll() { state = fresh(); rng = makeRng(state.seed); syncUniques(); save(); changed('reset'); }
 
 // ---------- derived ----------
 export const owned = (cls) => !!state.classes[cls];
@@ -58,8 +61,11 @@ export const partyPower = () => powerOf(partyStats());
 export const invCap = () => BAL.inventory + state.extra.inventory;
 export const offlineCapH = () => BAL.offlineCapHours + state.extra.offlineHours;
 const fameMult = () => state.mult.fame * (1 + Math.max(0, ...partyStats().map((s) => s.fame), 0)) * BAL.realmFame ** state.realm;
-export const dropQuality = () => state.mult.drops + Math.min(1.5, (state.best + 1) / STAGE_COUNT) * 0.6;
+const luck = () => Math.max(0, ...partyStats().map((s) => s.fx.luck || 0));
+export const dropQuality = () => state.mult.drops + Math.min(1.5, (state.best + 1) / STAGE_COUNT) * 0.6 + luck();
 export const ilvlFor = (stage) => stage + BAL.realmIlvl * state.realm;
+// Uniques keep pace with you: as strong as gear from a few stages behind your best
+const syncUniques = () => setUniqueLevel(ilvlFor(Math.max(0, state.best - BAL.uniqueLag)));
 
 /** Power a stage asks for: what a party needs to clear it about evenly. */
 export function stagePower(stage, realm = state.realm) {
@@ -187,6 +193,24 @@ function rollDrop(stage) {
   const rarity = rollRarity(rng, dropQuality());
   return makeItem(rng, state.nextId++, kindFor(cls, slot), ilvlFor(stage), rarity);
 }
+/** Maybe a Unique: the zone boss drops one now and then; its other enemies very rarely. */
+function rollUnique(stage, boss) {
+  const zone = Math.min(ZONES.length - 1, Math.floor(stage / STAGES_PER_ZONE));
+  const chance = (boss ? BAL.uniqueBoss * (zone === ZONES.length - 1 ? 2 : 1) : BAL.uniqueWave) * (1 + luck());
+  if (rng.next() >= chance) return null;
+  // ones you haven't found yet, and ones a class you own can wear, come up more often
+  const pool = UNIQUES.filter((u) => u.zone === zone);
+  const w = pool.map((u) => (state.uniques[u.id] ? 1 : 3) * (Object.keys(state.classes).some((c) => fits(c, { kind: u.kind })) ? 2 : 1));
+  let r = rng.next() * w.reduce((a, b) => a + b, 0), U = pool[0];
+  for (let i = 0; i < pool.length; i++) { r -= w[i]; if (r < 0) { U = pool[i]; break; } }
+  const it = makeUnique(state.nextId++, U.id);
+  const first = !state.uniques[U.id];
+  state.uniques[U.id] = (state.uniques[U.id] || 0) + 1;
+  state.stats.uniques = (state.stats.uniques || 0) + 1;
+  state.stats.items++;
+  state.inv.push(it); // Uniques always fit, even in a full bag
+  return { it, salvaged: 0, unique: true, first };
+}
 /** Put a drop in the bag (or turn it into Fame if the bag is full or it's set to auto-salvage). */
 function stash(it) {
   state.stats.items++;
@@ -211,12 +235,14 @@ function settle(events) {
     if (ev.k === 'waveClear') {
       const drops = ev.boss ? 2 : rng.next() < BAL.dropChancePerWave ? 1 : 0;
       for (let i = 0; i < drops; i++) out.push({ k: 'drop', ...stash(rollDrop(state.stage)) });
+      const u = rollUnique(state.stage, ev.boss);
+      if (u) out.push({ k: 'drop', ...u });
     }
     if (ev.k === 'won') {
       const f = clearFame(state.stage); gainFame(f); state.stats.clears++;
       if (isBoss(state.stage)) state.stats.bosses++;
       const first = state.stage > state.best;
-      if (first) state.best = state.stage;
+      if (first) { state.best = state.stage; syncUniques(); }
       if (state.flags.wallAt != null && state.stage >= state.flags.wallAt) state.flags.wallAt = null;
       out.push({ k: 'clear', n: f, stage: state.stage, first });
     }
@@ -252,7 +278,7 @@ const rateCache = new Map();
 /** Farming rate on a stage for the current party: seconds per clear and how often it wins. */
 export function farmRate(stage) {
   const stats = partyStats();
-  const key = `${stage}|${state.realm}|${JSON.stringify(stats.map((s) => [s.cls, Math.round(s.atk), Math.round(s.hp), Math.round(s.def)]))}`;
+  const key = `${stage}|${state.realm}|${JSON.stringify(stats.map((s) => [s.cls, Math.round(s.atk), Math.round(s.hp), Math.round(s.def), s.fx]))}`;
   if (rateCache.has(key)) return rateCache.get(key);
   let wins = 0, t = 0, kills = 0;
   for (let i = 0; i < 4; i++) { const r = simulate(stage, state.realm, stats, 1000 + i * 77); if (r.won) wins++; t += r.t + 1.5; kills += r.kills; }
@@ -274,8 +300,12 @@ export function collectOffline(now = Date.now()) {
   const nDrops = Math.min(60, Math.floor(clears * BAL.waves * BAL.dropChancePerWave * (isBoss(stage) ? 3 : 1)));
   const drops = []; let salvaged = 0;
   for (let i = 0; i < nDrops; i++) { const d = stash(rollDrop(stage)); drops.push(d.it); salvaged += d.salvaged; }
+  // Uniques: one roll per boss kill (or per wave on other stages), at most three
+  const uniques = [];
+  const tries = Math.min(4000, Math.floor(isBoss(stage) ? clears : clears * BAL.waves));
+  for (let i = 0; i < tries && uniques.length < 3; i++) { const u = rollUnique(stage, isBoss(stage)); if (u) uniques.push(u.it); }
   save(); changed('offline');
-  return { away, capped: raw > away, fame, clears: Math.floor(clears), drops, salvaged, stage };
+  return { away, capped: raw > away, fame, clears: Math.floor(clears), drops: [...uniques, ...drops], uniques, salvaged, stage };
 }
 
 // ---------- Ascension ----------
@@ -289,8 +319,11 @@ export function ascend() {
   state.mult.dmg *= 1 + P.gain * BAL.ascendDmg; state.mult.fame *= 1 + P.gain;
   state.mult.offline += P.gain * 0.15; state.mult.drops += P.gain * 0.3;
   state.ascensions = P.n; state.realm = P.realm;
-  for (const [c, C] of Object.entries(state.classes)) { C.lv = P.levels[c]; C.gear = {}; }
-  state.inv = []; state.fame = 0; state.stage = 0; state.best = -1; state.flags.wallAt = null;
+  // Uniques are kept (worn ones stay on) but lose their upgrades; everything else is gone
+  for (const [c, C] of Object.entries(state.classes)) { C.lv = P.levels[c]; C.gear = Object.fromEntries(Object.entries(C.gear).filter(([, it]) => it?.u)); }
+  state.inv = state.inv.filter((it) => it.u); state.fame = 0;
+  for (const it of [...state.inv, ...Object.values(state.classes).flatMap((C) => Object.values(C.gear))]) if (it) it.up = 0; state.stage = 0; state.best = -1; state.flags.wallAt = null;
+  syncUniques();
   rateCache.clear();
   startBattle(); save(); changed('ascend');
   return true;

@@ -18,12 +18,14 @@ export function enemyStats(stage, realm) {
 // against the attacker's ATK, so it stays useful at every stage without ever making anyone immune.
 const hit = (atk, def) => atk * (1 - def);
 // tanks also shrug off a flat share of every hit (Guard), since they draw most of the fire
-const heroArmor = (h, eatk) => 1 - (1 - h.def / (h.def + 2.5 * eatk)) * (h.role === 'tank' ? 1 - BAL.tankGuard : 1);
+const heroArmor = (h, eatk) => 1 - (1 - h.def / (h.def + 2.5 * eatk)) * (h.role === 'tank' ? 1 - BAL.tankGuard : 1) * (1 - Math.min(0.6, h.fx.guard || 0));
+
+const abilityCd = (h) => CLASSES[h.cls].ability.cd * (1 - Math.min(0.6, h.fx?.cdr || 0));
 
 export function createBattle(stage, realm, heroStats, seed = (Math.random() * 2 ** 32) >>> 0) {
   const B = {
     stage, realm, rng: makeRng(seed), t: 0, wave: 0, waves: BAL.waves, state: 'fight', pause: 0.6, uid: 1,
-    heroes: heroStats.map((s, i) => ({ ...s, i, maxHp: s.hp, hp: s.hp, atkT: 0.2 * i, cd: CLASSES[s.cls].ability.cd * (0.35 + 0.15 * i), buff: {}, dead: false })),
+    heroes: heroStats.map((s, i) => ({ ...s, fx: s.fx || {}, i, maxHp: s.hp, hp: s.hp, atkT: 0.2 * i, cd: abilityCd(s) * (0.35 + 0.15 * i), buff: {}, dead: false })),
     enemies: [], pending: [], events: [], kills: 0, bossKilled: false,
   };
   return B;
@@ -44,6 +46,7 @@ function spawnWave(B) {
     const xs = [70, 180, 290], n = BAL.perWave;
     B.enemies = Array.from({ length: n }, (_, k) => { const e = Z.enemies[B.rng.int(0, Z.enemies.length - 1)]; return mk(e[0], e[1], e[2], { hp: 1, atk: 1 }, xs[k], 110 + (k % 2) * 30); });
   }
+  for (const h of B.heroes) if (h.fx.firstStrike && !h.dead) h.cd = Math.min(h.cd, 0.25);
   B.events.push({ k: 'wave', n: B.wave, boss });
 }
 
@@ -70,10 +73,13 @@ function heal(B, h, amt) {
   const before = h.hp; h.hp = Math.min(h.maxHp, h.hp + amt);
   if (h.hp > before + 0.5) B.events.push({ k: 'heal', hero: h.i, amt: h.hp - before });
 }
-const dmgMult = (B, h) => (h.buff.dmgUntil > B.t ? 1 + h.buff.dmg : 1) * (alive(B.heroes).some((o) => o.buff.partyUntil > B.t) ? 1 + Math.max(...B.heroes.map((o) => (o.buff.partyUntil > B.t ? o.buff.party : 0))) : 1);
+const aura = (B) => B.heroes.reduce((a, o) => (o.fx.aura && !o.dead ? a * (1 + o.fx.aura) : a), 1);
+const dmgMult = (B, h) => aura(B) * (h.buff.dmgUntil > B.t ? 1 + h.buff.dmg : 1) * (alive(B.heroes).some((o) => o.buff.partyUntil > B.t) ? 1 + Math.max(...B.heroes.map((o) => (o.buff.partyUntil > B.t ? o.buff.party : 0))) : 1);
 
-function useAbility(B, h) {
-  const A = CLASSES[h.cls].ability, p = A.pow * h.pow, es = alive(B.enemies), hs = alive(B.heroes);
+const ECHOES = new Set(['aoe', 'heal', 'pierce', 'execute', 'stun', 'dot', 'drain', 'poison', 'chain']);
+function useAbility(B, h, scale = 1) {
+  const A = CLASSES[h.cls].ability, p = A.pow * h.pow * scale, es = alive(B.enemies), hs = alive(B.heroes);
+  if (!es.length) return;
   const dmg = h.atk * dmgMult(B, h);
   const src = { hero: h.i, ab: true };
   const ev = { k: 'ability', hero: h.i, fx: A.fx, targets: [] };
@@ -92,6 +98,7 @@ function useAbility(B, h) {
     default: break;
   }
   B.events.push(ev);
+  if (scale === 1 && h.fx.echo && ECHOES.has(A.fx)) useAbility(B, h, h.fx.echo);
 }
 
 /** Advance one tick. */
@@ -114,8 +121,12 @@ export function stepBattle(B) {
         else {
           const h = B.heroes[p.to];
           if (h.dead) continue;
+          if (h.fx.dodge && B.rng.next() < h.fx.dodge) { B.events.push({ k: 'dodge', hero: h.i }); continue; }
           h.hp -= p.dmg;
           B.events.push({ k: 'ehit', hero: h.i, dmg: p.dmg, big: p.big });
+          const from = h.fx.thorns && B.enemies.find((x) => x.id === p.from);
+          if (from) damageEnemy(B, from, p.raw * h.fx.thorns, { hero: h.i, thorns: true });
+          if (h.hp <= 0 && h.fx.revive && !h.revived) { h.revived = true; h.hp = h.maxHp * h.fx.revive; B.events.push({ k: 'revive', hero: h.i }); }
           if (h.hp <= 0) { h.hp = 0; h.dead = true; B.events.push({ k: 'fall', hero: h.i }); }
         }
       }
@@ -124,18 +135,26 @@ export function stepBattle(B) {
   // heroes
   for (const h of B.heroes) {
     if (h.dead) continue;
+    if (h.fx.regen) h.hp = Math.min(h.maxHp, h.hp + h.maxHp * h.fx.regen * dt);
+    if (h.fx.partyRegen) for (const o of alive(B.heroes)) o.hp = Math.min(o.maxHp, o.hp + o.maxHp * h.fx.partyRegen * dt);
     h.cd -= dt;
     const A = CLASSES[h.cls].ability, es = alive(B.enemies);
     const needHeal = A.fx === 'heal' ? alive(B.heroes).some((o) => o.hp < o.maxHp * 0.8) : true;
-    if (h.cd <= 0 && es.length && needHeal) { h.cd = A.cd; useAbility(B, h); }
+    if (h.cd <= 0 && es.length && needHeal) { h.cd = abilityCd(h); useAbility(B, h); }
     h.atkT -= dt * h.spd * (h.buff.hasteUntil > B.t ? 1 + h.buff.haste : 1);
     const e = frontEnemy(B);
     if (h.atkT <= 0 && e) {
       h.atkT += 1;
       const crit = B.rng.next() < h.crit;
-      const d = hit(h.hit * dmgMult(B, h) * (crit ? 2 : 1), e.def);
-      B.pending.push({ side: 'hero', to: e.id, dmg: d, crit, hero: h.i, at: B.t + HERO_FLIGHT });
+      const base = h.hit * dmgMult(B, h) * (crit ? 2 + (h.fx.critDmg || 0) : 1);
+      const vs = (t) => hit(base * (t.boss ? 1 + (h.fx.bossDmg || 0) : 1) * (t.hp < t.maxHp * 0.3 ? 1 + (h.fx.execute || 0) : 1), t.def);
+      B.pending.push({ side: 'hero', to: e.id, dmg: vs(e), crit, hero: h.i, at: B.t + HERO_FLIGHT });
       B.events.push({ k: 'shot', hero: h.i, to: e.id, crit, flight: HERO_FLIGHT });
+      const e2 = h.fx.multishot ? alive(B.enemies).find((x) => x !== e) : null;
+      if (e2) {
+        B.pending.push({ side: 'hero', to: e2.id, dmg: vs(e2) * h.fx.multishot, hero: h.i, at: B.t + HERO_FLIGHT });
+        B.events.push({ k: 'shot', hero: h.i, to: e2.id, flight: HERO_FLIGHT });
+      }
     }
   }
   // enemies
@@ -150,11 +169,11 @@ export function stepBattle(B) {
     if (e.boss && e.n % 3 === 0) {
       // the boss's big pattern: a burst that reaches the whole party
       B.events.push({ k: 'pattern', id: e.id, kind: ['ring', 'spread', 'spiral'][(e.n / 3) % 3 | 0] });
-      for (const h of alive(B.heroes)) B.pending.push({ side: 'enemy', to: h.i, dmg: hit(e.atk * 0.7, heroArmor(h, e.atk)), big: true, at: B.t + ENEMY_FLIGHT + 0.15 });
+      for (const h of alive(B.heroes)) B.pending.push({ side: 'enemy', to: h.i, from: e.id, raw: e.atk * 0.7, dmg: hit(e.atk * 0.7, heroArmor(h, e.atk)), big: true, at: B.t + ENEMY_FLIGHT + 0.15 });
     } else {
       const h = enemyTarget(B);
       if (!h) continue;
-      B.pending.push({ side: 'enemy', to: h.i, dmg: hit(e.atk, heroArmor(h, e.atk)), at: B.t + ENEMY_FLIGHT });
+      B.pending.push({ side: 'enemy', to: h.i, from: e.id, raw: e.atk, dmg: hit(e.atk, heroArmor(h, e.atk)), at: B.t + ENEMY_FLIGHT });
       B.events.push({ k: 'eshot', id: e.id, hero: h.i, flight: ENEMY_FLIGHT, boss: e.boss });
     }
   }

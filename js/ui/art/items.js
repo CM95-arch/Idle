@@ -4,6 +4,7 @@ import { svgImage, lit, metal, rad, blur, glowDot, ol } from './core.js';
 const RAR = [
   ['#8a9098', '#c9ced6', '#e6e9ed'], ['#2f8a3c', '#6fd47a', '#c6ffb0'], ['#2463b8', '#5aaaff', '#bfe2ff'],
   ['#6a2fb8', '#b06cff', '#f0d0ff'], ['#c46a10', '#ffb83e', '#fff0a0'], ['#b81f48', '#ff5a82', '#ffd34d'],
+  ['#8f96b8', '#ffffff', '#6ff2ff'], // Unique: pearl white with a cyan gem
 ];
 const WOOD = '#6a4a2a';
 const ICON = {

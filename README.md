@@ -14,12 +14,14 @@ Plain HTML/CSS/JavaScript, no build step. Save it to the iPhone home screen from
 | **Gold** | Premium currency for convenience only (bag space, offline time, more slots). Never needed to progress. The store isn't open yet. |
 | **Party** | Three classes fight at once. Start with the Wizard; Level 5 unlocks the next class (Priest → Archer → Rogue → Warrior), and higher classes unlock when two classes reach Level 20 (Knight, Huntress, Necromancer, Assassin, Paladin, Sorcerer). Each class has a role and an auto-ability. |
 | **Gear** | Four slots per class (weapon, ability, armor, ring), six rarities from Common to Mythic. Rarer pieces roll extra stats. Upgrade with Fame; salvage spares into Fame. Better weapons glow on your heroes. |
+| **Uniques** | 16 named items with special effects (split arrows, cheat death, thorns, a party damage aura…). Each zone boss guards its own; other enemies drop them very rarely. A white bag, a flash and a chime when one drops. They grow with your progress and are kept when you Ascend. Tracked in a collection on the Gear screen. |
 | **Stages** | 7 zones × 10 stages; every tenth is a boss. Auto-push moves you forward and falls back to farm when you hit a wall, retrying once you're 8% stronger. |
 | **Offline** | Up to 8 hours of farming your best stage, with drops, shown on the Welcome Back screen. |
 | **Ascension** | Beat Oryx to Ascend: stages, Fame and gear reset, classes keep a quarter of their levels, and you gain permanent Fame, damage, offline and drop-quality bonuses (big at first, smaller later) in a harder Realm that pays more. |
 
 ## Code map
 
+- `js/data/uniques.js`: the Unique items and their effects (applied in `js/core/battle.js`).
 - `js/data/balance.js`: **every tuning number** (growth curves, costs, rewards, rarities, Ascension).
 - `js/data/classes.js`, `zones.js`, `gear.js`: classes and abilities, the Realm's zones and bosses, gear kinds and stats.
 - `js/core/battle.js`: the auto-battle simulation (runs live, offline and in the balance tool).
@@ -35,4 +37,6 @@ Plain HTML/CSS/JavaScript, no build step. Save it to the iPhone home screen from
 npm start                                   # local server on :8080
 node tools/sim.mjs 48 30 90                 # pacing: 48h of a scripted player, 30 min active / 90 min away
 node tools/sim.mjs 24 30 90 levelCostGrowth=1.18   # try a balance change without editing the file
+node tools/classes.mjs 30                   # class balance: every class at level 30 across every party
+node tools/uniques.mjs 30                   # what each Unique is worth, in stages, against a Rare
 ```

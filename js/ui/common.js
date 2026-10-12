@@ -4,6 +4,7 @@ import { BAL } from '../data/balance.js';
 import { h } from './dom.js';
 import { heroImage } from './art/heroes.js';
 import { itemImage } from './art/items.js';
+import { ilvlOf } from '../core/items.js';
 import { artImg } from './art/core.js';
 import { fmt } from './battleView.js';
 import * as G from '../core/game.js';
@@ -39,7 +40,7 @@ export function itemTile(it, opts = {}) {
     who && it.kind !== 'ring' ? h('span', { class: 'who' }, portrait(who, 20, !usable)) : null,
     up ? h('span', { class: 'up' }, '▲') : null,
     it.up ? h('span', { class: 'plus' }, `+${it.up}`) : null,
-    h('span', { class: 'lvl' }, `${it.ilvl + 1}`));
+    h('span', { class: 'lvl' }, `${ilvlOf(it) + 1}`));
 }
 
 /** Tap feedback: sound + a tiny vibration where the device supports it. */

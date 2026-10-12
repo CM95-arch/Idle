@@ -41,6 +41,7 @@ const SOUNDS = {
   bow: () => { hiss(0.015, 0.12, 4000, 3000, 0.8); tone('triangle', 900 * jit(), 600, 0.05, 0.04); },
   hurt: () => tone('sine', 180, 60, 0.12, 0.12),
   loot: () => { tone('sine', 660, 660, 0.08, 0.08); tone('sine', 990, 990, 0.12, 0.07, ctx.currentTime + 0.07); },
+  unique: () => { [523, 659, 784, 1047, 1319, 1568].forEach((f, i) => tone('triangle', f, f, 0.5, 0.07, ctx.currentTime + i * 0.06)); [1047, 1568, 2093].forEach((f, i) => tone('sine', f, f * 1.002, 1.2, 0.05, ctx.currentTime + 0.4 + i * 0.12)); },
   lootRare: () => [523, 659, 784, 1047].forEach((f, i) => tone('triangle', f, f, 0.16, 0.08, ctx.currentTime + i * 0.07)),
   levelup: () => [392, 523, 659, 784].forEach((f, i) => tone('square', f, f, 0.12, 0.04, ctx.currentTime + i * 0.08)),
   drink: () => tone('sine', 300, 800, 0.16, 0.08),

@@ -6,10 +6,10 @@ import { initSound, setSoundEnabled, play } from './ui/sound.js';
 import { fmt, tap } from './ui/common.js';
 import { createBattleScreen } from './ui/battle.js';
 import { createPartyScreen, openClassSheet } from './ui/party.js';
-import { createGearScreen } from './ui/gear.js';
+import { createGearScreen, openItemSheet } from './ui/gear.js';
 import { createMapScreen } from './ui/map.js';
 import { createAscendScreen } from './ui/ascend.js';
-import { showWelcome, showOffline, showUnlock, showAscended } from './ui/celebrate.js';
+import { showWelcome, showOffline, showUnlock, showAscended, showUnique } from './ui/celebrate.js';
 import { icon } from './ui/icons.js';
 import { runTour, touring } from './ui/tour.js';
 import { CLASSES } from './data/classes.js';
@@ -48,7 +48,7 @@ const TABS = [
 ];
 let current = 'battle';
 const screens = {
-  battle: createBattleScreen($('#scr-battle'), { onFame, openClass: (c) => openClassSheet(c, refresh), onDrop: firstDropTip }),
+  battle: createBattleScreen($('#scr-battle'), { onFame, openClass: (c) => openClassSheet(c, refresh), onDrop: (it) => { if (it.u) setTimeout(() => showUnique(it, seeItem), 1700); else firstDropTip(it); } }),
   party: createPartyScreen($('#scr-party')),
   gear: createGearScreen($('#scr-gear'), { onChange: refresh }),
   map: createMapScreen($('#scr-map'), { goBattle: () => go('battle') }),
@@ -63,6 +63,7 @@ function go(id) {
   if (id !== 'battle') screens[id].render();
   updateTabs();
 }
+function seeItem(it) { go('gear'); openItemSheet(it.id, refresh); }
 function refresh() {
   if (current !== 'battle') screens[current].render();
   screens.battle.update(true);
@@ -151,7 +152,7 @@ if (G.state.settings.tapDebug) tapDebug(true);
 // ---------- offline earnings ----------
 function collect() {
   const r = G.collectOffline();
-  if (r) showOffline(r, () => { onFame(r.fame); refresh(); });
+  if (r) { showOffline(r, () => { onFame(r.fame); refresh(); }); for (const it of r.uniques) showUnique(it, seeItem); }
 }
 
 // ---------- loop ----------

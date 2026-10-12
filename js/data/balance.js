@@ -31,12 +31,17 @@ export const BAL = {
     { id: 'epic', name: 'Epic', color: '#b05cff', mult: 2.2, stats: 2, maxUp: 20, weight: 3.2 },
     { id: 'legendary', name: 'Legendary', color: '#ffb02e', mult: 2.9, stats: 3, maxUp: 25, weight: 0.7 },
     { id: 'mythic', name: 'Mythic', color: '#ff4f7a', mult: 3.8, stats: 3, maxUp: 30, weight: 0.1 },
+    // never rolled: Uniques are named boss drops (js/data/uniques.js)
+    { id: 'unique', name: 'Unique', color: '#f4f1ff', mult: 1.3, stats: 2, maxUp: 10, weight: 0 },
   ],
   gearGrowth: 1.155,       // item main stats grow per item level (= stage it dropped on), close to enemy growth
   upgradeStep: 0.12,       // each upgrade adds 12% of the base main stat
   upgradeCost: (ilvl, up, rarity) => Math.round(4 * 1.15 ** ilvl * 1.22 ** up * (1 + rarity * 0.35)),
   salvage: (ilvl, rarity) => Math.round(2 * 1.15 ** ilvl * (1 + rarity) ** 1.6),
   inventory: 30,
+  uniqueBoss: 0.03,        // chance a zone boss drops one of its Uniques (Oryx: double)
+  uniqueWave: 0.0006,      // chance any other cleared wave in the zone does
+  uniqueLag: 6,            // Uniques' item level trails your best stage by this much
   // ---- idle ----
   offlineCapHours: 8,
   offlineEfficiency: 0.8,  // share of your farming rate earned while away (before Ascension bonuses)

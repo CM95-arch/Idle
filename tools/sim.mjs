@@ -46,7 +46,7 @@ function manage() {
   for (const c of Object.keys(st.classes)) if (!st.party.includes(c) && G.levelCost(c) < st.fame * 0.05) G.levelUp(c);
 }
 
-let lastBest = -1, lastAsc = 0;
+let lastBest = -1, lastAsc = 0, lastU = 0;
 G.startBattle();
 while (simT < HOURS * 3600) {
   // active block
@@ -56,6 +56,7 @@ while (simT < HOURS * 3600) {
     G.tickBattle(); simT += TICK; mt += TICK;
     if (G.battle.state !== 'fight') { G.nextBattle(); }
     if (mt > 20) { mt = 0; manage(); if (G.canAscend()) { G.ascend(); log(`ASCENDED → Realm ${S().realm + 1}`); } }
+    if ((S().stats.uniques || 0) !== lastU) { lastU = S().stats.uniques; const it = [...S().inv].reverse().find((x) => x.u); log(`UNIQUE #${lastU}: ${it?.name}`); }
     if (S().best !== lastBest) {
       if (S().best >= 0 && (S().best + 1) % STAGES_PER_ZONE === 0 && (!process.env.QUIET || S().best === 69)) log(`beat ${ZONES[Math.floor(S().best / STAGES_PER_ZONE)].boss[0]} (${stageLabel(S().best)}, realm ${S().realm + 1})  power ${G.partyPower()}  lv ${S().party.map((c) => `${c}:${S().classes[c].lv}`).join(' ')}`);
       lastBest = S().best;

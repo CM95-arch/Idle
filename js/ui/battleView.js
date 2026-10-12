@@ -124,6 +124,8 @@ export class BattleView {
           break;
         }
         case 'heal': { const p = this.heroPos(B, ev.hero); this.num(p.x, p.y - 44, `+${fmt(ev.amt)}`, '#6cff8a', 12); for (let i = 0; i < 8; i++) this.parts.push({ x: p.x + rand(-14, 14), y: p.y + rand(-10, 10), vx: 0, vy: rand(-60, -30), t: 0, life: rand(0.5, 0.9), c: '#8fff9f', s: 2.5 }); break; }
+        case 'dodge': { const p = this.heroPos(B, ev.hero); this.num(p.x + rand(-10, 10), p.y - 40, 'dodge', '#b8c0d8', 11); break; }
+        case 'revive': { const p = this.heroPos(B, ev.hero); this.num(p.x, p.y - 50, 'Revived!', '#ffffff', 15, true); this.hv[ev.hero].cast = 0.8; for (let i = 0; i < 24; i++) this.parts.push({ x: p.x + rand(-16, 16), y: p.y + rand(-20, 20), vx: rand(-20, 20), vy: rand(-140, -60), t: 0, life: rand(0.6, 1.1), c: '#ffffff', s: 3 }); sound?.('levelup'); break; }
         case 'fall': { const p = this.heroPos(B, ev.hero); for (let i = 0; i < 18; i++) this.parts.push({ x: p.x, y: p.y, vx: rand(-90, 90), vy: rand(-120, 0), t: 0, life: 0.8, c: '#ff4030', s: 3, g: 200 }); this.shake = 5; sound?.('fall'); break; }
         case 'ability': this.ability(B, ev, byId, sound); break;
         case 'wave': if (ev.boss) { this.banner('BOSS', '#ff3a5a', 1.6, true); sound?.('bossWarn'); this.flash = 0.25; this.flashColor = '#ff2040'; } else if (ev.n > 0) this.banner(`Wave ${ev.n + 1}`, '#ffffff', 0.9); break;
@@ -136,8 +138,13 @@ export class BattleView {
       if (r.k === 'fame') { const e = B.enemies.find((x) => x.id === r.id) || { x: 180, y: 120 }; for (let i = 0; i < Math.min(6, 2 + Math.floor(Math.log10(r.n + 1))); i++) this.coins.push({ x: e.x + rand(-10, 10), y: e.y + rand(-10, 10), vx: rand(-90, 90), vy: rand(-140, -60), t: -i * 0.03, life: 0.95 }); }
       if (r.k === 'drop') {
         const e = [...B.enemies].reverse().find((x) => x.hp <= 0) || { x: 180, y: 140 };
-        this.bags.push({ x: e.x, y: e.y, t: 0, rarity: r.it.rarity, salvaged: r.salvaged });
-        sound?.(r.it.rarity >= 3 ? 'lootRare' : 'loot');
+        this.bags.push({ x: e.x, y: e.y, t: 0, rarity: r.it.rarity, salvaged: r.salvaged, life: r.unique ? 2.6 : 1.5 });
+        if (r.unique) {
+          // the white bag: a pillar of light, a flash, and a chime you learn to love
+          this.banner('UNIQUE!', '#ffffff', 2.2, true); this.flash = 0.45; this.flashColor = '#ffffff'; this.shake = 6;
+          for (let i = 0; i < 40; i++) { const a = rand(0, TAU), sp = rand(60, 220); this.parts.push({ x: e.x, y: e.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 60, t: 0, life: rand(0.8, 1.6), c: i % 3 ? '#ffffff' : '#6ff2ff', s: rand(2, 3.5), g: 80 }); }
+          sound?.('unique');
+        } else sound?.(r.it.rarity >= 3 ? 'lootRare' : 'loot');
       }
     }
   }
@@ -254,11 +261,11 @@ export class BattleView {
     }
     g.globalAlpha = 1;
     // loot bags pop out, sparkle, then fly to the bag counter
-    this.bags = this.bags.filter((b) => (b.t += dt) < 1.5);
+    this.bags = this.bags.filter((b) => (b.t += dt) < (b.life || 1.5));
     for (const b of this.bags) {
-      const R = BAL.rarities[b.rarity], q = Math.max(0, (b.t - 0.8) / 0.7);
+      const L = b.life || 1.5, R = BAL.rarities[b.rarity], q = Math.max(0, (b.t - (L - 0.7)) / 0.7);
       const x = b.x + (bagTarget.x - b.x) * easeIn(q), y = b.y + 20 - Math.sin(Math.min(1, b.t / 0.4) * Math.PI) * 26 + (bagTarget.y - b.y - 20) * easeIn(q);
-      if (b.rarity >= 2) { g.globalCompositeOperation = 'lighter'; g.globalAlpha = 0.6; g.drawImage(glow(R.color, 30), x - 30, y - 30); if (b.rarity >= 4 && b.t < 0.8) { g.fillStyle = R.color; g.globalAlpha = 0.35; g.fillRect(x - 3, 0, 6, y); } g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; }
+      if (b.rarity >= 2) { g.globalCompositeOperation = 'lighter'; g.globalAlpha = 0.6; g.drawImage(glow(R.color, 30), x - 30, y - 30); if (b.rarity >= 4 && b.t < L - 0.7) { const w = b.rarity === 6 ? 14 + 4 * Math.sin(b.t * 12) : 6; g.fillStyle = R.color; g.globalAlpha = b.rarity === 6 ? 0.55 : 0.35; g.fillRect(x - w / 2, 0, w, y); } g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; }
       const bag = itemImage('bag', b.rarity);
       g.globalAlpha = 1 - q * 0.6; if (ready(bag)) g.drawImage(bag.bmp, x - 15, y - 15, 30, 30); g.globalAlpha = 1;
     }
