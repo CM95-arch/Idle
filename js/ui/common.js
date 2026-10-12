@@ -4,7 +4,7 @@ import { BAL } from '../data/balance.js';
 import { h } from './dom.js';
 import { heroImage } from './art/heroes.js';
 import { itemImage } from './art/items.js';
-import { ilvlOf } from '../core/items.js';
+import { ilvlOf, uniqueOf } from '../core/items.js';
 import { artImg } from './art/core.js';
 import { fmt } from './battleView.js';
 import * as G from '../core/game.js';
@@ -20,7 +20,7 @@ export function portrait(cls, size = 64, locked = false) {
 }
 /** A gear icon, `size` px square. */
 export function itemIcon(it, size = 34) {
-  const img = artImg(itemImage(it.kind, it.rarity));
+  const img = artImg(itemImage(it.kind, it.rarity, uniqueOf(it)?.pal));
   img.className = 'figure'; img.alt = ''; img.style.width = img.style.height = `${size}px`;
   return img;
 }
@@ -35,7 +35,7 @@ export function itemTile(it, opts = {}) {
   // who can wear it: a class in the party first, then any class you own
   const who = opts.who === false ? null : G.wearers(it).sort((a, b) => (G.state.party.includes(b) - G.state.party.includes(a)) || (!!G.state.classes[b] - !!G.state.classes[a]))[0];
   const usable = who && G.state.classes[who];
-  return h('button', { class: `itile r${it.rarity}${usable || opts.who === false ? '' : ' unusable'}`, style: { '--rc': rcolor(it.rarity) }, onclick: opts.onclick, 'aria-label': `${it.name}${who ? `, for ${CLASSES[who].name}` : ''}` },
+  return h('button', { class: `itile r${it.rarity}${uniqueOf(it)?.exalted ? ' ex' : ''}${usable || opts.who === false ? '' : ' unusable'}`, style: { '--rc': rcolor(it.rarity) }, onclick: opts.onclick, 'aria-label': `${it.name}${who ? `, for ${CLASSES[who].name}` : ''}` },
     itemIcon(it, opts.size || 40),
     who && it.kind !== 'ring' ? h('span', { class: 'who' }, portrait(who, 20, !usable)) : null,
     up ? h('span', { class: 'up' }, '▲') : null,

@@ -42,6 +42,9 @@ const SOUNDS = {
   hurt: () => tone('sine', 180, 60, 0.12, 0.12),
   loot: () => { tone('sine', 660, 660, 0.08, 0.08); tone('sine', 990, 990, 0.12, 0.07, ctx.currentTime + 0.07); },
   unique: () => { [523, 659, 784, 1047, 1319, 1568].forEach((f, i) => tone('triangle', f, f, 0.5, 0.07, ctx.currentTime + i * 0.06)); [1047, 1568, 2093].forEach((f, i) => tone('sine', f, f * 1.002, 1.2, 0.05, ctx.currentTime + 0.4 + i * 0.12)); },
+  blast: () => { hiss(0.25, 0.12, 900, 120); tone('sine', 120, 40, 0.25, 0.12); },
+  zap: () => hiss(0.08, 0.05, 5000, 2500),
+  exalted: () => { [392, 523, 659, 784, 1047, 1319, 1568, 2093].forEach((f, i) => tone('triangle', f, f, 0.7, 0.07, ctx.currentTime + i * 0.07)); [784, 1047, 1568].forEach((f) => tone('sine', f, f, 2, 0.05, ctx.currentTime + 0.6)); },
   lootRare: () => [523, 659, 784, 1047].forEach((f, i) => tone('triangle', f, f, 0.16, 0.08, ctx.currentTime + i * 0.07)),
   levelup: () => [392, 523, 659, 784].forEach((f, i) => tone('square', f, f, 0.12, 0.04, ctx.currentTime + i * 0.08)),
   drink: () => tone('sine', 300, 800, 0.16, 0.08),
@@ -62,7 +65,7 @@ const SOUNDS = {
   ascend: () => { [262, 330, 392, 523, 659, 784, 1047].forEach((f, i) => tone('triangle', f, f, 0.5, 0.06, ctx.currentTime + i * 0.12)); hiss(1.4, 0.05, 200, 4000, 0.6); },
   coinCount: () => tone('square', 1500 * jit(), 1500, 0.03, 0.025),
 };
-const GAP = { staff: 0.06, wand: 0.06, sword: 0.08, dagger: 0.07, bow: 0.07, hurt: 0.1, kill: 0.05, fame: 0.05, coinCount: 0.04, loot: 0.08 };
+const GAP = { staff: 0.06, wand: 0.06, sword: 0.08, dagger: 0.07, bow: 0.07, hurt: 0.1, kill: 0.05, fame: 0.05, coinCount: 0.04, loot: 0.08, blast: 0.09, zap: 0.08 };
 const jit = () => 0.92 + Math.random() * 0.16;
 
 export function play(name) {

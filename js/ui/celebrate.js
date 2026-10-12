@@ -94,13 +94,13 @@ export function showAscended(P) {
 /** The white bag: a Unique dropped. */
 export function showUnique(it, onSee) {
   enqueue((close) => {
-    const U = UNIQUE[it.u], n = Object.keys(G.state.uniques).length, dupe = G.state.uniques[it.u] > 1;
+    const U = UNIQUE[it.u], n = Object.keys(G.state.uniques).length, dupe = G.state.uniques[it.u] > 1, ex = !!U.exalted;
     const icon = itemTile(it, { upFor: false, size: 96 }); icon.classList.add('hero-item');
-    play('unique');
-    return h('div', { class: 'celebrate unique' }, h('div', { class: 'rays' }),
-      h('div', { class: 'kicker', style: { color: '#ffffff' } }, dupe ? 'Unique · found again' : 'Unique found!'),
+    play(ex ? 'exalted' : 'unique');
+    return h('div', { class: `celebrate unique${ex ? ' exalted' : ''}` }, h('div', { class: 'rays' }),
+      h('div', { class: 'kicker', style: { color: ex ? '#ffe08a' : '#ffffff' } }, `${ex ? 'Exalted unique' : 'Unique'}${dupe ? ' · found again' : ' found!'}`),
       h('div', { class: 'por' }, icon),
-      h('div', { class: 'big', style: { fontSize: '30px', color: '#ffffff', textShadow: '0 0 24px rgba(111,242,255,.8), 0 3px 0 #2a3050' } }, U.name),
+      h('div', { class: 'big', style: { fontSize: '30px', color: ex ? '#fff3c0' : '#ffffff', textShadow: ex ? '0 0 28px rgba(255,210,90,.9), 0 3px 0 #5a3a0a' : '0 0 24px rgba(111,242,255,.8), 0 3px 0 #2a3050' } }, U.name),
       h('div', { class: 'muted', style: { fontWeight: 800, fontSize: '13px' } }, `Dropped by ${ZONES[U.zone].boss[0]}`),
       h('div', { class: 'panel', style: { textAlign: 'left' } }, h('b', { style: { color: '#6ff2ff' } }, '✦ Unique effect'), h('div', { style: { fontSize: '14px', fontWeight: 700, marginTop: '2px' } }, U.desc)),
       h('div', { class: 'dim', style: { fontSize: '12px', fontWeight: 800 } }, `Collection ${n} / ${UNIQUES.length} · Uniques keep pace with your progress and stay with you when you Ascend.`),

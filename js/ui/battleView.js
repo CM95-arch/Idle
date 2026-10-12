@@ -10,6 +10,8 @@ import { backdrop } from './art/scenes.js';
 import { ready } from './art/core.js';
 
 export const VW = 360, VH = 430;
+const MOD_COLOR = { chain: '#7ae8ff', burn: '#ff8a2a', chill: '#bfe8ff' };
+const EXALT_PAL = ['#a07a20', '#fff3c0', '#ffffff'];
 export const HERO_POS = [{ x: 180, y: 335 }, { x: 92, y: 362 }, { x: 268, y: 362 }];
 const TAU = Math.PI * 2;
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -73,7 +75,8 @@ export class BattleView {
           const h = B.heroes[ev.hero], e = byId(ev.to); if (!e) break;
           const C = CLASSES[h.cls], p = this.heroPos(B, ev.hero);
           this.hv[ev.hero].lunge = Math.max(this.hv[ev.hero].lunge, h.spd > 4 ? 0.45 : 1);
-          this.fx.push({ k: 'bolt', x0: p.x + (i => (i === 2 ? -14 : 14))(ev.hero), y0: p.y - 44, id: e.id, t: 0, life: ev.flight, c: C.shot, crit: ev.crit, w: C.weapon });
+          this.fx.push({ k: 'bolt', x0: p.x + (i => (i === 2 ? -14 : 14))(ev.hero), y0: p.y - 44, id: e.id, t: 0, life: ev.flight, c: MOD_COLOR[ev.mod] || C.shot, crit: ev.crit, w: C.weapon, big: ev.big, mod: ev.mod });
+          if (ev.big) this.hv[ev.hero].lunge = 1.4;
           sound?.(C.weapon);
           break;
         }
@@ -118,12 +121,35 @@ export class BattleView {
         case 'ehit': {
           const p = this.heroPos(B, ev.hero);
           this.hv[ev.hero].hurt = 0.2;
-          this.num(p.x + rand(-10, 10), p.y - 40, fmt(ev.dmg), '#ff6b5e', ev.big ? 13 : 11);
+          this.num(p.x + rand(-10, 10), p.y - 40, ev.shield && ev.dmg < 1 ? 'blocked' : fmt(ev.dmg), ev.shield ? '#7ad0ff' : '#ff6b5e', ev.big ? 13 : 11);
           if (ev.big) this.shake = Math.max(this.shake, 6);
           sound?.('hurt');
           break;
         }
         case 'heal': { const p = this.heroPos(B, ev.hero); this.num(p.x, p.y - 44, `+${fmt(ev.amt)}`, '#6cff8a', 12); for (let i = 0; i < 8; i++) this.parts.push({ x: p.x + rand(-14, 14), y: p.y + rand(-10, 10), vx: 0, vy: rand(-60, -30), t: 0, life: rand(0.5, 0.9), c: '#8fff9f', s: 2.5 }); break; }
+        case 'blast': {
+          const e = byId(ev.id); if (!e) break;
+          this.fx.push({ k: 'boom', x: e.x, y: e.y, t: 0, life: ev.big ? 0.7 : 0.5, c: '#ffb070', big: ev.big });
+          this.fx.push({ k: 'ringwave', x: e.x, y: e.y, t: 0, life: ev.big ? 0.55 : 0.4, c: '#ffe0b0' });
+          for (let i = 0; i < (ev.big ? 18 : 8); i++) { const a = rand(0, TAU), sp = rand(80, ev.big ? 240 : 160); this.parts.push({ x: e.x, y: e.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, t: 0, life: rand(0.3, 0.6), c: i % 2 ? '#ffd34d' : '#ff7a3a', s: rand(2, 3.5) }); }
+          this.shake = Math.max(this.shake, ev.big ? 5 : 2.5);
+          sound?.('blast');
+          break;
+        }
+        case 'arc': {
+          const a = byId(ev.from); if (!a) break;
+          let prev = a;
+          for (const id of ev.ids) { const o = byId(id); if (!o) continue; this.fx.push({ k: 'zap', x0: prev.x, y0: prev.y, x1: o.x, y1: o.y, t: 0, life: 0.25, c: '#7ae8ff' }); prev = o; }
+          sound?.('zap');
+          break;
+        }
+        case 'ignite': case 'chill': {
+          if (this.fx.some((f) => f.k === 'burn' && f.id === ev.id && f.life - f.t > 0.5)) break;
+          this.fx.push({ k: 'burn', id: ev.id, t: 0, life: ev.k === 'chill' ? ev.dur : 3, c: ev.k === 'chill' ? '#9ad8ff' : '#ff8a2a' });
+          break;
+        }
+        case 'stunned': this.fx.push({ k: 'stars', id: ev.id, t: 0, life: 0.8 }); break;
+        case 'barrier': for (const i of ev.heroes) { this.hv[i].aura = 0.8; this.hv[i].auraColor = '#7ad0ff'; } break;
         case 'dodge': { const p = this.heroPos(B, ev.hero); this.num(p.x + rand(-10, 10), p.y - 40, 'dodge', '#b8c0d8', 11); break; }
         case 'revive': { const p = this.heroPos(B, ev.hero); this.num(p.x, p.y - 50, 'Revived!', '#ffffff', 15, true); this.hv[ev.hero].cast = 0.8; for (let i = 0; i < 24; i++) this.parts.push({ x: p.x + rand(-16, 16), y: p.y + rand(-20, 20), vx: rand(-20, 20), vy: rand(-140, -60), t: 0, life: rand(0.6, 1.1), c: '#ffffff', s: 3 }); sound?.('levelup'); break; }
         case 'fall': { const p = this.heroPos(B, ev.hero); for (let i = 0; i < 18; i++) this.parts.push({ x: p.x, y: p.y, vx: rand(-90, 90), vy: rand(-120, 0), t: 0, life: 0.8, c: '#ff4030', s: 3, g: 200 }); this.shake = 5; sound?.('fall'); break; }
@@ -138,12 +164,12 @@ export class BattleView {
       if (r.k === 'fame') { const e = B.enemies.find((x) => x.id === r.id) || { x: 180, y: 120 }; for (let i = 0; i < Math.min(6, 2 + Math.floor(Math.log10(r.n + 1))); i++) this.coins.push({ x: e.x + rand(-10, 10), y: e.y + rand(-10, 10), vx: rand(-90, 90), vy: rand(-140, -60), t: -i * 0.03, life: 0.95 }); }
       if (r.k === 'drop') {
         const e = [...B.enemies].reverse().find((x) => x.hp <= 0) || { x: 180, y: 140 };
-        this.bags.push({ x: e.x, y: e.y, t: 0, rarity: r.it.rarity, salvaged: r.salvaged, life: r.unique ? 2.6 : 1.5 });
+        this.bags.push({ x: e.x, y: e.y, t: 0, rarity: r.it.rarity, salvaged: r.salvaged, life: r.unique ? (r.exalted ? 3.4 : 2.6) : 1.5, ex: r.exalted });
         if (r.unique) {
           // the white bag: a pillar of light, a flash, and a chime you learn to love
-          this.banner('UNIQUE!', '#ffffff', 2.2, true); this.flash = 0.45; this.flashColor = '#ffffff'; this.shake = 6;
+          if (r.exalted) { this.banner('EXALTED!', '#ffe08a', 3, true); this.flash = 0.7; this.flashColor = '#fff2b0'; this.shake = 10; this.confetti(); } else { this.banner('UNIQUE!', '#ffffff', 2.2, true); this.flash = 0.45; this.flashColor = '#ffffff'; this.shake = 6; }
           for (let i = 0; i < 40; i++) { const a = rand(0, TAU), sp = rand(60, 220); this.parts.push({ x: e.x, y: e.y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 60, t: 0, life: rand(0.8, 1.6), c: i % 3 ? '#ffffff' : '#6ff2ff', s: rand(2, 3.5), g: 80 }); }
-          sound?.('unique');
+          sound?.(r.exalted ? 'exalted' : 'unique');
         } else sound?.(r.it.rarity >= 3 ? 'lootRare' : 'loot');
       }
     }
@@ -265,8 +291,8 @@ export class BattleView {
     for (const b of this.bags) {
       const L = b.life || 1.5, R = BAL.rarities[b.rarity], q = Math.max(0, (b.t - (L - 0.7)) / 0.7);
       const x = b.x + (bagTarget.x - b.x) * easeIn(q), y = b.y + 20 - Math.sin(Math.min(1, b.t / 0.4) * Math.PI) * 26 + (bagTarget.y - b.y - 20) * easeIn(q);
-      if (b.rarity >= 2) { g.globalCompositeOperation = 'lighter'; g.globalAlpha = 0.6; g.drawImage(glow(R.color, 30), x - 30, y - 30); if (b.rarity >= 4 && b.t < L - 0.7) { const w = b.rarity === 6 ? 14 + 4 * Math.sin(b.t * 12) : 6; g.fillStyle = R.color; g.globalAlpha = b.rarity === 6 ? 0.55 : 0.35; g.fillRect(x - w / 2, 0, w, y); } g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; }
-      const bag = itemImage('bag', b.rarity);
+      if (b.rarity >= 2) { g.globalCompositeOperation = 'lighter'; g.globalAlpha = 0.6; g.drawImage(glow(R.color, 30), x - 30, y - 30); if (b.rarity >= 4 && b.t < L - 0.7) { const w = b.rarity === 6 ? (b.ex ? 26 : 14) + 4 * Math.sin(b.t * 12) : 6; g.fillStyle = b.ex ? '#ffe08a' : R.color; g.globalAlpha = b.rarity === 6 ? 0.55 : 0.35; g.fillRect(x - w / 2, 0, w, y); } g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; }
+      const bag = itemImage('bag', b.rarity, b.ex ? EXALT_PAL : null);
       g.globalAlpha = 1 - q * 0.6; if (ready(bag)) g.drawImage(bag.bmp, x - 15, y - 15, 30, 30); g.globalAlpha = 1;
     }
     // fame coins burst, then fly to the counter
@@ -318,8 +344,8 @@ export class BattleView {
         const x = f.x0 + (e.x - f.x0) * p, y = f.y0 + (e.y - f.y0) * p, ang = Math.atan2(e.y - f.y0, e.x - f.x0);
         if (f.w === 'bow' || f.w === 'dagger') {
           // arrows and thrown blades: a bright streak with a glint at the tip
-          const len = f.w === 'bow' ? 26 : 14;
-          g.globalAlpha = 0.5; g.strokeStyle = f.c; g.lineWidth = f.crit ? 5 : 3; g.lineCap = 'round';
+          const len = (f.w === 'bow' ? 26 : 14) * (f.big ? 1.6 : 1);
+          g.globalAlpha = 0.5; g.strokeStyle = f.c; g.lineWidth = (f.crit ? 5 : 3) * (f.big ? 2 : 1); g.lineCap = 'round';
           g.beginPath(); g.moveTo(x - Math.cos(ang) * len * 1.8, y - Math.sin(ang) * len * 1.8); g.lineTo(x, y); g.stroke();
           g.globalAlpha = 1; g.strokeStyle = '#ffffff'; g.lineWidth = 1.6;
           g.beginPath(); g.moveTo(x - Math.cos(ang) * len, y - Math.sin(ang) * len); g.lineTo(x, y); g.stroke();
@@ -327,12 +353,13 @@ export class BattleView {
         } else if (f.w === 'sword') {
           // a crescent of force
           g.save(); g.translate(x, y); g.rotate(ang + Math.PI / 2);
+          if (f.big) g.scale(1.7, 1.7);
           g.globalAlpha = 0.9; g.strokeStyle = f.c; g.lineWidth = f.crit ? 5 : 3.5;
           g.beginPath(); g.arc(0, 8, f.crit ? 18 : 14, Math.PI * 1.15, Math.PI * 1.85); g.stroke();
           g.globalAlpha = 0.5; g.lineWidth = 9; g.beginPath(); g.arc(0, 8, f.crit ? 18 : 14, Math.PI * 1.2, Math.PI * 1.8); g.stroke();
           g.restore();
         } else {
-          const r = f.crit ? 15 : 11, wob = f.w === 'staff' ? Math.sin(p * 9) * 6 : 0;
+          const r = (f.crit ? 15 : 11) * (f.big ? 1.8 : 1), wob = f.w === 'staff' && !f.big ? Math.sin(p * 9) * 6 : 0;
           for (let k = 1; k <= 4; k++) { const q = Math.max(0, p - k * 0.05); g.globalAlpha = 0.4 / k; g.drawImage(glow(f.c, r), f.x0 + (e.x - f.x0) * q - r + wob, f.y0 + (e.y - f.y0) * q - r); }
           g.globalAlpha = 1; g.drawImage(glow(f.c, r), x - r + wob, y - r);
           g.fillStyle = '#ffffff'; g.beginPath(); g.arc(x + wob, y, 2.2, 0, TAU); g.fill();
@@ -358,7 +385,7 @@ export class BattleView {
         break;
       }
       case 'boom': {
-        g.globalAlpha = 1 - p; const r = 20 + p * 46; g.drawImage(glow(f.c, r), f.x - r, f.y - r);
+        g.globalAlpha = 1 - p; const r = (20 + p * 46) * (f.big ? 1.5 : 1); g.drawImage(glow(f.c, r), f.x - r, f.y - r);
         if (p < 0.3) { g.drawImage(glow('#fff2c0', 18), f.x - 18, f.y - 18); }
         break;
       }

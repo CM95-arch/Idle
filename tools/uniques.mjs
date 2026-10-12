@@ -24,12 +24,12 @@ for (const U of UNIQUES) {
   let sum = 0, n = 0;
   for (const w of wearers.slice(0, 3)) {
     const others = CLASS_IDS.filter((c) => c !== w);
-    for (let k = 0; k < 4; k++) {
+    for (let k = 0; k < 3; k++) {
       const party = [w, others[(k * 3) % others.length], others[(k * 3 + 5) % others.length]];
       const it = { ...makeUnique(0, U.id), up: 3 };
       const base = reach(party.map((c) => stats(c))), withU = reach(party.map((c, i) => stats(c, i === 0 ? it : null)));
       sum += withU - base; n++;
     }
   }
-  console.log(`${U.name.padEnd(26)} ${U.fx.padEnd(12)} ${(sum / n >= 0 ? '+' : '') + (sum / n).toFixed(2)} stages`);
+  console.log(`${U.name.padEnd(26)} ${(U.exalted ? '★ ' : '') + Object.keys(U.fx).join('+').padEnd(26)} ${(sum / n >= 0 ? '+' : '') + (sum / n).toFixed(2)} stages`);
 }

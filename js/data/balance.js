@@ -39,8 +39,9 @@ export const BAL = {
   upgradeCost: (ilvl, up, rarity) => Math.round(4 * 1.15 ** ilvl * 1.22 ** up * (1 + rarity * 0.35)),
   salvage: (ilvl, rarity) => Math.round(2 * 1.15 ** ilvl * (1 + rarity) ** 1.6),
   inventory: 30,
-  uniqueBoss: 0.03,        // chance a zone boss drops one of its Uniques (Oryx: double)
+  uniqueBoss: 0.045,       // chance a zone boss drops one of its Uniques (Oryx: double)
   uniqueWave: 0.0006,      // chance any other cleared wave in the zone does
+  exaltedWeight: 0.08,     // an Exalted Unique is this likely next to an ordinary one from the same boss
   uniqueLag: 6,            // Uniques' item level trails your best stage by this much
   // ---- idle ----
   offlineCapHours: 8,

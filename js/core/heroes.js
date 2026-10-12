@@ -3,18 +3,22 @@ import { BAL } from '../data/balance.js';
 import { CLASSES } from '../data/classes.js';
 import { SLOTS } from '../data/gear.js';
 import { itemStats, uniqueOf } from './items.js';
-import { FX_SUM } from '../data/uniques.js';
+import { FX_MAX } from '../data/uniques.js';
 
 /** C = { lv, gear: { weapon, ability, armor, ring } }, mult = Ascension multipliers */
 export function heroStats(cls, C, mult = {}) {
   const K = CLASSES[cls], g = BAL.levelGrowth, L = C.lv - 1;
   const flat = { hp: 0, atk: 0, def: 0, pow: 0 }, pct = { atkPct: 0, hpPct: 0, defPct: 0, spdPct: 0, crit: 0, famePct: 0 };
   const fx = {};
+  let rate = 1; // a Unique weapon can trade fire rate for heavier shots
   for (const slot of SLOTS) {
     const it = C.gear?.[slot];
     if (!it) continue;
     const U = uniqueOf(it);
-    if (U) fx[U.fx] = FX_SUM.has(U.fx) ? (fx[U.fx] || 0) + U.v : U.v;
+    if (U) {
+      for (const [k, v] of Object.entries(U.fx)) fx[k] = FX_MAX.has(k) ? Math.max(fx[k] || 0, v) : (fx[k] || 0) + v;
+      if (U.rate) rate *= U.rate;
+    }
     for (const [k, v] of Object.entries(itemStats(it))) { if (k in flat) flat[k] += v; else pct[k] += v; }
   }
   const dmg = mult.dmg || 1;
@@ -24,9 +28,9 @@ export function heroStats(cls, C, mult = {}) {
   return {
     cls, role: K.role,
     hp: Math.round((K.base.hp * g.hp ** L + flat.hp) * (1 + pct.hpPct / 100)),
-    atk, hit: atk / K.base.spd,
+    atk, hit: atk / (K.base.spd * rate),
     def: (K.base.def * g.def ** L + flat.def) * (1 + pct.defPct / 100),
-    spd: K.base.spd * (1 + pct.spdPct / 100) * (1 + (fx.haste || 0)),
+    spd: K.base.spd * rate * (1 + pct.spdPct / 100) * (1 + (fx.haste || 0)),
     crit: Math.min(0.6, 0.05 + pct.crit / 100),
     pow: 1 + flat.pow,
     fame: pct.famePct / 100,

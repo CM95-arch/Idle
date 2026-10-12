@@ -200,7 +200,8 @@ function rollUnique(stage, boss) {
   if (rng.next() >= chance) return null;
   // ones you haven't found yet, and ones a class you own can wear, come up more often
   const pool = UNIQUES.filter((u) => u.zone === zone);
-  const w = pool.map((u) => (state.uniques[u.id] ? 1 : 3) * (Object.keys(state.classes).some((c) => fits(c, { kind: u.kind })) ? 2 : 1));
+  // Exalted ones are far rarer than the rest
+  const w = pool.map((u) => (u.exalted ? BAL.exaltedWeight : 1) * (state.uniques[u.id] ? 1 : 3) * (Object.keys(state.classes).some((c) => fits(c, { kind: u.kind })) ? 2 : 1));
   let r = rng.next() * w.reduce((a, b) => a + b, 0), U = pool[0];
   for (let i = 0; i < pool.length; i++) { r -= w[i]; if (r < 0) { U = pool[i]; break; } }
   const it = makeUnique(state.nextId++, U.id);
@@ -209,7 +210,7 @@ function rollUnique(stage, boss) {
   state.stats.uniques = (state.stats.uniques || 0) + 1;
   state.stats.items++;
   state.inv.push(it); // Uniques always fit, even in a full bag
-  return { it, salvaged: 0, unique: true, first };
+  return { it, salvaged: 0, unique: true, first, exalted: !!U.exalted };
 }
 /** Put a drop in the bag (or turn it into Fame if the bag is full or it's set to auto-salvage). */
 function stash(it) {

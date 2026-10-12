@@ -31,12 +31,13 @@ const ICON = {
   bag: (g) => `<path d="M18 22 Q32 16 46 22 L54 50 Q32 62 10 50 Z" fill="url(#${g}a)" ${ol()}/><path d="M22 22 Q32 6 42 22" fill="url(#${g}a)" ${ol(1.8)}/><path d="M20 24 Q32 30 44 24" stroke="url(#${g}b)" stroke-width="3" fill="none"/><circle cx="32" cy="40" r="5" fill="var(--c)"/>`,
 };
 
-export function itemMarkup(kind, rarity, g = 'i') {
-  const [a, b, c] = RAR[rarity];
+export function itemMarkup(kind, rarity, g = 'i', pal = null) {
+  const [a, b, c] = pal || RAR[rarity];
   return `<defs>${lit(`${g}a`, a)}${lit(`${g}b`, b)}${metal(`${g}m`, kind === 'heavy' || kind === 'helm' || kind === 'trap' ? b : '#b8bcc8')}${rad(`${g}gm`, [[0, '#fff'], [0.4, c], [1, a]])}${blur(`${g}bl`, 2.6)}</defs>
     <g style="--c:${c}">${(ICON[kind] || ICON.bag)(g)}</g>`.replace(/var\(--c\)/g, c);
 }
-export function itemImage(kind, rarity) {
-  return svgImage(`item|${kind}|${rarity}`, 64, 64, () => itemMarkup(kind, rarity, `i${kind.slice(0, 3)}${rarity}`), 2);
+export function itemImage(kind, rarity, pal = null) {
+  const key = pal ? pal.join('').replace(/#/g, '') : rarity;
+  return svgImage(`item|${kind}|${key}`, 64, 64, () => itemMarkup(kind, rarity, `i${kind.slice(0, 3)}${key}`, pal), 2);
 }
 export const RARITY_SHADES = RAR;

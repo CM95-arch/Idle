@@ -22,7 +22,7 @@ function statRows(it, vs) {
   const keys = [...new Set([...Object.keys(a), ...(b ? Object.keys(b) : [])])];
   return keys.map((k) => {
     const name = STAT_NAME[k] || EXTRA[k]?.name || k, pct = k in EXTRA, v = a[k] || 0, d = b ? v - (b[k] || 0) : 0;
-    const show = (x) => (k === 'pow' ? `+${Math.round(x * 100)}%` : pct ? `+${Math.round(x)}%` : `+${fmt(x)}`);
+    const show = (x) => (k === 'pow' ? `+${Math.round(x * 100)}%` : pct ? `${x < 0 ? '−' : '+'}${Math.abs(Math.round(x))}%` : `+${fmt(x)}`);
     return h('div', { class: 'stat' }, h('span', {}, name), h('b', { class: 'tnum' }, v ? show(v) : '—',
       b && Math.abs(d) > 1e-6 ? h('small', { class: d > 0 ? 'delta-up' : 'delta-down' }, ` ${d > 0 ? '▲' : '▼'}${show(Math.abs(d)).slice(1)}`) : null));
   });
@@ -37,10 +37,10 @@ export function openItemSheet(id, onChange) {
     const owners = Object.keys(G.state.classes).filter((c) => fits(c, it));
     return [
       h('div', { class: 'row' },
-        h('div', { class: `itile r${it.rarity}`, style: { '--rc': R.color, width: '72px' } }, itemIcon(it, 56)),
+        h('div', { class: `itile r${it.rarity}${uniqueOf(it)?.exalted ? ' ex' : ''}`, style: { '--rc': R.color, width: '72px' } }, itemIcon(it, 56)),
         h('div', { class: 'grow' },
-          h('div', { style: { fontWeight: 900, fontSize: '18px', color: R.color } }, `${it.name}${it.up ? ` +${it.up}` : ''}`),
-          h('div', { class: 'muted', style: { fontWeight: 800, fontSize: '12px' } }, `${R.name} ${SLOT_NAME[slot]} · item level ${ilvlOf(it) + 1}`),
+          h('div', { style: { fontWeight: 900, fontSize: '18px', color: uniqueOf(it)?.exalted ? '#ffe08a' : R.color } }, `${it.name}${it.up ? ` +${it.up}` : ''}`),
+          h('div', { class: 'muted', style: { fontWeight: 800, fontSize: '12px' } }, `${uniqueOf(it)?.exalted ? 'Exalted Unique' : R.name} ${SLOT_NAME[slot]} · item level ${ilvlOf(it) + 1}`),
           wornBy ? h('div', { class: 'gold', style: { fontWeight: 800, fontSize: '12px' } }, `Worn by ${CLASSES[wornBy].name}`) : null)),
       uniqueOf(it) ? h('div', { class: 'panel ufx' }, h('b', {}, '✦ Unique effect'), h('div', { style: { fontSize: '14px', fontWeight: 700, marginTop: '2px' } }, uniqueOf(it).desc), h('div', { class: 'dim', style: { fontSize: '11px', fontWeight: 800, marginTop: '4px' } }, 'Grows with you: always as strong as gear from just behind your best stage. Kept when you Ascend (upgrades reset).')) : null,
       h('div', { class: 'panel stats', style: { gridTemplateColumns: '1fr' } }, statRows(it)),
@@ -127,16 +127,16 @@ export function openCollection() {
     const found = G.state.uniques;
     return [
       h('div', { class: 'pixel center', style: { fontSize: '22px' } }, 'Uniques'),
-      h('div', { class: 'muted center', style: { fontSize: '13px', fontWeight: 700 } }, `${Object.keys(found).length} of ${UNIQUES.length} found. Each zone boss guards its own; its other enemies drop them very rarely.`),
+      h('div', { class: 'muted center', style: { fontSize: '13px', fontWeight: 700 } }, `${Object.keys(found).length} of ${UNIQUES.length} found. Each zone boss guards its own; its other enemies drop them very rarely. Exalted Uniques are rarer still.`),
       ...ZONES.map((Z, zi) => h('div', {},
         h('div', { class: 'h2' }, `${Z.name} · ${Z.boss[0]}`),
         ...UNIQUES.filter((U) => U.zone === zi).map((U) => {
           const has = found[U.id];
-          const icon = artImg(itemImage(U.kind, 6)); icon.style.width = '44px';
+          const icon = artImg(itemImage(U.kind, 6, U.pal)); icon.style.width = '44px';
           return h('div', { class: 'panel row', style: { marginBottom: '6px', padding: '8px 10px', alignItems: 'flex-start' } },
-            h('div', { class: `itile r6${has ? '' : ' locked'}`, style: { width: '56px', flex: 'none', '--rc': '#fff' } }, icon),
+            h('div', { class: `itile r6${U.exalted ? ' ex' : ''}${has ? '' : ' locked'}`, style: { width: '56px', flex: 'none', '--rc': '#fff' } }, icon),
             h('div', { class: 'grow' },
-              h('b', { style: { color: has ? '#ffffff' : 'var(--ink-3)' } }, has ? U.name : '???'),
+              h('b', { style: { color: has ? (U.exalted ? '#ffe08a' : '#ffffff') : 'var(--ink-3)' } }, has ? U.name : '???', U.exalted ? h('small', { class: 'exalt' }, ' ✦ Exalted') : null),
               h('div', { style: { fontSize: '12px', fontWeight: 700, color: has ? 'var(--ink-2)' : 'var(--ink-3)' } }, has ? U.desc : `Not found yet · ${KIND_LABEL({ kind: U.kind })}`),
               has ? h('div', { class: 'dim', style: { fontSize: '11px', fontWeight: 800 } }, `Found ×${has}`) : null));
         }))),

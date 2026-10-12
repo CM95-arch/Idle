@@ -25,8 +25,8 @@ const abilityCd = (h) => CLASSES[h.cls].ability.cd * (1 - Math.min(0.6, h.fx?.cd
 export function createBattle(stage, realm, heroStats, seed = (Math.random() * 2 ** 32) >>> 0) {
   const B = {
     stage, realm, rng: makeRng(seed), t: 0, wave: 0, waves: BAL.waves, state: 'fight', pause: 0.6, uid: 1,
-    heroes: heroStats.map((s, i) => ({ ...s, fx: s.fx || {}, i, maxHp: s.hp, hp: s.hp, atkT: 0.2 * i, cd: abilityCd(s) * (0.35 + 0.15 * i), buff: {}, dead: false })),
-    enemies: [], pending: [], events: [], kills: 0, bossKilled: false,
+    heroes: heroStats.map((s, i) => ({ ...s, fx: s.fx || {}, i, maxHp: s.hp, hp: s.hp, atkT: 0.2 * i, cd: abilityCd(s) * (0.35 + 0.15 * i), buff: {}, dead: false, shield: 0, shots: 0, rampId: 0, ramp: 0 })),
+    enemies: [], pending: [], events: [], kills: 0, bossKilled: false, rez: null, rezUsed: false,
   };
   return B;
 }
@@ -46,7 +46,15 @@ function spawnWave(B) {
     const xs = [70, 180, 290], n = BAL.perWave;
     B.enemies = Array.from({ length: n }, (_, k) => { const e = Z.enemies[B.rng.int(0, Z.enemies.length - 1)]; return mk(e[0], e[1], e[2], { hp: 1, atk: 1 }, xs[k], 110 + (k % 2) * 30); });
   }
-  for (const h of B.heroes) if (h.fx.firstStrike && !h.dead) h.cd = Math.min(h.cd, 0.25);
+  const hs = alive(B.heroes), sum = (k) => hs.reduce((a, o) => a + (o.fx[k] || 0), 0);
+  const partyShield = sum('partyBarrier'), waveHeal = sum('waveHeal');
+  for (const h of hs) {
+    if (h.fx.firstStrike) h.cd = Math.min(h.cd, 0.25);
+    const sh = h.maxHp * ((h.fx.barrier || 0) + partyShield);
+    if (sh > h.shield) h.shield = sh;
+    if (waveHeal) h.hp = Math.min(h.maxHp, h.hp + h.maxHp * waveHeal);
+  }
+  if (partyShield || hs.some((h) => h.fx.barrier)) B.events.push({ k: 'barrier', heroes: hs.filter((h) => h.shield > 0).map((h) => h.i) });
   B.events.push({ k: 'wave', n: B.wave, boss });
 }
 
@@ -66,7 +74,17 @@ function damageEnemy(B, e, d, src) {
   if (e.hp <= 0) return;
   e.hp -= d;
   B.events.push({ k: 'hit', id: e.id, dmg: d, crit: src.crit, ab: src.ab, hero: src.hero });
-  if (e.hp <= 0) { e.hp = 0; B.kills++; if (e.boss) B.bossKilled = true; B.events.push({ k: 'die', id: e.id, boss: e.boss }); }
+  if (e.hp <= 0) {
+    e.hp = 0; B.kills++; if (e.boss) B.bossKilled = true; B.events.push({ k: 'die', id: e.id, boss: e.boss });
+    // any kill: frenzied heroes speed up, and a corpse-burster makes the body explode (which can set off the next)
+    let bomber = null;
+    for (const h of alive(B.heroes)) {
+      if (h.fx.frenzy) h.buff.frenzyUntil = B.t + 2.5;
+      if (h.fx.corpse && (!bomber || h.fx.corpse > bomber.fx.corpse)) bomber = h;
+    }
+    const others = bomber ? alive(B.enemies) : [];
+    if (others.length) { B.events.push({ k: 'blast', id: e.id, big: true }); for (const o of others) damageEnemy(B, o, hit(e.maxHp * bomber.fx.corpse, o.def), { hero: bomber.i }); }
+  }
 }
 function heal(B, h, amt) {
   if (h.dead || h.hp <= 0) return;
@@ -74,13 +92,13 @@ function heal(B, h, amt) {
   if (h.hp > before + 0.5) B.events.push({ k: 'heal', hero: h.i, amt: h.hp - before });
 }
 const aura = (B) => B.heroes.reduce((a, o) => (o.fx.aura && !o.dead ? a * (1 + o.fx.aura) : a), 1);
-const dmgMult = (B, h) => aura(B) * (h.buff.dmgUntil > B.t ? 1 + h.buff.dmg : 1) * (alive(B.heroes).some((o) => o.buff.partyUntil > B.t) ? 1 + Math.max(...B.heroes.map((o) => (o.buff.partyUntil > B.t ? o.buff.party : 0))) : 1);
+const dmgMult = (B, h) => aura(B) * (1 + (h.fx.glass || 0)) * (h.fx.lastStand && h.hp < h.maxHp * 0.4 ? 1 + h.fx.lastStand : 1) * (h.buff.dmgUntil > B.t ? 1 + h.buff.dmg : 1) * (alive(B.heroes).some((o) => o.buff.partyUntil > B.t) ? 1 + Math.max(...B.heroes.map((o) => (o.buff.partyUntil > B.t ? o.buff.party : 0))) : 1);
 
 const ECHOES = new Set(['aoe', 'heal', 'pierce', 'execute', 'stun', 'dot', 'drain', 'poison', 'chain']);
 function useAbility(B, h, scale = 1) {
   const A = CLASSES[h.cls].ability, p = A.pow * h.pow * scale, es = alive(B.enemies), hs = alive(B.heroes);
   if (!es.length) return;
-  const dmg = h.atk * dmgMult(B, h);
+  const dmg = h.atk * dmgMult(B, h) * (1 + (h.fx.abilityDmg || 0));
   const src = { hero: h.i, ab: true };
   const ev = { k: 'ability', hero: h.i, fx: A.fx, targets: [] };
   switch (A.fx) {
@@ -101,6 +119,41 @@ function useAbility(B, h, scale = 1) {
   if (scale === 1 && h.fx.echo && ECHOES.has(A.fx)) useAbility(B, h, h.fx.echo);
 }
 
+// ---------- a hero's shot, and what Unique weapons add to it ----------
+const MODS = ['splash', 'chain', 'burn', 'chill', 'stun', 'leech'];
+function fire(B, h, e, delay) {
+  const fx = h.fx;
+  h.shots++;
+  const charged = fx.charge && h.shots % fx.charge === 0;
+  const crit = charged || B.rng.next() < h.crit;
+  if (fx.ramp) { if (h.rampId === e.id) h.ramp = Math.min(10, h.ramp + 1); else { h.rampId = e.id; h.ramp = 0; } }
+  const base = h.hit * dmgMult(B, h) * (crit ? 2 + (fx.critDmg || 0) : 1) * (charged ? fx.chargeX / 2 : 1) * (1 + (fx.ramp || 0) * h.ramp);
+  const vs = (t) => hit(base * (t.boss ? 1 + (fx.bossDmg || 0) : 1) * (t.hp < t.maxHp * 0.3 ? 1 + (fx.execute || 0) : 1), t.def);
+  const mods = MODS.some((k) => fx[k]) ? fx : null;
+  const mod = fx.splash ? 'blast' : fx.chain ? 'chain' : fx.burn ? 'burn' : fx.chill ? 'chill' : null;
+  const heavy = h.hit > h.atk / CLASSES[h.cls].base.spd * 1.3; // a slow, heavy Unique weapon
+  B.pending.push({ side: 'hero', to: e.id, dmg: vs(e), crit, hero: h.i, mods, at: B.t + HERO_FLIGHT + delay });
+  B.events.push({ k: 'shot', hero: h.i, to: e.id, crit, flight: HERO_FLIGHT + delay, mod, big: heavy || charged });
+  const e2 = fx.multishot ? alive(B.enemies).find((x) => x !== e) : null;
+  if (e2) {
+    B.pending.push({ side: 'hero', to: e2.id, dmg: vs(e2) * fx.multishot, hero: h.i, at: B.t + HERO_FLIGHT + delay });
+    B.events.push({ k: 'shot', hero: h.i, to: e2.id, flight: HERO_FLIGHT + delay });
+  }
+}
+function landShot(B, e, p) {
+  damageEnemy(B, e, p.dmg, p);
+  const m = p.mods;
+  if (!m) return;
+  const h = B.heroes[p.hero], src = { hero: p.hero };
+  if (m.leech && h && !h.dead) h.hp = Math.min(h.maxHp, h.hp + p.dmg * m.leech);
+  if (m.burn && e.hp > 0) { e.dots.push({ left: 3, dps: (p.dmg * m.burn) / 3, hero: p.hero }); B.events.push({ k: 'ignite', id: e.id }); }
+  if (m.chill && e.hp > 0) { e.slowUntil = Math.max(e.slowUntil, B.t + m.chill); B.events.push({ k: 'chill', id: e.id, dur: m.chill }); }
+  if (m.stun && e.hp > 0 && B.rng.next() < m.stun) { e.stunUntil = Math.max(e.stunUntil, B.t + 0.8 * (e.boss ? 0.5 : 1)); B.events.push({ k: 'stunned', id: e.id }); }
+  const others = alive(B.enemies).filter((x) => x !== e);
+  if (m.splash) { B.events.push({ k: 'blast', id: e.id, big: m.splash >= 0.7 }); for (const o of others) damageEnemy(B, o, p.dmg * m.splash, src); }
+  if (m.chain && others.length) { B.events.push({ k: 'arc', from: e.id, ids: others.map((o) => o.id) }); others.forEach((o, k) => damageEnemy(B, o, p.dmg * m.chain ** (k + 1), src)); }
+}
+
 /** Advance one tick. */
 export function stepBattle(B) {
   if (B.state !== 'fight') return;
@@ -117,20 +170,30 @@ export function stepBattle(B) {
     if (due.length) {
       B.pending = B.pending.filter((p) => p.at > B.t);
       for (const p of due) {
-        if (p.side === 'hero') { const e = B.enemies.find((x) => x.id === p.to); if (e) damageEnemy(B, e, p.dmg, p); }
+        if (p.side === 'hero') { const e = B.enemies.find((x) => x.id === p.to); if (e) landShot(B, e, p); }
         else {
           const h = B.heroes[p.to];
           if (h.dead) continue;
           if (h.fx.dodge && B.rng.next() < h.fx.dodge) { B.events.push({ k: 'dodge', hero: h.i }); continue; }
-          h.hp -= p.dmg;
-          B.events.push({ k: 'ehit', hero: h.i, dmg: p.dmg, big: p.big });
+          const absorbed = Math.min(h.shield, p.dmg); h.shield -= absorbed;
+          h.hp -= p.dmg - absorbed;
+          B.events.push({ k: 'ehit', hero: h.i, dmg: p.dmg - absorbed, big: p.big, shield: absorbed > 0 });
           const from = h.fx.thorns && B.enemies.find((x) => x.id === p.from);
           if (from) damageEnemy(B, from, p.raw * h.fx.thorns, { hero: h.i, thorns: true });
           if (h.hp <= 0 && h.fx.revive && !h.revived) { h.revived = true; h.hp = h.maxHp * h.fx.revive; B.events.push({ k: 'revive', hero: h.i }); }
-          if (h.hp <= 0) { h.hp = 0; h.dead = true; B.events.push({ k: 'fall', hero: h.i }); }
+          if (h.hp <= 0) {
+            h.hp = 0; h.dead = true; B.events.push({ k: 'fall', hero: h.i });
+            const healer = !B.rezUsed && alive(B.heroes).filter((o) => o.fx.rezAlly).sort((a, b) => b.fx.rezAlly - a.fx.rezAlly)[0];
+            if (healer) { B.rezUsed = true; B.rez = { hero: h.i, at: B.t + 2, v: healer.fx.rezAlly, by: healer.i }; }
+          }
         }
       }
     }
+  }
+  if (B.rez && B.t >= B.rez.at) {
+    const h = B.heroes[B.rez.hero];
+    if (alive(B.heroes).length) { h.dead = false; h.hp = h.maxHp * B.rez.v; B.events.push({ k: 'revive', hero: h.i, by: B.rez.by }); }
+    B.rez = null;
   }
   // heroes
   for (const h of B.heroes) {
@@ -141,20 +204,12 @@ export function stepBattle(B) {
     const A = CLASSES[h.cls].ability, es = alive(B.enemies);
     const needHeal = A.fx === 'heal' ? alive(B.heroes).some((o) => o.hp < o.maxHp * 0.8) : true;
     if (h.cd <= 0 && es.length && needHeal) { h.cd = abilityCd(h); useAbility(B, h); }
-    h.atkT -= dt * h.spd * (h.buff.hasteUntil > B.t ? 1 + h.buff.haste : 1);
+    h.atkT -= dt * h.spd * (h.buff.hasteUntil > B.t ? 1 + h.buff.haste : 1) * (h.buff.frenzyUntil > B.t ? 1 + h.fx.frenzy : 1);
     const e = frontEnemy(B);
     if (h.atkT <= 0 && e) {
       h.atkT += 1;
-      const crit = B.rng.next() < h.crit;
-      const base = h.hit * dmgMult(B, h) * (crit ? 2 + (h.fx.critDmg || 0) : 1);
-      const vs = (t) => hit(base * (t.boss ? 1 + (h.fx.bossDmg || 0) : 1) * (t.hp < t.maxHp * 0.3 ? 1 + (h.fx.execute || 0) : 1), t.def);
-      B.pending.push({ side: 'hero', to: e.id, dmg: vs(e), crit, hero: h.i, at: B.t + HERO_FLIGHT });
-      B.events.push({ k: 'shot', hero: h.i, to: e.id, crit, flight: HERO_FLIGHT });
-      const e2 = h.fx.multishot ? alive(B.enemies).find((x) => x !== e) : null;
-      if (e2) {
-        B.pending.push({ side: 'hero', to: e2.id, dmg: vs(e2) * h.fx.multishot, hero: h.i, at: B.t + HERO_FLIGHT });
-        B.events.push({ k: 'shot', hero: h.i, to: e2.id, flight: HERO_FLIGHT });
-      }
+      fire(B, h, e, 0);
+      if (h.fx.double && B.rng.next() < h.fx.double) fire(B, h, e, 0.09);
     }
   }
   // enemies
