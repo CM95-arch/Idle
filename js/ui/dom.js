@@ -1,27 +1,35 @@
 // DOM helpers: element builder, bottom sheets, dialogs, toasts, formatting.
 export const $ = (sel, root = document) => root.querySelector(sel);
 
-// Taps. iPhone Safari often never delivers a click for a tap: inside anything scrollable (like a bottom sheet) the
-// slightest finger movement makes it start a scroll, which cancels the pointer events and swallows the click.
-// The touch events still arrive, so on touch screens a button acts on touchend when the finger stayed within a
-// few pixels of where it went down (so real scrolls don't press anything). touchend's preventDefault stops Safari's
-// late click from firing it again. Mouse and keyboard use the normal click, ignored right after a touch tap so a
-// "ghost" click can't hit whatever replaced the button.
-let lastTap = 0;
+// Taps. iPhone Safari is unreliable at turning touches into clicks: inside scrollable sheets the slightest
+// movement starts a scroll and swallows the click, and after the element under a finger is removed or redrawn
+// (a level-up that opens an unlock card, a sheet that re-renders) it can keep routing later touches to stale
+// targets. So taps don't depend on which element Safari picks: one page-wide listener asks the page what is
+// actually under the finger when it goes down and when it lifts, and if that's the same tappable element and the
+// finger stayed within 12px (so scrolls don't press anything), its handler runs. touchend's preventDefault stops
+// Safari's late click from firing it twice. Mouse and keyboard use the normal click, ignored right after a tap.
+let lastTap = 0, touch = null;
 export const recentTap = () => Date.now() - lastTap < 700;
+const tappableAt = (x, y) => document.elementFromPoint(x, y)?.closest?.('[data-tap]') || null;
+document.addEventListener('touchstart', (e) => {
+  const t = e.changedTouches[0];
+  touch = e.touches.length > 1 ? null : { x: t.clientX, y: t.clientY, el: tappableAt(t.clientX, t.clientY) };
+}, { capture: true, passive: true });
+document.addEventListener('touchcancel', () => { touch = null; }, { capture: true, passive: true });
+document.addEventListener('touchend', (e) => {
+  const s = touch; touch = null;
+  if (!s?.el) return;
+  const t = e.changedTouches[0];
+  if (Math.hypot(t.clientX - s.x, t.clientY - s.y) > 12) return;
+  const el = tappableAt(t.clientX, t.clientY);
+  if (el !== s.el || el.disabled || !el.isConnected) return;
+  if (e.cancelable) e.preventDefault();
+  lastTap = Date.now();
+  el._tap(e);
+}, { capture: true, passive: false });
 export function onTap(el, fn) {
-  let sx = 0, sy = 0, down = false;
-  el.addEventListener('touchstart', (e) => { const t = e.changedTouches[0]; sx = t.clientX; sy = t.clientY; down = true; }, { passive: true });
-  el.addEventListener('touchcancel', () => { down = false; }, { passive: true });
-  el.addEventListener('touchend', (e) => {
-    if (!down) return;
-    down = false;
-    const t = e.changedTouches[0];
-    if (el.disabled || Math.hypot(t.clientX - sx, t.clientY - sy) > 12) return;
-    if (e.cancelable) e.preventDefault();
-    lastTap = Date.now();
-    fn(e);
-  });
+  el.dataset.tap = '';
+  el._tap = fn;
   el.addEventListener('click', (e) => { if (recentTap() || el.disabled) return; fn(e); });
 }
 
