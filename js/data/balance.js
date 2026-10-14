@@ -42,8 +42,9 @@ export const BAL = {
   salvage: (ilvl) => Math.round(25 * 1.27 ** ilvl),
   uniqueBoss: 0.2,         // chance a zone boss drops one of its Uniques (Oryx: double)
   uniqueKill: 0.00018,     // chance any other kill in the zone does (elites get a second roll)
+  utWeapon: 1.2,           // a Unique weapon hits this much harder than the tiered weapon its stats are measured against
   dupeUpgrades: 2,         // a Unique you already own melts into your copy as this many free upgrades
-  exaltedWeight: 0.12,     // an Exalted Unique is this likely next to an ordinary one from the same boss
+  exaltedWeight: 0.06,     // an Exalted Unique is this likely next to an ordinary one from the same boss
   uniqueLag: 6,            // Uniques' item level trails your best stage by this much
   // ---- idle ----
   offlineCapHours: 8,

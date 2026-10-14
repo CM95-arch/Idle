@@ -29,5 +29,5 @@ for (const U of UNIQUES) {
       sum += withU - base; n++;
     }
   }
-  console.log(`${U.name.padEnd(26)} ${(U.exalted ? '★ ' : '') + Object.keys(U.fx).join('+').padEnd(26)} ${(sum / n >= 0 ? '+' : '') + (sum / n).toFixed(2)} stages`);
+  console.log(`${U.name.padEnd(26)} ${(U.exalted ? '★ ' : '') + [U.shot && `${U.shot.n}×shot`, U.abil?.mode, ...Object.keys(U.fx || {}), U.rot && 'stats'].filter(Boolean).join('+').padEnd(26)} ${(sum / n >= 0 ? '+' : '') + (sum / n).toFixed(2)} stages`);
 }

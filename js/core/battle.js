@@ -10,7 +10,7 @@ import { makeRng } from './rng.js';
 
 export const TICK = 0.05;
 export const WORLD = { w: 360, h: 430 };
-const SHOT_SPEED = 560, ENEMY_SHOT_SPEED = 190, TIME_LIMIT = 150, SURGE = 8;
+const ENEMY_SHOT_SPEED = 190, TIME_LIMIT = 150, SURGE = 8;
 const HERO_R = 15;
 // where the party stands: the tank (or first hero) in front, the others either side behind
 const SPOTS = [{ x: 180, y: 290 }, { x: 122, y: 338 }, { x: 238, y: 338 }];
@@ -52,7 +52,7 @@ export function createBattle(stage, realm, heroStats, seed = (Math.random() * 2 
     stage, realm, rng: makeRng(seed), t: 0, state: 'fight', uid: 1, cleared: false,
     heroes: heroStats.map((s, i) => makeHero(s, i, pos[i])),
     enemies: [], pending: [], events: [], kills: 0, stageKills: 0, stageT: 0, spawnT: 0.4, surgeT: 0,
-    bossSpawned: false, bossKilled: false, rez: null, rezUsed: false,
+    bossSpawned: false, bossKilled: false, rez: null, rezUsed: false, zones: [],
   };
   startStage(B);
   return B;
@@ -121,6 +121,9 @@ function pickTarget(B, e) {
 }
 function damageEnemy(B, e, d, src) {
   if (e.hp <= 0) return;
+  // Cursed enemies take 25% more; Armor Broken ones lose their armor
+  if (e.curseUntil > B.t) d *= 1.25;
+  if (e.breakUntil > B.t && e.def > 0) d /= 1 - e.def;
   e.hp -= d;
   B.events.push({ k: 'hit', id: e.id, dmg: d, crit: src.crit, ab: src.ab, hero: src.hero });
   if (e.hp > 0) return;
@@ -144,7 +147,10 @@ function heal(B, h, amt) {
 }
 function hurtHero(B, h, dmg, raw, from, big) {
   if (h.dead) return;
+  if (h.buff.invulnUntil > B.t) { B.events.push({ k: 'dodge', hero: h.i, invuln: true }); return; }
   if (h.fx.dodge && B.rng.next() < h.fx.dodge) { B.events.push({ k: 'dodge', hero: h.i }); return; }
+  if (h.buff.armorUntil > B.t) dmg *= 0.6; // Armored
+  if (h.fx.vitProc && !(h.procCd > B.t)) { h.procCd = B.t + 25; h.buff.vitUntil = B.t + 10; B.events.push({ k: 'heal', hero: h.i, amt: 0 }); } // Mantle of the Monarchy
   const absorbed = Math.min(h.shield, dmg); h.shield -= absorbed;
   h.hp -= dmg - absorbed;
   B.events.push({ k: 'ehit', hero: h.i, dmg: dmg - absorbed, big, shield: absorbed > 0 });
@@ -174,9 +180,50 @@ function useAbility(B, h, scale = 1) {
   const src = { hero: h.i, ab: true };
   const ev = { k: 'ability', hero: h.i, fx: A.fx, targets: [] };
   const strike = (list, f = 1, s = src) => { for (const e of list) { ev.targets.push(e.id); damageEnemy(B, e, hit(dmg * p * f, e.def), s); } };
+  // a Unique ability item changes what the ability does (ROTMG's UT abilities)
+  const M = h.abil || {};
+  ev.mode = M.mode;
+  switch (M.mode) {
+    case 'snipe': { // Quiver of Thunder: one enormous arrow into the toughest enemy, Dazing it
+      const t = es.reduce((a, b) => (b.hp > a.hp ? b : a)); ev.x = t.x; ev.y = t.y;
+      strike([t], M.pow); t.stunUntil = Math.max(t.stunUntil, B.t + M.daze * (t.boss ? 0.4 : 1)); B.events.push(ev); return;
+    }
+    case 'armorBreak': { // Shield of Ogmur: Armor Broken instead of Stunned
+      const list = within(es, h, 120); ev.x = h.x; ev.y = h.y;
+      for (const e of list) e.breakUntil = B.t + M.dur; strike(list, M.pow); B.events.push(ev); return;
+    }
+    case 'paralyze': { // Coral Venom Trap: a burst that Paralyzes
+      const c = cluster(es), list = within(es, c, BAL.aoeRadius); ev.x = c.x; ev.y = c.y;
+      for (const e of list) e.stunUntil = Math.max(e.stunUntil, B.t + M.dur * (e.boss ? 0.3 : 1)); strike(list, M.pow); B.events.push(ev); return;
+    }
+    case 'portals': { // Genesis Spell: portals that keep zapping the area for seconds
+      const c = cluster(es); ev.x = c.x; ev.y = c.y;
+      B.zones.push({ x: c.x, y: c.y, r: BAL.aoeRadius * 1.15, until: B.t + M.dur, next: B.t, every: 0.4, dmg: (dmg * p * M.pow) / (M.dur / 0.4), hero: h.i });
+      B.events.push(ev); return;
+    }
+    case 'twinBombs': { // Murky Toxin: two layered bombs on the thickest knot
+      const c = cluster(es); ev.x = c.x; ev.y = c.y;
+      for (const e of within(es, c, BAL.aoeRadius * 0.6)) { ev.targets.push(e.id); e.dots.push({ left: 4, dps: (dmg * p * M.inner) / 4, hero: h.i }); }
+      for (const e of within(es, c, BAL.aoeRadius * 1.2)) { if (!ev.targets.includes(e.id)) ev.targets.push(e.id); e.dots.push({ left: 4, dps: (dmg * p * M.outer) / 4, hero: h.i }); }
+      B.events.push(ev); return;
+    }
+    case 'fulminate': case 'devastate': { // scepters: chain lightning, with their own reach and falloff
+      let at = nearest(es, h); const seen = new Set();
+      for (let k = 0; at && k < M.targets; k++) {
+        seen.add(at); ev.targets.push(at.id); damageEnemy(B, at, hit(dmg * p * M.pow * M.falloff ** k, at.def), src);
+        if (M.slow) at.slowUntil = Math.max(at.slowUntil, B.t + M.slow);
+        at = nearest(es.filter((e) => !seen.has(e) && d2(e, at) < 130 * 130), at);
+      }
+      B.events.push({ ...ev, fx: 'chain' }); return;
+    }
+    default: break;
+  }
   switch (A.fx) {
     case 'aoe': { const c = cluster(es); ev.x = c.x; ev.y = c.y; strike(within(es, c, BAL.aoeRadius)); break; }
-    case 'heal': { const t = hs.reduce((a, b) => (b.hp / b.maxHp < a.hp / a.maxHp ? b : a)); ev.heroes = [t.i]; heal(B, t, t.maxHp * p); break; }
+    case 'heal': {
+      if (M.mode === 'holyProtection') { for (const o of hs) heal(B, o, o.maxHp * p * 0.6); h.buff.armorUntil = B.t + 4; ev.heroes = hs.map((o) => o.i); break; }
+      const t = hs.reduce((a, b) => (b.hp / b.maxHp < a.hp / a.maxHp ? b : a)); ev.heroes = [t.i]; heal(B, t, t.maxHp * p * (M.heal || 1)); break;
+    }
     case 'pierce': {
       // a line from the archer through the nearest enemy and on, hitting all it passes
       const t = nearest(es, h), dx = t.x - h.x, dy = t.y - h.y, L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L;
@@ -184,18 +231,19 @@ function useAbility(B, h, scale = 1) {
       strike(es.filter((e) => { const along = (e.x - h.x) * ux + (e.y - h.y) * uy, off = Math.abs((e.x - h.x) * uy - (e.y - h.y) * ux); return along > 0 && off < 22 + e.r; }));
       break;
     }
-    case 'execute': strike([...es].sort((a, b) => a.hp - b.hp).slice(0, 3), 1, { ...src, crit: true }); break;
-    case 'berserk': h.buff.taunt = B.t + 4; h.buff.hasteUntil = B.t + 4; h.buff.haste = p; for (const e of es) if (!e.ranged && B.rng.next() < 0.6) e.target = h.i; break;
+    case 'execute': strike([...es].sort((a, b) => a.hp - b.hp).slice(0, 3), 1, { ...src, crit: true }); if (M.mode === 'planewalk') h.buff.invulnUntil = B.t + M.dur; if (M.mode === 'bloody') { h.buff.dmgUntil = B.t + M.dur; h.buff.dmg = M.dmg; } break;
+    case 'berserk': h.buff.taunt = B.t + 4; h.buff.hasteUntil = B.t + 4; h.buff.haste = p;
+      if (M.mode === 'juggernaut') { h.buff.armorUntil = B.t + 4.5; for (const o of hs) { o.buff.hasteUntil = B.t + 4.5; o.buff.haste = Math.max(o.buff.haste || 0, p * 0.6); } ev.heroes = hs.map((o) => o.i); } for (const e of es) if (!e.ranged && B.rng.next() < 0.6) e.target = h.i; break;
     case 'stun': { const list = within(es, h, 120); for (const e of list) e.stunUntil = B.t + 1.2 * (e.boss ? 0.5 : 1); ev.x = h.x; ev.y = h.y; strike(list); break; }
     case 'dot': { const c = cluster(es); ev.x = c.x; ev.y = c.y; for (const e of within(es, c, BAL.aoeRadius)) { ev.targets.push(e.id); e.dots.push({ left: 4, dps: (dmg * p) / 4, hero: h.i }); e.slowUntil = B.t + 4; } break; }
     case 'drain': {
       const c = cluster(es); let tot = 0; ev.x = c.x; ev.y = c.y;
-      for (const e of within(es, c, BAL.aoeRadius)) { ev.targets.push(e.id); const d = hit(dmg * p, e.def); tot += d; damageEnemy(B, e, d, src); }
-      for (const o of hs) heal(B, o, Math.min(o.maxHp * 0.2, (tot * 0.08) / hs.length)); ev.heroes = hs.map((o) => o.i);
+      for (const e of within(es, c, BAL.aoeRadius * (M.radius || 1))) { if (M.curse) e.curseUntil = B.t + M.curse; ev.targets.push(e.id); const d = hit(dmg * p, e.def); tot += d; damageEnemy(B, e, d, src); }
+      for (const o of hs) heal(B, o, Math.min(o.maxHp * 0.2, (tot * 0.08 * (M.heal || 1)) / hs.length)); ev.heroes = hs.map((o) => o.i);
       break;
     }
     case 'poison': { const e = es.reduce((a, b) => (b.hp > a.hp ? b : a)); ev.targets.push(e.id); e.dots.push({ left: 5, dps: (dmg * p) / 5, hero: h.i }); break; }
-    case 'buff': for (const o of hs) heal(B, o, o.maxHp * 0.1); h.buff.partyUntil = B.t + 5; h.buff.party = p; ev.heroes = hs.map((o) => o.i); break;
+    case 'buff': for (const o of hs) heal(B, o, o.maxHp * 0.1); h.buff.partyUntil = B.t + 5; h.buff.party = p; if (M.mode === 'invuln') h.buff.invulnUntil = B.t + M.dur; ev.heroes = hs.map((o) => o.i); break;
     case 'chain': {
       // lightning leaps from enemy to nearby enemy, weaker with each jump
       let at = nearest(es, h); const seen = new Set();
@@ -212,25 +260,38 @@ function useAbility(B, h, scale = 1) {
 }
 
 // ---------- a hero's shot, and what Unique weapons add to it ----------
-const MODS = ['splash', 'chain', 'burn', 'chill', 'stun', 'leech'];
+const MODS = ['splash', 'chain', 'burn', 'chill', 'stun', 'leech', 'paralyze', 'curse', 'armorBreak', 'bleed'];
+export const TILE = 32; // pixels per ROTMG tile
 function fire(B, h, e, delay) {
-  const fx = h.fx;
+  const fx = h.fx, S = h.shot;
   h.shots++;
   const charged = fx.charge && h.shots % fx.charge === 0;
   const crit = charged || B.rng.next() < h.crit;
   if (fx.ramp) { if (h.rampId === e.id) h.ramp = Math.min(10, h.ramp + 1); else { h.rampId = e.id; h.ramp = 0; } }
-  const base = h.hit * dmgMult(B, h) * (crit ? 2 + (fx.critDmg || 0) : 1) * (charged ? fx.chargeX / 2 : 1) * (1 + (fx.ramp || 0) * h.ramp);
-  const vs = (t) => hit(base * (t.boss ? 1 + (fx.bossDmg || 0) : 1) * (t.hp < t.maxHp * 0.3 ? 1 + (fx.execute || 0) : 1), t.def);
-  const mods = MODS.some((k) => fx[k]) ? fx : null;
+  // the shot's damage is shared between its projectiles, so a full hit lands the hero's whole ATK
+  const base = h.hit * (S.per ?? 1 / S.n) * dmgMult(B, h) * (crit ? 2 + (fx.critDmg || 0) : 1) * (charged ? fx.chargeX / 2 : 1) * (1 + (fx.ramp || 0) * h.ramp);
+  const vs = (t) => hit(base * (t.boss ? 1 + (fx.bossDmg || 0) : 1) * (t.hp < t.maxHp * 0.3 ? 1 + (fx.execute || 0) : 1), S.ignoreDef ? 0 : t.def);
+  const mods = MODS.some((k) => fx[k]) || S.onHit ? { ...fx, ...S.onHit } : null;
   const mod = fx.splash ? 'blast' : fx.chain ? 'chain' : fx.burn ? 'burn' : fx.chill ? 'chill' : null;
-  const heavy = h.hit > (h.atk / CLASSES[h.cls].base.spd) * 1.3; // a slow, heavy Unique weapon
-  const shoot = (t, dmg, m) => {
-    const flight = Math.max(0.06, Math.sqrt(d2(h, t)) / SHOT_SPEED) + delay;
-    B.pending.push({ side: 'hero', to: t.id, dmg, crit, hero: h.i, mods: m, at: B.t + flight });
-    B.events.push({ k: 'shot', hero: h.i, to: t.id, crit, flight, mod, big: heavy || charged });
-  };
-  shoot(e, vs(e), mods);
-  if (fx.multishot) { const e2 = nearest(alive(B.enemies).filter((x) => x !== e), h); if (e2) shoot(e2, vs(e2) * fx.multishot, null); }
+  const heavy = (S.per ?? 1 / S.n) > 1.4; // one huge projectile (Doom Bow, Wand of the Bulwark)
+  const range = S.range * TILE, speed = S.speed * TILE, es = alive(B.enemies);
+  const aim = Math.atan2(e.y - (h.y - 20), e.x - h.x);
+  for (let k = 0; k < S.n; k++) {
+    // fan the projectiles out by the arc gap; with no gap they fly side by side
+    const off = k - (S.n - 1) / 2, ang = aim + (off * S.arc * Math.PI) / 180;
+    const ux = Math.cos(ang), uy = Math.sin(ang), side = S.arc ? 0 : off * 7;
+    const ox = h.x - uy * side, oy = h.y - 20 + ux * side;
+    // what this projectile meets on its line: the first enemy, or every one if it pierces
+    const struck = [];
+    for (const t of es) {
+      const along = (t.x - ox) * ux + (t.y - oy) * uy, across = Math.abs((t.x - ox) * uy - (t.y - oy) * ux);
+      if (along > 0 && along < range + t.r && across < t.r + (S.wavy ? 7 : 4)) struck.push({ t, along });
+    }
+    struck.sort((a, b) => a.along - b.along);
+    const hits = S.pierce ? struck : struck.slice(0, 1), far = hits.length && !S.pierce ? hits[0].along : range;
+    for (const { t, along } of hits) B.pending.push({ side: 'hero', to: t.id, dmg: vs(t) * (S.vary ? 1 - S.vary + B.rng.next() * S.vary * 2 : 1), crit, hero: h.i, mods, at: B.t + along / speed + delay });
+    B.events.push({ k: 'shot', hero: h.i, ang, x0: ox, y0: oy, len: far, flight: far / speed + delay, crit, mod, big: heavy || charged, look: S.look, color: S.color, wavy: S.wavy, size: S.size });
+  }
 }
 function landShot(B, e, p) {
   const at = { x: e.x, y: e.y };
@@ -241,6 +302,11 @@ function landShot(B, e, p) {
   if (m.leech && h && !h.dead) h.hp = Math.min(h.maxHp, h.hp + p.dmg * m.leech);
   if (m.burn && e.hp > 0) { e.dots.push({ left: 3, dps: (p.dmg * m.burn) / 3, hero: p.hero }); B.events.push({ k: 'ignite', id: e.id }); }
   if (m.chill && e.hp > 0) { e.slowUntil = Math.max(e.slowUntil, B.t + m.chill); B.events.push({ k: 'chill', id: e.id, dur: m.chill }); }
+  // ROTMG status effects from a weapon's shots (seconds)
+  if (m.paralyze && e.hp > 0) { e.stunUntil = Math.max(e.stunUntil, B.t + m.paralyze * (e.boss ? 0.3 : 1)); B.events.push({ k: 'stunned', id: e.id }); }
+  if (m.curse && e.hp > 0) { if (!(e.curseUntil > B.t)) B.events.push({ k: 'status', id: e.id, s: 'curse' }); e.curseUntil = B.t + m.curse; }
+  if (m.armorBreak && e.hp > 0) { if (!(e.breakUntil > B.t)) B.events.push({ k: 'status', id: e.id, s: 'break' }); e.breakUntil = B.t + m.armorBreak; }
+  if (m.bleed && e.hp > 0) e.dots.push({ left: 3, dps: (p.dmg * m.bleed) / 3, hero: p.hero });
   if (m.stun && e.hp > 0 && B.rng.next() < m.stun) { e.stunUntil = Math.max(e.stunUntil, B.t + 0.8 * (e.boss ? 0.5 : 1)); B.events.push({ k: 'stunned', id: e.id }); }
   const others = alive(B.enemies).filter((x) => x !== e);
   if (m.splash) { B.events.push({ k: 'blast', x: at.x, y: at.y, big: m.splash >= 0.7 }); for (const o of within(others, at, BAL.splashRadius)) damageEnemy(B, o, p.dmg * m.splash, src); }
@@ -316,20 +382,35 @@ export function stepBattle(B) {
     if (alive(B.heroes).length) { h.dead = false; h.hp = h.maxHp * B.rez.v; B.events.push({ k: 'revive', hero: h.i, by: B.rez.by }); }
     B.rez = null;
   }
+  // lingering ability zones (Genesis Spell portals)
+  B.zones = B.zones.filter((z) => z.until > B.t);
+  for (const z of B.zones) if (B.t >= z.next) { z.next += z.every; for (const e of within(alive(B.enemies), z, z.r)) damageEnemy(B, e, hit(z.dmg, e.def), { hero: z.hero, ab: true }); B.events.push({ k: 'zap', x: z.x, y: z.y, r: z.r }); }
   // heroes: each shoots the nearest enemy
   for (const h of B.heroes) {
     if (h.dead) continue;
     if (h.fx.regen) h.hp = Math.min(h.maxHp, h.hp + h.maxHp * h.fx.regen * dt);
+    if (h.buff.vitUntil > B.t) h.hp = Math.min(h.maxHp, h.hp + h.maxHp * h.fx.vitProc * dt);
     if (h.fx.partyRegen) for (const o of alive(B.heroes)) o.hp = Math.min(o.maxHp, o.hp + o.maxHp * h.fx.partyRegen * dt);
     const es = alive(B.enemies).filter((e) => e.y > -e.r); // only what's on the field
     h.cd -= dt;
     const A = CLASSES[h.cls].ability;
     const needHeal = A.fx === 'heal' ? alive(B.heroes).some((o) => o.hp < o.maxHp * 0.8) : true;
     if (h.cd <= 0 && es.length && needHeal) { h.cd = abilityCd(h); useAbility(B, h); }
+    // Divinity's Exalted Beam: every second, a blast at the end of the sword's reach that ignores armor
+    if (h.shot.beam && (h.beamT = (h.beamT ?? 0.5) - dt) <= 0) {
+      const Bm = h.shot.beam, t = nearest(es, h);
+      if (t && d2(t, h) < (Bm.reach * TILE) ** 2) {
+        h.beamT = Bm.every;
+        const at = { x: t.x, y: t.y };
+        for (const o of within(es, at, Bm.radius * TILE)) damageEnemy(B, o, h.hit * Bm.per * BAL.utWeapon * dmgMult(B, h), { hero: h.i, ab: true });
+        B.events.push({ k: 'beam', hero: h.i, x: at.x, y: at.y, r: Bm.radius * TILE });
+      } else h.beamT = 0.1;
+    }
     h.atkT -= dt * h.spd * (h.buff.hasteUntil > B.t ? 1 + h.buff.haste : 1) * (h.buff.frenzyUntil > B.t ? 1 + h.fx.frenzy : 1);
     if (h.atkT <= 0) {
       const e = nearest(es, h);
-      if (!e) { h.atkT = 0; continue; }
+      // hold fire until something is in range
+      if (!e || d2(e, h) > (h.shot.range * TILE + e.r) ** 2) { h.atkT = 0; continue; }
       h.atkT += 1;
       fire(B, h, e, 0);
       if (h.fx.double && B.rng.next() < h.fx.double) fire(B, h, e, 0.09);

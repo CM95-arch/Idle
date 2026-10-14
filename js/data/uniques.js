@@ -1,139 +1,123 @@
-// Unique items: named pieces with special effects, dropped by a zone's boss (rarely by its other enemies).
-// Their stats keep pace with your progress, and you keep them when you Ascend.
-//   fx:    effects battle.js applies (several can stack on one item; the same effect on two items adds up)
-//   rate:  weapons only: multiplies fire rate, and each shot hits harder to match (so 0.4 = slow, heavy shots)
-//   extra: a fixed bonus stat; ring: a ring's main stat; pal: the item's own colors [main, light, gem]
-//   exalted: far rarer, far stronger. A gold bag instead of a white one.
+// Unique items: Realm of the Mad God's UTs, as close to the real ones as this game allows (stats from the
+// RealmEye wiki). Each zone boss guards its own; Exalted ones are the rarest endgame drops.
 //
-// Effects
-//   on every shot:  splash (others take this share)  chain (jumps on, this share each jump)  multishot (one more
-//                   target)  burn (this share again over 3s)  chill (seconds of slow)  stun (chance)  leech (heal
-//                   this share)  double (chance to fire twice)  charge/chargeX (every Nth shot hits ×X)
-//                   ramp (+this per hit on the same target, 10 stacks)  critDmg  execute  bossDmg
-//   on any kill:    corpse (the body explodes for this share of its max HP)  frenzy (fire faster for 2.5s)
-//   defense:        regen  partyRegen  barrier (shield at each surge)  partyBarrier  guard  dodge  thorns  revive
-//                   rezAlly (raise the first ally to fall)  waveHeal (party heals at each surge)
-//   power:          aura (party damage)  glass (own damage)  lastStand (damage below 40% HP)  haste  cdr  echo
-//                   abilityDmg  firstStrike  luck
+//   shot: how a UT weapon fires, ROTMG-style. n projectiles, arc (degrees between them; 0 = side by side),
+//         rate (fire rate, 1 = normal), per (each projectile's damage as a share of a tiered weapon's whole
+//         volley: avg damage ÷ the tiered peer's), range and speed in tiles, pierce, wavy, ignoreDef, vary
+//         (damage spread), look and color. Tiered peers: bow 190 (Bow of Covert Havens, 125-135 + 2×25-35),
+//         staff 160, wand 152 (Wand of Recompense), dagger 135, sword 245.
+//   abil: what a UT ability item changes about its class's ability (see useAbility in core/battle.js).
+//   rot:  ROTMG stat bonuses (ATT, DEX, DEF, HP, MP, VIT, WIS, SPD; armor = the armor's own DEF), turned into
+//         this game's percentages by core/items.js.
+//   fx:   other effects battle.js applies.
+//   exalted: far rarer, far stronger. A gold bag instead of a white one.
 export const UNIQUES = [
-  // ---- Beaches · Kraken King ----
-  { id: 'tideStaff', name: 'Staff of the Breaking Tide', kind: 'staff', zone: 0, rate: 0.4, fx: { splash: 1 }, extra: { k: 'crit', v: 5 }, pal: ['#1d4f8a', '#4fb6e8', '#bff4ff'],
-    desc: 'Fires slow, heavy tide orbs (40% the fire rate, 2.5× the damage) that burst on impact, splashing every other enemy for the same damage.' },
-  { id: 'coralBow', name: 'Coral Bow', kind: 'bow', zone: 0, fx: { multishot: 0.6 }, extra: { k: 'spdPct', v: 10 }, pal: ['#b8405a', '#ff8a8a', '#ffe0c0'],
-    desc: 'Every arrow splits: each shot also strikes a second enemy for 60% damage.' },
-  { id: 'pearl', name: 'Pearl of the Deep', kind: 'ring', ring: 'hp', zone: 0, fx: { regen: 0.02 }, extra: { k: 'hpPct', v: 12 }, pal: ['#6a7a9a', '#e8eef8', '#ffffff'],
-    desc: 'Restores 2% of max HP every second.' },
-  { id: 'driftShield', name: 'Driftwood Bulwark', kind: 'shield', zone: 0, fx: { barrier: 0.2 }, extra: { k: 'hpPct', v: 10 }, pal: ['#6a4a2a', '#a8804a', '#7ae0ff'],
-    desc: 'Every 8 seconds, raises a barrier worth 20% of max HP.' },
-  { id: 'brineCloak', name: 'Brine-Soaked Cloak', kind: 'cloak', zone: 0, fx: { dodge: 0.22, regen: 0.015 }, extra: { k: 'spdPct', v: 6 }, pal: ['#1a3a4a', '#3a8a9a', '#a0fff0'],
-    desc: 'Dodges 22% of enemy attacks and restores 1.5% of max HP every second.' },
-  { id: 'inkVial', name: 'Kraken Ink Vial', kind: 'poison', zone: 0, fx: { abilityDmg: 0.5 }, extra: { k: 'crit', v: 5 }, pal: ['#1a1a2a', '#4a3a6a', '#c070ff'],
-    desc: 'Ability deals 50% more damage.' },
+  // ---- Beaches · Kraken King (the Ocean Trench, Snake Pit and pirates) ----
+  { id: 'coralBow', name: 'Coral Bow', kind: 'bow', zone: 0, shot: { n: 2, arc: 9, rate: 1.25, per: 0.45, pierce: true, range: 6.4, speed: 18.5, look: 'arrow', color: '#ff7aa8' },
+    pal: ['#b8405a', '#ff8a9a', '#ffe0d0'], desc: 'Two coral-pink arrows 9° apart at 125% rate of fire. Fast shots that pass through enemies.' },
+  { id: 'coralTrap', name: 'Coral Venom Trap', kind: 'trap', zone: 0, abil: { mode: 'paralyze', pow: 1, dur: 3 }, rot: { spd: 4, dex: 4 },
+    pal: ['#b8405a', '#ff8a9a', '#7affd8'], desc: 'The trap Paralyzes everything it catches for 3 seconds instead of slowing it. +4 SPD, +4 DEX.' },
+  { id: 'coralSilk', name: 'Coral Silk Armor', kind: 'leather', zone: 0, rot: { armor: 16, spd: 3, dex: 4 },
+    pal: ['#c0506a', '#ff9aa8', '#ffe0d0'], desc: 'Mermaid-woven armor threaded with coral. 16 DEF, +3 SPD, +4 DEX.' },
+  { id: 'bulwark', name: 'Wand of the Bulwark', kind: 'wand', zone: 0, shot: { n: 1, rate: 0.33, per: 2.63, pierce: true, range: 6.6, speed: 6, look: 'orb', color: '#7cff9a', size: 1.8 },
+    pal: ['#2a5a2a', '#7cff9a', '#e8ffd0'], desc: 'Lazily drifting orbs that lay a minefield close by: one huge, slow, piercing shot at 33% rate of fire.' },
+  { id: 'cutlass', name: "Pirate King's Cutlass", kind: 'sword', zone: 0, shot: { n: 1, rate: 1.3, per: 0.84, range: 3.3, speed: 15, look: 'slash', color: '#ffd34d' }, rot: { spd: 3, def: -2 },
+    pal: ['#8a6a2a', '#e8d8a0', '#ffd34d'], desc: 'A fast-swinging cutlass: 130% rate of fire, short reach. +3 SPD, −2 DEF.' },
+  { id: 'spiritDagger', name: 'Spirit Dagger', kind: 'dagger', zone: 0, shot: { n: 1, per: 1.22, vary: 0.7, range: 5.2, speed: 14, look: 'blade', color: '#bfe8ff' },
+    pal: ['#5a7a9a', '#bfe8ff', '#ffffff'], desc: 'A ghostly blade with a wild damage spread (50–280): higher damage than a tiered dagger, if luck allows.' },
 
-  // ---- Lowlands · Dwarf King ----
-  { id: 'dwarfAxe', name: 'Axe of the Dwarf King', kind: 'sword', zone: 1, fx: { critDmg: 1.5 }, extra: { k: 'crit', v: 10 }, pal: ['#6a3a24', '#c09040', '#ffd34d'],
-    desc: 'Critical hits deal 3.5× damage instead of 2×.' },
-  { id: 'dwarfCrown', name: 'Crown of the Dwarf King', kind: 'helm', zone: 1, fx: { cdr: 0.4 }, extra: { k: 'hpPct', v: 10 }, pal: ['#8a6a1a', '#ffd34d', '#ff4a4a'],
-    desc: 'Ability recharges 40% faster.' },
-  { id: 'forgeWand', name: 'Forgefire Wand', kind: 'wand', zone: 1, fx: { burn: 0.6 }, extra: { k: 'atkPct', v: 6 }, pal: ['#5a2a14', '#ff6a2a', '#ffe08a'],
-    desc: 'Shots set enemies ablaze: 60% extra damage over 3 seconds.' },
-  { id: 'hearthRing', name: 'Hearthstone Ring', kind: 'ring', ring: 'def', zone: 1, fx: { waveHeal: 0.2, barrier: 0.1 }, extra: { k: 'defPct', v: 10 }, pal: ['#5a3a2a', '#d08a4a', '#ff9a4a'],
-    desc: 'Every 8 seconds, the whole party heals 20% of max HP and the wearer gains a barrier worth 10%.' },
-  { id: 'anvilPlate', name: 'Anvil Plate', kind: 'heavy', zone: 1, fx: { guard: 0.12, thorns: 0.25 }, extra: { k: 'defPct', v: 12 }, pal: ['#3a3a44', '#8a8a96', '#ff7a3a'],
-    desc: 'Takes 12% less damage, and attackers take 25% of their attack back.' },
-  { id: 'runeTome', name: 'Tome of the Last Rite', kind: 'tome', zone: 1, fx: { rezAlly: 0.5 }, extra: { k: 'hpPct', v: 8 }, pal: ['#2a2a5a', '#6a6ad8', '#ffe08a'],
-    desc: 'Once per fight, raises the first fallen ally 2 seconds later with 50% HP.' },
+  // ---- Lowlands · Dwarf King (Sprite World, the Spider Den, the Woodland Labyrinth) ----
+  { id: 'poisonFang', name: 'Poison Fang Dagger', kind: 'dagger', zone: 1, shot: { n: 1, per: 0.7, range: 5.6, speed: 14, look: 'blade', color: '#7cff4a' }, rot: { att: 4 },
+    pal: ['#2a4a1a', '#7cff4a', '#e8ffd0'], desc: 'A dagger made from a giant spider’s fang. An early UT: modest damage, quick to find.' },
+  { id: 'sep', name: 'Staff of Extreme Prejudice', kind: 'staff', zone: 1, shot: { n: 10, arc: 36, rate: 0.4, per: 0.8, range: 5.5, speed: 11, look: 'star', color: '#ffd34d' },
+    pal: ['#7a5a1a', '#ffd34d', '#ffffff'], desc: 'Fires a full 360° ring of 10 short-range bolts at 40% rate of fire. Shreds anything standing right next to the wizard.' },
+  { id: 'leafBow', name: 'Leaf Bow', kind: 'bow', zone: 1, shot: { n: 1, rate: 1.4, per: 0.75, wavy: true, range: 7.2, speed: 12, look: 'arrow', color: '#7ae05a' }, rot: { spd: 5 },
+    pal: ['#2f6a2a', '#7ae05a', '#f0ffd0'], desc: 'A single wavy leaf at 140% rate of fire. Gives up piercing for range and steady damage. +5 SPD.' },
+  { id: 'planewalker', name: 'Cloak of the Planewalker', kind: 'cloak', zone: 1, abil: { mode: 'planewalk', dur: 1.2 }, rot: { dex: 5, spd: 4 },
+    pal: ['#3a2a6a', '#8a6ad8', '#c0f0ff'], desc: 'After the Backstab the Rogue teleports out and can’t be touched for a moment. +5 DEX, +4 SPD.' },
+  { id: 'experimental', name: 'Experimental Ring', kind: 'ring', ring: 'hp', zone: 1, rot: { hp: 60, mp: 60, def: 4, vit: 4 },
+    pal: ['#4a6a7a', '#a0e8ff', '#7affd8'], desc: 'An early prototype: +60 HP, +60 MP, +4 DEF, +4 VIT.' },
+  { id: 'leafDragon', name: 'Leaf Dragon Hide Armor', kind: 'leather', zone: 1, rot: { armor: 13, hp: 50, spd: 6, wis: 3, vit: 3 },
+    pal: ['#2f6a2a', '#7ae05a', '#ffd34d'], desc: 'Trades armor for life and speed: 13 DEF, +50 HP, +6 SPD, +3 WIS, +3 VIT.' },
 
-  // ---- Midlands · Lich ----
-  { id: 'lichStaff', name: 'Staff of the Lich', kind: 'staff', zone: 2, fx: { echo: 0.5 }, extra: { k: 'crit', v: 6 }, pal: ['#2a1a40', '#d8d2c0', '#40ffe0'],
-    desc: 'Abilities cast twice. The echo has 50% power.' },
-  { id: 'phylactery', name: 'Phylactery Robe', kind: 'robe', zone: 2, fx: { revive: 0.4 }, extra: { k: 'hpPct', v: 10 }, pal: ['#1a1a2a', '#5a5a7a', '#40ffe0'],
-    desc: 'Once per fight, cheats death and rises again with 40% HP.' },
-  { id: 'soulDagger', name: 'Soulreaver Dagger', kind: 'dagger', zone: 2, fx: { leech: 0.2 }, extra: { k: 'crit', v: 6 }, pal: ['#2a1a2a', '#8a4a8a', '#ff4a8a'],
-    desc: 'Heals for 20% of the damage it deals.' },
-  { id: 'rimeBow', name: 'Rimefang Longbow', kind: 'bow', zone: 2, fx: { chill: 2 }, extra: { k: 'atkPct', v: 8 }, pal: ['#2a4a6a', '#9ad8ff', '#ffffff'],
-    desc: 'Arrows freeze their target: it attacks 40% slower for 2 seconds.' },
-  { id: 'tormentSkull', name: 'Skull of Endless Torment', kind: 'skull', zone: 2, fx: { corpse: 0.4 }, extra: { k: 'atkPct', v: 6 }, pal: ['#3a1a1a', '#d8c8b0', '#ff3a3a'],
-    desc: 'While the wearer stands, every enemy that dies explodes, dealing 40% of its max HP to every other enemy.' },
-  { id: 'wraithQuiver', name: 'Wraithbound Quiver', kind: 'quiver', zone: 2, fx: { abilityDmg: 0.5, cdr: 0.2 }, extra: { k: 'spdPct', v: 6 }, pal: ['#2a2a3a', '#6a7a9a', '#a0ffe0'],
-    desc: 'Ability deals 50% more damage and recharges 20% faster.' },
-  { id: 'necronomicon', name: 'Codex of the Unliving', kind: 'skull', zone: 2, exalted: true, fx: { corpse: 0.6, leech: 0.1, abilityDmg: 0.4 }, extra: { k: 'atkPct', v: 12 }, pal: ['#1a0a1a', '#6a2a4a', '#40ff9a'],
-    desc: 'Every enemy that dies explodes for 60% of its max HP to every other enemy. Heals for 10% of damage dealt. Ability +40% damage.' },
+  // ---- Midlands · Lich (the Undead Lair, the Mad Lab, the haunted places) ----
+  { id: 'doomBow', name: 'Doom Bow', kind: 'bow', zone: 2, shot: { n: 1, rate: 0.33, per: 2.89, ignoreDef: true, range: 7, speed: 14, look: 'arrow', color: '#ff2a2a', size: 1.7 },
+    pal: ['#1a0a0a', '#7a1a1a', '#ff3a3a'], desc: 'One enormous arrow at a time (500–600 damage, 33% rate of fire). Hits so hard that armor barely matters.' },
+  { id: 'madScientist', name: 'Robe of the Mad Scientist', kind: 'robe', zone: 2, rot: { armor: 12, vit: 5, wis: 5 }, fx: { cdr: 0.2 },
+    pal: ['#e8e8f0', '#ffffff', '#7affd8'], desc: 'Abilities cost 20% less (they come round 20% sooner). 12 DEF, +5 VIT, +5 WIS.' },
+  { id: 'fulmination', name: 'Scepter of Fulmination', kind: 'scepter', zone: 2, abil: { mode: 'fulminate', targets: 5, pow: 0.55, falloff: 1, slow: 3 }, rot: { att: 2, wis: 2 },
+    pal: ['#2a3a6a', '#6ab0ff', '#e0f0ff'], desc: 'Weaker lightning that reaches 5 enemies without fading and Slows them all for 3 seconds. +2 ATT, +2 WIS.' },
+  { id: 'resWarrior', name: "Resurrected Warrior's Armor", kind: 'heavy', zone: 2, rot: { armor: 17, mp: 150, wis: 20 },
+    pal: ['#4a4a52', '#a0a0aa', '#40ffe0'], desc: 'Heavy armor that trades HP for a deep well of power: 17 DEF, +150 MP, +20 WIS.' },
+  { id: 'endlessTorment', name: 'Skull of Endless Torment', kind: 'skull', zone: 2, abil: { mode: 'torment', radius: 1.4, heal: 2 },
+    pal: ['#3a1a1a', '#d8c8b0', '#ff3a3a'], desc: 'A wider blast whose stolen life heals the party twice as much, purging their ills.' },
+  { id: 'purification', name: 'Tome of Purification', kind: 'tome', zone: 2, abil: { mode: 'purify', heal: 1.4 }, rot: { vit: 10, wis: 10 },
+    pal: ['#e8e0c8', '#ffffff', '#ffe08a'], desc: 'A stronger, cleansing heal (+40%). +10 VIT, +10 WIS.' },
 
-  // ---- Forest · Ent Ancient ----
-  { id: 'barkPlate', name: 'Ancient Bark Plate', kind: 'heavy', zone: 3, fx: { thorns: 0.45 }, extra: { k: 'defPct', v: 15 }, pal: ['#4a3a24', '#7a6a3a', '#a0ff60'],
-    desc: 'Enemies that hit the wearer take 45% of their attack back as damage.' },
-  { id: 'seedTome', name: 'Tome of the Elder Seed', kind: 'tome', zone: 3, fx: { partyRegen: 0.006 }, extra: { k: 'hpPct', v: 10 }, pal: ['#2a4a1a', '#6aa84a', '#d0ff8a'],
-    desc: 'The whole party restores 0.6% of max HP every second.' },
-  { id: 'heartBlade', name: 'Heartwood Greatblade', kind: 'sword', zone: 3, rate: 0.6, fx: { splash: 0.4 }, extra: { k: 'hpPct', v: 10 }, pal: ['#4a2a14', '#8a5a2a', '#a0ff60'],
-    desc: 'Huge, slow cleaves (60% the swing rate, 1.7× the damage) that also hit every other enemy for 40%.' },
-  { id: 'brambleSnare', name: 'Bramble Snare', kind: 'trap', zone: 3, fx: { abilityDmg: 0.5 }, extra: { k: 'atkPct', v: 6 }, pal: ['#2a3a14', '#5a7a2a', '#ff6a4a'],
-    desc: 'Ability deals 50% more damage.' },
-  { id: 'sapLeather', name: 'Sap-Bound Leather', kind: 'leather', zone: 3, fx: { regen: 0.02, guard: 0.08 }, extra: { k: 'hpPct', v: 12 }, pal: ['#4a3a1a', '#8a6a2a', '#ffd34d'],
-    desc: 'Restores 2% of max HP every second and takes 8% less damage.' },
-  { id: 'groveRing', name: 'Ring of the Old Grove', kind: 'ring', ring: 'atk', zone: 3, fx: { haste: 0.12, regen: 0.006 }, extra: { k: 'atkPct', v: 6 }, pal: ['#2a4a2a', '#5a9a4a', '#ffe08a'],
-    desc: 'Attacks 12% faster and slowly restores HP.' },
-  { id: 'verdantHeart', name: 'Verdant Heart', kind: 'ring', ring: 'hp', zone: 3, exalted: true, fx: { partyRegen: 0.012, waveHeal: 0.15, haste: 0.15 }, extra: { k: 'hpPct', v: 18 }, pal: ['#1a5a2a', '#4aff8a', '#ffffff'],
-    desc: 'The party restores 1.2% HP every second and heals 15% every 8 seconds. Attacks 15% faster.' },
+  // ---- Highlands · Ent Ancient (the Ice Cave, the Crystal Prisoner, the Toxic Sewers, the Abyss) ----
+  { id: 'esben', name: 'Staff of Esben', kind: 'staff', zone: 3, shot: { n: 2, arc: 0, per: 0.47, wavy: true, pierce: true, range: 8.4, speed: 16, look: 'orb', color: '#9ad8ff' }, rot: { spd: 3 },
+    pal: ['#2a4a7a', '#9ad8ff', '#ffffff'], desc: 'Two icy bolts in wide waves that pass through everything they touch. Made for hordes. +3 SPD.' },
+  { id: 'crystalWand', name: 'Crystal Wand', kind: 'wand', zone: 3, shot: { n: 1, rate: 1.1, per: 0.77, ignoreDef: true, range: 9, speed: 15, look: 'bolt', color: '#d8b8ff' },
+    pal: ['#5a4a8a', '#d8b8ff', '#ffffff'], desc: 'Crystal bolts that ignore armor completely, at 110% rate of fire.' },
+  { id: 'crystalSword', name: 'Crystal Sword', kind: 'sword', zone: 3, shot: { n: 1, per: 0.86, range: 4.5, speed: 12, look: 'slash', color: '#c8a8ff' },
+    pal: ['#5a4a8a', '#c8a8ff', '#ffffff'], desc: 'Reaches 4.5 tiles where other swords reach 3.5, so it starts cutting sooner.' },
+  { id: 'murky', name: 'Murky Toxin', kind: 'poison', zone: 3, abil: { mode: 'twinBombs', inner: 0.3, outer: 0.12 }, rot: { att: 3, dex: 3 },
+    pal: ['#2a3a1a', '#6a8a2a', '#7cff4a'], desc: 'Throws two bombs at once: a small, deadly one inside a wide one. +3 ATT, +3 DEX.' },
+  { id: 'demonBlade', name: 'Demon Blade', kind: 'sword', zone: 3, shot: { n: 2, arc: 25, per: 0.66, range: 3.4, speed: 13, look: 'slash', color: '#ff3a3a' },
+    pal: ['#3a0a0a', '#8a1a1a', '#ff3a3a'], desc: 'Two blades in a V, 25° apart. Up close both land, and it’s one of the deadliest swords there is.' },
+  { id: 'decades', name: 'Ring of Decades', kind: 'ring', ring: 'hp', zone: 3, rot: { hp: 190 },
+    pal: ['#8a3a6a', '#ff8ad8', '#ffe0f0'], desc: 'The most life any ring can give: +190 HP.' },
 
-  // ---- Desert · Grand Sphinx ----
-  { id: 'sphinxFang', name: 'Fang of the Sphinx', kind: 'dagger', zone: 4, fx: { execute: 1.5 }, extra: { k: 'crit', v: 8 }, pal: ['#8a6a2a', '#d8b070', '#ffffff'],
-    desc: 'Attacks deal 2.5× damage to enemies below 30% HP.' },
-  { id: 'riddleRing', name: 'Riddle Ring', kind: 'ring', ring: 'atk', zone: 4, fx: { luck: 0.2 }, extra: { k: 'famePct', v: 20 }, pal: ['#8a6a1a', '#ffd34d', '#4aa3ff'],
-    desc: 'Luck: gear drops rarer, and Uniques drop more often. Also +20% Fame.' },
-  { id: 'duskCloak', name: 'Cloak of Dusk', kind: 'cloak', zone: 4, fx: { dodge: 0.35 }, extra: { k: 'spdPct', v: 8 }, pal: ['#2a1a3a', '#6a3a8a', '#ffb070'],
-    desc: 'Dodges 35% of enemy attacks.' },
-  { id: 'sandWand', name: 'Wand of the Sandstorm', kind: 'wand', zone: 4, fx: { chain: 0.55 }, extra: { k: 'atkPct', v: 6 }, pal: ['#8a6a3a', '#e8c890', '#5de0ff'],
-    desc: 'Shots arc on through every other enemy: 55% damage on the first jump, 30% on the next.' },
-  { id: 'scarabRobe', name: 'Scarab-Woven Robe', kind: 'robe', zone: 4, fx: { barrier: 0.3 }, extra: { k: 'hpPct', v: 10 }, pal: ['#1a3a4a', '#3a8a8a', '#ffd34d'],
-    desc: 'Every 8 seconds, raises a barrier worth 30% of max HP.' },
-  { id: 'flareSpell', name: 'Spell of the Noon Sun', kind: 'spell', zone: 4, fx: { abilityDmg: 0.6 }, extra: { k: 'crit', v: 5 }, pal: ['#8a4a14', '#ffb02e', '#ffffff'],
-    desc: 'Ability deals 60% more damage.' },
-  { id: 'mirageDagger', name: 'Mirage Dirk', kind: 'dagger', zone: 4, fx: { double: 0.3 }, extra: { k: 'spdPct', v: 6 }, pal: ['#6a5a8a', '#c0b0ff', '#ffe0ff'],
-    desc: '30% of throws are followed by a mirage copy for full damage.' },
-  { id: 'pharaohScepter', name: 'Scepter of the First Pharaoh', kind: 'scepter', zone: 4, exalted: true, fx: { echo: 0.7, abilityDmg: 0.3, cdr: 0.15 }, extra: { k: 'atkPct', v: 12 }, pal: ['#6a4a0a', '#ffd34d', '#4af0ff'],
-    desc: 'Abilities cast twice (the echo at 70%), deal 30% more damage, and recharge 15% faster.' },
+  // ---- Godlands · Grand Sphinx (the Tomb of the Ancients) ----
+  { id: 'pyramid', name: 'Ring of the Pyramid', kind: 'ring', ring: 'atk', zone: 4, rot: { att: 4, def: 4, hp: 100 },
+    pal: ['#8a6a2a', '#ffd34d', '#4aa3ff'], desc: 'A balanced ring from the Tomb: +4 ATT, +4 DEF, +100 HP.' },
+  { id: 'sphinxRing', name: 'Ring of the Sphinx', kind: 'ring', ring: 'atk', zone: 4, rot: { wis: 4, dex: 4, mp: 100 },
+    pal: ['#8a6a2a', '#ffd34d', '#7affd8'], desc: 'For casters: +4 WIS, +4 DEX, +100 MP.' },
+  { id: 'holyProtection', name: 'Tome of Holy Protection', kind: 'tome', zone: 4, abil: { mode: 'holyProtection' }, rot: { def: 4, hp: 40 },
+    pal: ['#d8c890', '#fff3c0', '#4aa3ff'], desc: 'Heals the whole party at once instead of one ally, and makes the Priest Armored. +4 DEF, +40 HP.' },
+  { id: 'juggernaut', name: 'Helm of the Juggernaut', kind: 'helm', zone: 4, abil: { mode: 'juggernaut' }, rot: { def: 10, spd: 5 },
+    pal: ['#5a5a66', '#c0c0c8', '#ff6a3a'], desc: 'Berserk spreads to the whole party, and the Warrior turns Armored (takes 40% less). +10 DEF, +5 SPD.' },
+  { id: 'thunder', name: 'Quiver of Thunder', kind: 'quiver', zone: 4, abil: { mode: 'snipe', pow: 2.4, daze: 3 },
+    pal: ['#3a3a6a', '#ffe36a', '#ffffff'], desc: 'Instead of a piercing volley: one thunderous arrow (about 1,000 damage) into the toughest enemy, Dazing it for 3 seconds.' },
+  { id: 'crystalSerpent', name: 'Staff of the Crystal Serpent', kind: 'staff', zone: 4, shot: { n: 2, arc: 0, rate: 1.1, per: 0.41, wavy: true, range: 9, speed: 16, look: 'orb', color: '#b8a0ff' },
+    pal: ['#4a3a8a', '#b8a0ff', '#ffffff'], desc: 'Light, fast bolts (110% rate of fire) with a wand’s 9-tile reach: damage from safety.' },
 
-  // ---- Mountains · Stone Guardian ----
-  { id: 'guardianShield', name: 'Bulwark of the Guardian', kind: 'shield', zone: 5, fx: { guard: 0.15 }, extra: { k: 'defPct', v: 15 }, pal: ['#5a5a66', '#b0b0b8', '#40a0ff'],
-    desc: 'Takes 15% less damage from every hit.' },
-  { id: 'sunderWand', name: 'Wand of Sundering', kind: 'wand', zone: 5, fx: { bossDmg: 0.6 }, extra: { k: 'crit', v: 6 }, pal: ['#3a3a4a', '#9a9ab0', '#ff4a4a'],
-    desc: 'Deals 60% more damage to bosses.' },
-  { id: 'glacierStaff', name: 'Glacier Staff', kind: 'staff', zone: 5, rate: 0.7, fx: { chill: 1, splash: 0.25 }, extra: { k: 'defPct', v: 8 }, pal: ['#2a4a7a', '#9ad8ff', '#ffffff'],
-    desc: 'Heavier ice bolts that splash every other enemy for 25% and freeze the target for a second.' },
-  { id: 'runeHelm', name: 'Helm of the Last Stand', kind: 'helm', zone: 5, fx: { lastStand: 0.6, guard: 0.05 }, extra: { k: 'hpPct', v: 12 }, pal: ['#4a4a5a', '#9a9aaa', '#ff6a3a'],
-    desc: 'Below 40% HP, deals 60% more damage. Takes 5% less damage.' },
-  { id: 'mountainSeal', name: 'Seal of the Mountain', kind: 'seal', zone: 5, fx: { partyBarrier: 0.12 }, extra: { k: 'defPct', v: 10 }, pal: ['#5a5a6a', '#d8d8e0', '#40a0ff'],
-    desc: 'Every 8 seconds, the whole party gains a barrier worth 12% of their max HP.' },
-  { id: 'stormBow', name: 'Bow of Gathering Storms', kind: 'bow', zone: 5, fx: { charge: 4, chargeX: 3.5 }, extra: { k: 'atkPct', v: 6 }, pal: ['#2a2a5a', '#6a8ad8', '#e0f0ff'],
-    desc: 'Every 4th arrow is a storm arrow that hits for 3.5×.' },
-  { id: 'quakeRing', name: 'Ring of Cracked Earth', kind: 'ring', ring: 'atk', zone: 5, fx: { stun: 0.08 }, extra: { k: 'atkPct', v: 6 }, pal: ['#5a4a3a', '#a08a6a', '#ffb070'],
-    desc: '8% of hits stun the target for 0.8 seconds.' },
-  { id: 'avalanche', name: 'Avalanche Maul', kind: 'sword', zone: 5, exalted: true, rate: 0.4, fx: { splash: 0.7, stun: 0.2 }, extra: { k: 'hpPct', v: 15 }, pal: ['#3a4a6a', '#c0d8ff', '#ffffff'],
-    desc: 'Earth-shaking blows (40% the swing rate, 2.5× the damage) that hit every other enemy for 70% and stun 20% of the time.' },
+  // ---- Castle Approaches · Stone Guardian (the Lost Lands, the Keyper, the Shatters) ----
+  { id: 'ogmur', name: 'Shield of Ogmur', kind: 'shield', zone: 5, abil: { mode: 'armorBreak', pow: 1.15, dur: 4 }, rot: { hp: 60, def: 14 },
+    pal: ['#3a4a5a', '#8aa0b8', '#ff8a3a'], desc: 'The bash breaks armor instead of stunning: enemies hit lose all armor for 4 seconds. +60 HP, +14 DEF.' },
+  { id: 'blasphemous', name: 'Seal of Blasphemous Prayer', kind: 'seal', zone: 5, abil: { mode: 'invuln', dur: 1.5 }, rot: { spd: 4 },
+    pal: ['#3a1a3a', '#c0a0d0', '#ffd34d'], desc: 'The seal also makes the Paladin Invulnerable for 1.5 seconds. +4 SPD.' },
+  { id: 'devastation', name: 'Scepter of Devastation', kind: 'scepter', zone: 5, abil: { mode: 'devastate', targets: 3, pow: 1.3, falloff: 0.9 }, rot: { att: 4, wis: 2, hp: -20, vit: -5 },
+    pal: ['#4a1a1a', '#ff6a3a', '#ffe08a'], desc: 'Fewer, harder jumps: 3 targets at 130% with little falloff. +4 ATT, +2 WIS, −20 HP, −5 VIT.' },
+  { id: 'corruptedSouls', name: 'Skull of Corrupted Souls', kind: 'skull', zone: 5, abil: { mode: 'curse', curse: 4, radius: 0.8 },
+    pal: ['#2a1a3a', '#a08ab8', '#ff6ad8'], desc: 'A tighter blast that Curses everything it hits for 4 seconds (they take 25% more damage).' },
+  { id: 'monarchy', name: 'Mantle of the Monarchy', kind: 'robe', zone: 5, rot: { armor: 10, hp: 40, mp: 40, def: 10, vit: 20 }, fx: { vitProc: 0.03 },
+    pal: ['#3a2a5a', '#8a6ab0', '#ffd34d'], desc: 'When struck, VIT surges for 10 seconds (fast healing; every 25 seconds). 10 DEF, +40 HP, +40 MP, +10 DEF, +20 VIT.' },
+  { id: 'bloodySurprises', name: 'Cloak of Bloody Surprises', kind: 'cloak', zone: 5, abil: { mode: 'bloody', dur: 3.5, dmg: 0.5 },
+    pal: ['#4a0a1a', '#a01a2a', '#ff3a5a'], desc: 'After the Backstab the Rogue goes berserk: +50% damage for 3.5 seconds.' },
+  { id: 'fallen', name: 'Wand of the Fallen', kind: 'wand', zone: 5, shot: { n: 1, rate: 0.85, per: 1.1, range: 6.6, speed: 12.5, look: 'bolt', color: '#b84aff' },
+    pal: ['#3a1a5a', '#b84aff', '#ffe0ff'], desc: 'One of the hardest-hitting wands, at 85% rate of fire.' },
+  { id: 'bracer', name: 'Bracer of the Guardian', kind: 'ring', ring: 'def', zone: 5, exalted: true, rot: { hp: 90, mp: 80, att: 4, def: 9 },
+    pal: ['#3a4a6a', '#a0b8e8', '#ffd34d'], desc: 'The Shatters’ guardian band: +90 HP, +80 MP, +4 ATT, +9 DEF.' },
 
-  // ---- Oryx's Castle · Oryx the Mad God ----
-  { id: 'madBlade', name: 'Blade of the Mad God', kind: 'sword', zone: 6, fx: { aura: 0.15 }, extra: { k: 'crit', v: 8 }, pal: ['#3a2a4a', '#8a3a5a', '#d8a830'],
-    desc: 'While the wielder stands, the whole party deals 15% more damage.' },
-  { id: 'madHide', name: 'Hide of the Mad God', kind: 'leather', zone: 6, fx: { haste: 0.3 }, extra: { k: 'hpPct', v: 12 }, pal: ['#2a1a2a', '#6a2a3a', '#d8a830'],
-    desc: 'Attacks 30% faster.' },
-  { id: 'conflictOrb', name: 'Orb of Conflict', kind: 'scepter', zone: 6, fx: { firstStrike: 1 }, extra: { k: 'atkPct', v: 12 }, pal: ['#2a1a3a', '#8a2a8a', '#ff4a8a'],
-    desc: 'Every 8 seconds, the ability is instantly ready again.' },
-  { id: 'doomBow', name: 'Doom Bow', kind: 'bow', zone: 6, rate: 0.3, fx: { critDmg: 1, multishot: 1 }, extra: { k: 'crit', v: 15 }, pal: ['#1a0a0a', '#5a1a1a', '#ff2a2a'],
-    desc: 'One enormous arrow at a time (30% the fire rate, 3.3× the damage) that punches through into a second enemy. Crits deal 3×.' },
-  { id: 'chronoDirk', name: 'Dirk of the Endless Hour', kind: 'dagger', zone: 6, fx: { ramp: 0.08 }, extra: { k: 'spdPct', v: 10 }, pal: ['#2a2a4a', '#8a8ad8', '#ffe08a'],
-    desc: 'Each hit on the same target deals 8% more, stacking up to +80%.' },
-  { id: 'unboundRing', name: 'Ring of Unbound Fury', kind: 'ring', ring: 'atk', zone: 6, fx: { frenzy: 0.8, critDmg: 0.5 }, extra: { k: 'crit', v: 8 }, pal: ['#4a0a1a', '#ff3a5a', '#ffd34d'],
-    desc: 'Whenever an enemy dies, attacks 80% faster for 2.5 seconds. Crits deal 2.5×.' },
-  { id: 'madVestments', name: 'Vestments of the Mad God', kind: 'robe', zone: 6, fx: { glass: 0.9 }, extra: { k: 'hpPct', v: -20 }, pal: ['#2a0a2a', '#7a1a5a', '#ff4af0'],
-    desc: 'Glass cannon: deals 90% more damage, but has 20% less HP.' },
-  { id: 'feastTome', name: 'Tome of the Endless Feast', kind: 'tome', zone: 6, fx: { rezAlly: 0.8, waveHeal: 0.1 }, extra: { k: 'hpPct', v: 12 }, pal: ['#4a1a2a', '#c04a6a', '#ffe08a'],
-    desc: 'Once per fight, raises the first fallen ally with 80% HP. The party heals 10% every 8 seconds.' },
-  { id: 'cataclysm', name: 'Staff of the Cataclysm', kind: 'staff', zone: 6, exalted: true, rate: 0.35, fx: { splash: 1.2, burn: 0.6 }, extra: { k: 'crit', v: 10 }, pal: ['#3a0a0a', '#ff4a1a', '#ffe08a'],
-    desc: 'Hurls a world-ending meteor (35% the fire rate, 2.9× the damage) that detonates on every enemy for even more than the direct hit, and leaves them all burning.' },
-  { id: 'madCrown', name: 'Crown of the Mad God', kind: 'helm', zone: 6, exalted: true, fx: { aura: 0.2, cdr: 0.3, guard: 0.12 }, extra: { k: 'hpPct', v: 15 }, pal: ['#3a2a0a', '#d8a830', '#ff3a8a'],
-    desc: 'The party deals 20% more damage. Ability recharges 30% faster. Takes 12% less damage.' },
+  // ---- Oryx's Castle · Oryx the Mad God (Oryx's Sanctuary, the Lost Halls, the Void) ----
+  { id: 'newLife', name: 'Breastplate of New Life', kind: 'heavy', zone: 6, rot: { armor: 14, hp: 160 },
+    pal: ['#e8e0d0', '#ffffff', '#7affd8'], desc: 'Marble armor from the Lost Halls that trades armor for a huge well of life: 14 DEF, +160 HP.' },
+  { id: 'avarice', name: 'Avarice', kind: 'dagger', zone: 6, shot: { n: 1, per: 1.5, wavy: true, range: 5.5, speed: 14, look: 'blade', color: '#ffd34d' },
+    pal: ['#7a5a0a', '#ffd34d', '#ffffff'], desc: 'Steady, heavy blades (190–215) that weave left and right.' },
+  { id: 'voidBow', name: 'Bow of the Void', kind: 'bow', zone: 6, exalted: true, shot: { n: 1, rate: 1.05, per: 1.12, pierce: true, wavy: true, range: 6, speed: 16, look: 'arrow', color: '#9a5aff', size: 1.3 },
+    pal: ['#1a0a2a', '#6a3ab0', '#d0a0ff'], desc: 'The Void Entity’s bow: one heavy arrow that weaves and pierces everything in its path.' },
+  { id: 'colossus', name: 'Sword of the Colossus', kind: 'sword', zone: 6, exalted: true, shot: { n: 1, per: 1.17, wavy: true, range: 4.5, speed: 10, look: 'slash', color: '#f0e8d8', size: 1.3 },
+    pal: ['#8a8a92', '#f0e8d8', '#7affd8'], desc: 'Marble Colossus’s blade: a long, curving swing that hits harder than any tiered sword.' },
+  { id: 'divinity', name: 'Divinity', kind: 'sword', zone: 6, exalted: true, shot: { n: 1, rate: 0.6, per: 1.22, pierce: true, range: 4, speed: 12, look: 'slash', color: '#fff3b0', size: 1.3, beam: { per: 2.86, every: 1, radius: 2.25, reach: 6.25 } },
+    pal: ['#8a7a2a', '#fff3b0', '#ffffff'], desc: 'Oryx 3’s holy blade. Piercing swings, and every second an Exalted Beam blasts the area at the end of its reach (600–800, ignores armor).' },
+  { id: 'unholy', name: 'Staff of Unholy Sacrifice', kind: 'staff', zone: 6, exalted: true, shot: { n: 4, arc: 5, rate: 0.5, per: 0.89, range: 8, speed: 14, look: 'orb', color: '#e0203a', size: 1.2 },
+    pal: ['#3a0a1a', '#a0102a', '#ff6a6a'], desc: 'Four heavy bolts that fire backwards: the wizard turns away from the horde to unleash them. Out-damages almost every staff.' },
+  { id: 'genesis', name: 'Genesis Spell', kind: 'spell', zone: 6, exalted: true, abil: { mode: 'portals', pow: 1.8, dur: 4 },
+    pal: ['#2a1a5a', '#b6a0ff', '#ffffff'], desc: 'Opens four portals that zap everything in a wide area every 0.4 seconds for 4 seconds.' },
+  { id: 'omnipotence', name: 'Omnipotence Ring', kind: 'ring', ring: 'atk', zone: 6, exalted: true, rot: { hp: 80, mp: 80, att: 4, def: 4, spd: 4, dex: 4, vit: 4, wis: 4 },
+    pal: ['#5a3a8a', '#d0a0ff', '#ffffff'], desc: 'Everything at once: +80 HP, +80 MP, +4 ATT, +4 DEF, +4 SPD, +4 DEX, +4 VIT, +4 WIS.' },
 ];
 export const UNIQUE = Object.fromEntries(UNIQUES.map((u) => [u.id, u]));
 /** One-time effects take the strongest; everything else adds up. */
-export const FX_MAX = new Set(['revive', 'rezAlly', 'firstStrike', 'charge', 'chargeX']);
+export const FX_MAX = new Set(['revive', 'rezAlly', 'firstStrike', 'charge', 'chargeX', 'vitProc']);

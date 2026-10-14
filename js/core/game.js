@@ -3,7 +3,7 @@ import { BAL } from '../data/balance.js';
 import { CLASSES, CLASS_IDS } from '../data/classes.js';
 import { SLOTS } from '../data/gear.js';
 import { STAGE_COUNT, STAGES_PER_ZONE, ZONES, isBoss } from '../data/zones.js';
-import { UNIQUES } from '../data/uniques.js';
+import { UNIQUES, UNIQUE } from '../data/uniques.js';
 import { makeRng } from './rng.js';
 import { heroStats, powerOf } from './heroes.js';
 import { makeUnique, setUniqueLevel, slotOf, fits, upgradeCost, canUpgrade, salvageValue, itemScore, RARITY } from './items.js';
@@ -36,11 +36,14 @@ const changed = (why) => { for (const fn of listeners) { try { fn(why); } catch 
 
 // Regular gear is gone: every item is a Unique now. Anything an older save still holds turns into Fame.
 function retireOldGear() {
-  const old = [...state.inv.filter((it) => !it.u), ...Object.values(state.classes).flatMap((C) => Object.values(C.gear).filter((it) => it && !it.u))];
+  // regular gear, and Uniques from the old invented catalog (now the real ROTMG ones)
+  const gone = (it) => it && (!it.u || !UNIQUE[it.u]);
+  for (const id of Object.keys(state.uniques)) if (!UNIQUE[id]) delete state.uniques[id];
+  const old = [...state.inv.filter(gone), ...Object.values(state.classes).flatMap((C) => Object.values(C.gear).filter(gone))];
   if (!old.length) return;
-  const fame = old.reduce((a, it) => a + 4 * 1.15 ** (it.ilvl || 0) * (1 + Math.min(it.rarity, 5)) ** 1.6, 0);
-  state.inv = state.inv.filter((it) => it.u);
-  for (const C of Object.values(state.classes)) for (const [k, it] of Object.entries(C.gear)) if (it && !it.u) delete C.gear[k];
+  const fame = old.reduce((a, it) => a + (it.u ? BAL.salvage(Math.max(0, state.best)) * 2 : 4 * 1.15 ** (it.ilvl || 0) * (1 + Math.min(it.rarity, 5)) ** 1.6), 0);
+  state.inv = state.inv.filter((it) => !gone(it));
+  for (const C of Object.values(state.classes)) for (const [k, it] of Object.entries(C.gear)) if (gone(it)) delete C.gear[k];
   gainFame(fame, false);
   state.flags.retired = { n: old.length, fame };
 }

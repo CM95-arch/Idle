@@ -73,10 +73,10 @@ export class BattleView {
     for (const ev of events) {
       switch (ev.k) {
         case 'shot': {
-          const h = B.heroes[ev.hero], e = byId(ev.to); if (!e) break;
-          const C = CLASSES[h.cls], m = this.muzzle(h), v = this.hv[ev.hero];
+          // each projectile flies its own straight line (a fan of arrows, twin wavy orbs, a piercing bolt)
+          const h = B.heroes[ev.hero], C = CLASSES[h.cls], v = this.hv[ev.hero];
           v.kick = Math.max(v.kick, ev.big ? 1.4 : 0.7); v.muzzle = 0.06;
-          this.fx.push({ k: 'bolt', x0: m.x, y0: m.y, id: e.id, x1: e.x, y1: e.y, t: 0, life: ev.flight, c: MOD_COLOR[ev.mod] || C.shot, crit: ev.crit, w: C.weapon, big: ev.big });
+          this.fx.push({ k: 'bolt', x0: ev.x0, y0: ev.y0, ang: ev.ang, len: ev.len, t: 0, life: Math.max(0.05, ev.flight), c: ev.color || MOD_COLOR[ev.mod] || C.shot, crit: ev.crit, look: ev.look, big: ev.big, wavy: ev.wavy, size: ev.size || 1, ph: Math.random() * TAU });
           sound?.(C.weapon);
           break;
         }
@@ -153,8 +153,11 @@ export class BattleView {
           break;
         }
         case 'stunned': this.fx.push({ k: 'stars', id: ev.id, t: 0, life: 0.8 }); break;
+        case 'status': { const e = byId(ev.id); if (e) this.num(e.x, e.y - sizeOf(e) - 4, ev.s === 'curse' ? 'Cursed' : 'Armor Broken', ev.s === 'curse' ? '#ff6ad8' : '#ffb070', 9); break; }
+        case 'zap': for (let k = 0; k < 3; k++) { const a = rand(0, TAU), d = rand(10, ev.r); this.fx.push({ k: 'zap', x0: ev.x + Math.cos(this.t * 2 + k * 2.1) * ev.r * 0.6, y0: ev.y - 30 + Math.sin(this.t * 2 + k * 2.1) * ev.r * 0.3, x1: ev.x + Math.cos(a) * d, y1: ev.y + Math.sin(a) * d * 0.5 - 10, t: 0, life: 0.2, c: '#c8b8ff' }); } sound?.('zap'); break;
+        case 'beam': { const h = B.heroes[ev.hero]; this.fx.push({ k: 'beam', x0: h.x, y0: h.y - 40, x1: ev.x, y1: ev.y - 20, t: 0, life: 0.3, c: '#fff3b0', w: 9 }); this.fx.push({ k: 'groundring', x: ev.x, y: ev.y, t: 0, life: 0.5, c: '#fff3b0', r: ev.r }); this.fx.push({ k: 'boom', x: ev.x, y: ev.y - 12, t: 0, life: 0.5, c: '#fff3b0', big: true }); this.shake = Math.max(this.shake, 3); sound?.('blast'); break; }
         case 'barrier': for (const i of ev.heroes) { this.hv[i].aura = 0.8; this.hv[i].auraColor = '#7ad0ff'; } break;
-        case 'dodge': { const h = B.heroes[ev.hero]; if (Math.random() < 0.5) this.num(h.x + rand(-10, 10), h.y - 52, 'dodge', '#b8c0d8', 10); break; }
+        case 'dodge': { const h = B.heroes[ev.hero]; if (ev.invuln) { this.hv[ev.hero].aura = 0.3; this.hv[ev.hero].auraColor = '#ffffff'; } else if (Math.random() < 0.5) this.num(h.x + rand(-10, 10), h.y - 52, 'dodge', '#b8c0d8', 10); break; }
         case 'revive': { const h = B.heroes[ev.hero]; this.num(h.x, h.y - 64, 'Revived!', '#ffffff', 14, true); this.hv[ev.hero].cast = 0.8; for (let i = 0; i < 24; i++) this.parts.push({ x: h.x + rand(-16, 16), y: h.y - rand(0, 40), vx: rand(-20, 20), vy: rand(-140, -60), t: 0, life: rand(0.6, 1.1), c: '#ffffff', s: 3, add: true }); sound?.('levelup'); break; }
         case 'fall': { const h = B.heroes[ev.hero]; for (let i = 0; i < 18; i++) this.parts.push({ x: h.x, y: h.y - 20, vx: rand(-90, 90), vy: rand(-120, 0), t: 0, life: 0.8, c: '#ff4030', s: 3, g: 200 }); this.shake = 5; sound?.('fall'); break; }
         case 'ability': this.ability(B, ev, byId, sound); break;
@@ -195,6 +198,15 @@ export class BattleView {
     this.fx.push({ k: 'groundring', x: h.x, y: h.y, t: 0, life: 0.45, c: C.shot, r: 34 });
     const ts = (ev.targets || []).map(byId).filter(Boolean);
     sound?.('ability');
+    // Unique ability items look like their ROTMG selves
+    switch (ev.mode) {
+      case 'snipe': { const m = this.muzzle(h); this.fx.push({ k: 'beam', x0: m.x, y0: m.y, x1: ev.x, y1: ev.y - 20, t: 0, life: 0.4, c: '#ffe36a', w: 10 }); this.fx.push({ k: 'boom', x: ev.x, y: ev.y - 16, t: 0, life: 0.6, c: '#ffe36a', big: true }); this.shake = Math.max(this.shake, 6); sound?.('blast'); return; }
+      case 'armorBreak': this.fx.push({ k: 'groundring', x: h.x, y: h.y, t: 0, life: 0.6, c: '#ffb070', r: 120 }); for (const e of ts) this.num(e.x, e.y - sizeOf(e) - 4, 'Armor Broken', '#ffb070', 9); this.shake = Math.max(this.shake, 5); return;
+      case 'paralyze': this.fx.push({ k: 'groundring', x: ev.x, y: ev.y, t: 0, life: 0.6, c: '#ff7aa8', r: BAL.aoeRadius }); this.fx.push({ k: 'boom', x: ev.x, y: ev.y - 8, t: 0, life: 0.5, c: '#ff7aa8', big: true }); for (const e of ts) this.fx.push({ k: 'stars', id: e.id, t: 0, life: 2 }); return;
+      case 'twinBombs': for (const [dx, r] of [[0, 0.6], [0, 1.2]]) this.fx.push({ k: 'groundring', x: ev.x + dx, y: ev.y, t: 0, life: 0.7, c: '#7cff4a', r: BAL.aoeRadius * r }); for (const e of ts) this.fx.push({ k: 'burn', id: e.id, t: 0, life: 4, c: '#7cff4a' }); return;
+      case 'portals': this.fx.push({ k: 'groundring', x: ev.x, y: ev.y, t: 0, life: 0.6, c: '#b6a0ff', r: BAL.aoeRadius * 1.15 }); this.flash = 0.1; this.flashColor = '#d8c8ff'; return;
+      default: break;
+    }
     switch (ev.fx) {
       case 'aoe': this.fx.push({ k: 'boom', x: ev.x, y: ev.y - 10, t: 0, life: 0.6, c: '#ff8a3c', big: true }); this.fx.push({ k: 'groundring', x: ev.x, y: ev.y, t: 0, life: 0.5, c: '#ffb070', r: BAL.aoeRadius }); this.shake = Math.max(this.shake, 5); this.flash = 0.1; this.flashColor = '#ffb070'; break;
       case 'pierce': this.fx.push({ k: 'beam', x0: h.x, y0: h.y - 30, x1: ev.x, y1: ev.y - 30, t: 0, life: 0.35, c: '#ffe08a', w: 7 }); break;
@@ -270,6 +282,13 @@ export class BattleView {
     }
     for (const id of [...this.ev.keys()]) if (!B.enemies.some((e) => e.id === id)) this.ev.delete(id);
 
+    // Genesis portals hovering over their area
+    g.globalCompositeOperation = 'lighter';
+    for (const z of B.zones || []) for (let k = 0; k < 4; k++) {
+      const a = this.t * 2 + (k * TAU) / 4, x = z.x + Math.cos(a) * z.r * 0.6, y = z.y - 30 + Math.sin(a) * z.r * 0.3;
+      g.globalAlpha = 0.8; g.drawImage(glow('#b6a0ff', 16), x - 16, y - 16); g.strokeStyle = '#efe8ff'; g.lineWidth = 2; g.beginPath(); g.ellipse(x, y, 7, 10, 0, 0, TAU); g.stroke();
+    }
+    g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
     // effects, light on top
     this.fx = this.fx.filter((f) => (f.t += dt) < f.life);
     g.globalCompositeOperation = 'lighter';
@@ -400,30 +419,38 @@ export class BattleView {
     const p = f.t / f.life;
     switch (f.k) {
       case 'bolt': {
-        const e = B.enemies.find((x) => x.id === f.id);
-        if (e) { f.x1 = e.x; f.y1 = e.y - sizeOf(e) * 0.4; }
-        const x = f.x0 + (f.x1 - f.x0) * p, y = f.y0 + (f.y1 - f.y0) * p, ang = Math.atan2(f.y1 - f.y0, f.x1 - f.x0);
-        const cs = Math.cos(ang), sn = Math.sin(ang);
-        if (f.w === 'staff' || f.w === 'wand') {
-          // glowing orbs with a short comet tail
-          const r = (f.crit ? 9 : 7) * (f.big ? 2 : 1);
+        const cs = Math.cos(f.ang), sn = Math.sin(f.ang), d = f.len * p;
+        let x = f.x0 + cs * d, y = f.y0 + sn * d;
+        if (f.wavy) { const w = Math.sin(p * 9 + f.ph) * 7; x -= sn * w; y += cs * w; }
+        const z = (f.big ? 1.7 : 1) * f.size, look = f.look;
+        if (look === 'orb' || look === 'bolt' || look === 'star' || look === 'skull') {
+          // glowing orbs and bolts with a short comet tail
+          const r = (f.crit ? 8 : 6) * z;
           g.globalAlpha = 0.45; g.strokeStyle = f.c; g.lineWidth = r * 0.9; g.lineCap = 'round';
-          g.beginPath(); g.moveTo(x - cs * r * 3, y - sn * r * 3); g.lineTo(x, y); g.stroke();
+          const tail = Math.min(r * 3, d);
+          g.beginPath(); g.moveTo(x - cs * tail, y - sn * tail); g.lineTo(x, y); g.stroke();
           g.globalAlpha = 1; g.drawImage(glow(f.c, r * 1.8), x - r * 1.8, y - r * 1.8);
-          g.fillStyle = '#ffffff'; g.beginPath(); g.arc(x, y, r * 0.35, 0, TAU); g.fill();
-        } else if (f.w === 'sword') {
-          g.save(); g.translate(x, y); g.rotate(ang + Math.PI / 2); if (f.big) g.scale(1.6, 1.6);
+          if (look === 'star') { g.save(); g.translate(x, y); g.rotate(f.t * 14); g.fillStyle = '#fff'; for (let k = 0; k < 4; k++) { g.rotate(Math.PI / 2); g.beginPath(); g.moveTo(0, -r); g.lineTo(r * 0.25, 0); g.lineTo(-r * 0.25, 0); g.fill(); } g.restore(); }
+          else { g.fillStyle = '#ffffff'; g.beginPath(); g.arc(x, y, r * 0.35, 0, TAU); g.fill(); }
+        } else if (look === 'slash') {
+          g.save(); g.translate(x, y); g.rotate(f.ang + Math.PI / 2); g.scale(z, z);
           g.globalAlpha = 0.9; g.strokeStyle = f.c; g.lineWidth = f.crit ? 4 : 3;
           g.beginPath(); g.arc(0, 6, f.crit ? 14 : 11, Math.PI * 1.15, Math.PI * 1.85); g.stroke();
           g.globalAlpha = 0.45; g.lineWidth = 8; g.beginPath(); g.arc(0, 6, f.crit ? 14 : 11, Math.PI * 1.2, Math.PI * 1.8); g.stroke();
           g.restore();
+        } else if (look === 'blade') {
+          // a spinning thrown blade
+          g.save(); g.translate(x, y); g.rotate(f.t * 30); g.scale(z, z);
+          g.globalAlpha = 0.5; g.drawImage(glow(f.c, 9), -9, -9); g.globalAlpha = 1;
+          g.fillStyle = '#f2f4ff'; g.beginPath(); g.moveTo(0, -7); g.lineTo(2, 0); g.lineTo(0, 7); g.lineTo(-2, 0); g.closePath(); g.fill();
+          g.restore();
         } else {
-          // tracers: a bright streak with a hot white core (arrows, thrown blades)
-          const len = (f.w === 'bow' ? 22 : 13) * (f.big ? 1.7 : 1);
-          g.globalAlpha = 0.55; g.strokeStyle = f.c; g.lineWidth = (f.crit ? 4.5 : 3) * (f.big ? 1.8 : 1); g.lineCap = 'round';
-          g.beginPath(); g.moveTo(x - cs * len * 1.6, y - sn * len * 1.6); g.lineTo(x, y); g.stroke();
+          // arrows: a bright streak with a hot white core
+          const len = Math.min(22 * z, d / 1.4 + 2);
+          g.globalAlpha = 0.55; g.strokeStyle = f.c; g.lineWidth = (f.crit ? 4.5 : 3) * z; g.lineCap = 'round';
+          g.beginPath(); g.moveTo(x - cs * len * 1.4, y - sn * len * 1.4); g.lineTo(x, y); g.stroke();
           g.globalAlpha = 1; g.strokeStyle = '#ffffff'; g.lineWidth = 1.4;
-          g.beginPath(); g.moveTo(x - cs * len * 0.8, y - sn * len * 0.8); g.lineTo(x, y); g.stroke();
+          g.beginPath(); g.moveTo(x - cs * len * 0.7, y - sn * len * 0.7); g.lineTo(x, y); g.stroke();
           g.drawImage(glow(f.c, 7), x - 7, y - 7);
         }
         break;
