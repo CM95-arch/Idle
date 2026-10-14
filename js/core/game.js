@@ -6,8 +6,8 @@ import { STAGE_COUNT, STAGES_PER_ZONE, ZONES, isBoss } from '../data/zones.js';
 import { UNIQUES } from '../data/uniques.js';
 import { makeRng } from './rng.js';
 import { heroStats, powerOf } from './heroes.js';
-import { makeItem, makeUnique, setUniqueLevel, rollRarity, kindFor, slotOf, fits, upgradeCost, canUpgrade, salvageValue, itemScore } from './items.js';
-import { createBattle, stepBattle, simulate, enemyStats } from './battle.js';
+import { makeUnique, setUniqueLevel, slotOf, fits, upgradeCost, canUpgrade, salvageValue, itemScore, RARITY } from './items.js';
+import { createBattle, stepBattle, simulate, enemyStats, advanceStage, refreshHeroes } from './battle.js';
 
 const KEY = 'realm-idle-save-v1';
 export const LAST_STAGE = STAGE_COUNT - 1;
@@ -22,7 +22,7 @@ function fresh() {
     extra: { offlineHours: 0, inventory: 0 }, // Gold upgrades (store not open yet)
     lastSeen: Date.now(), created: Date.now(),
     stats: { kills: 0, clears: 0, fameEarned: 0, bosses: 0, items: 0, played: 0 },
-    settings: { sound: true, autoSalvage: -1 }, // auto-salvage drops at or below this rarity (-1 = off)
+    settings: { sound: true },
     uniques: {}, // Unique id → how many you've found
     flags: {},
   };
@@ -34,6 +34,17 @@ export const onChange = (fn) => listeners.add(fn);
 // a broken listener must never undo or hide an action that already happened
 const changed = (why) => { for (const fn of listeners) { try { fn(why); } catch (e) { setTimeout(() => { throw e; }); } } };
 
+// Regular gear is gone: every item is a Unique now. Anything an older save still holds turns into Fame.
+function retireOldGear() {
+  const old = [...state.inv.filter((it) => !it.u), ...Object.values(state.classes).flatMap((C) => Object.values(C.gear).filter((it) => it && !it.u))];
+  if (!old.length) return;
+  const fame = old.reduce((a, it) => a + 4 * 1.15 ** (it.ilvl || 0) * (1 + Math.min(it.rarity, 5)) ** 1.6, 0);
+  state.inv = state.inv.filter((it) => it.u);
+  for (const C of Object.values(state.classes)) for (const [k, it] of Object.entries(C.gear)) if (it && !it.u) delete C.gear[k];
+  gainFame(fame, false);
+  state.flags.retired = { n: old.length, fame };
+}
+
 // ---------- save ----------
 export function load() {
   try {
@@ -42,6 +53,7 @@ export function load() {
   } catch { state = fresh(); }
   rng = makeRng(state.seed);
   syncUniques();
+  retireOldGear();
   return state;
 }
 export function save() {
@@ -58,11 +70,10 @@ export const partyStats = () => state.party.filter(Boolean).map((c) => {
   return { ...heroStats(c, C, state.mult), weaponRarity: C.gear.weapon?.rarity ?? -1, gearRarity: Math.max(-1, ...gear.map((it) => it.rarity)) };
 });
 export const partyPower = () => powerOf(partyStats());
-export const invCap = () => BAL.inventory + state.extra.inventory;
 export const offlineCapH = () => BAL.offlineCapHours + state.extra.offlineHours;
 const fameMult = () => state.mult.fame * (1 + Math.max(0, ...partyStats().map((s) => s.fame), 0)) * BAL.realmFame ** state.realm;
-const luck = () => Math.max(0, ...partyStats().map((s) => s.fx.luck || 0));
-export const dropQuality = () => state.mult.drops + Math.min(1.5, (state.best + 1) / STAGE_COUNT) * 0.6 + luck();
+// luck (a Unique effect) and the drop bonus from Ascending both make Uniques turn up more often
+const luck = () => Math.max(0, ...partyStats().map((s) => s.fx.luck || 0)) + state.mult.drops;
 export const ilvlFor = (stage) => stage + BAL.realmIlvl * state.realm;
 // Uniques keep pace with you: as strong as gear from a few stages behind your best
 const syncUniques = () => setUniqueLevel(ilvlFor(Math.max(0, state.best - BAL.uniqueLag)));
@@ -133,7 +144,7 @@ export function equip(cls, itemId) {
 }
 export function unequip(cls, slot) {
   const C = state.classes[cls];
-  if (!C.gear[slot] || state.inv.length >= invCap()) return false;
+  if (!C.gear[slot]) return false;
   state.inv.push(C.gear[slot]); delete C.gear[slot]; changed('gear');
   return true;
 }
@@ -149,14 +160,6 @@ export function upgrade(itemId) {
   state.fame -= upgradeCost(f.it); f.it.up++;
   changed('gear');
   return true;
-}
-/** Change the auto-salvage level, and apply it to what's already in the bag. Returns { n, fame }. */
-export function setAutoSalvage(level) {
-  state.settings.autoSalvage = level;
-  const ids = state.inv.filter(autoSalvages).map((it) => it.id);
-  const fame = ids.length ? salvage(ids) : 0;
-  save(); changed('gear');
-  return { n: ids.length, fame };
 }
 export function salvage(ids) {
   let got = 0;
@@ -195,44 +198,34 @@ export function bestUpgrades() {
 
 // ---------- rewards ----------
 function gainFame(n, earned = true) { state.fame += n; if (earned) state.stats.fameEarned += n; }
-function rollDrop(stage) {
-  const party = state.party.filter(Boolean);
-  const cls = party[rng.int(0, party.length - 1)], slot = SLOTS[rng.int(0, SLOTS.length - 1)];
-  const rarity = rollRarity(rng, dropQuality());
-  return makeItem(rng, state.nextId++, kindFor(cls, slot), ilvlFor(stage), rarity);
-}
+const uniqueChance = (zone, boss) => (boss ? BAL.uniqueBoss * (zone === ZONES.length - 1 ? 2 : 1) : BAL.uniqueKill) * (1 + luck());
 /** Maybe a Unique: the zone boss drops one now and then; its other enemies very rarely. */
-function rollUnique(stage, boss) {
+function rollUnique(stage, boss, force = false) {
   const zone = Math.min(ZONES.length - 1, Math.floor(stage / STAGES_PER_ZONE));
-  const chance = (boss ? BAL.uniqueBoss * (zone === ZONES.length - 1 ? 2 : 1) : BAL.uniqueWave) * (1 + luck());
-  if (rng.next() >= chance) return null;
+  if (!force && rng.next() >= uniqueChance(zone, boss)) return null;
   // ones you haven't found yet, and ones a class you own can wear, come up more often
   const pool = UNIQUES.filter((u) => u.zone === zone);
   // Exalted ones are far rarer than the rest
   const w = pool.map((u) => (u.exalted ? BAL.exaltedWeight : 1) * (state.uniques[u.id] ? 1 : 3) * (Object.keys(state.classes).some((c) => fits(c, { kind: u.kind })) ? 2 : 1));
   let r = rng.next() * w.reduce((a, b) => a + b, 0), U = pool[0];
   for (let i = 0; i < pool.length; i++) { r -= w[i]; if (r < 0) { U = pool[i]; break; } }
-  const it = makeUnique(state.nextId++, U.id);
   const first = !state.uniques[U.id];
   state.uniques[U.id] = (state.uniques[U.id] || 0) + 1;
   state.stats.uniques = (state.stats.uniques || 0) + 1;
   state.stats.items++;
-  state.inv.push(it); // Uniques always fit, even in a full bag
-  return { it, salvaged: 0, unique: true, first, exalted: !!U.exalted };
-}
-/** Put a drop in the bag (or turn it into Fame if the bag is full or it's set to auto-salvage). */
-// auto-salvage never eats a Unique, or an upgrade for someone in the party
-const autoSalvages = (it) => !it.u && it.rarity <= state.settings.autoSalvage && !state.party.some((c) => isUpgradeFor(c, it));
-function stash(it) {
-  state.stats.items++;
-  const auto = autoSalvages(it);
-  if (auto || state.inv.length >= invCap()) {
-    const v = salvageValue(it); gainFame(v, false);
-    if (auto) { const A = (state.stats.auto ||= { n: 0, fame: 0 }); A.n++; A.fame += v; }
-    return { it, salvaged: v };
+  // one you already own: it melts into your copy as free upgrades (and Fame once that copy is maxed)
+  const owned = [...state.inv, ...Object.values(state.classes).flatMap((C) => Object.values(C.gear))].filter((x) => x?.u === U.id).sort((a, b) => b.up - a.up)[0];
+  if (owned) {
+    const ups = Math.min(BAL.dupeUpgrades, RARITY[owned.rarity].maxUp - owned.up);
+    owned.up += ups;
+    const fame = ups < BAL.dupeUpgrades ? salvageValue(makeUnique(0, U.id)) : 0;
+    if (fame) gainFame(fame, false);
+    changed('gear');
+    return { it: owned, salvaged: 0, unique: true, first: false, dupe: { ups, fame }, exalted: !!U.exalted };
   }
+  const it = makeUnique(state.nextId++, U.id);
   state.inv.push(it);
-  return { it, salvaged: 0 };
+  return { it, salvaged: 0, unique: true, first, exalted: !!U.exalted };
 }
 const killFame = (stage) => BAL.fameKill(stage) * fameMult();
 const clearFame = (stage) => BAL.fameClear(stage) * fameMult() * (isBoss(stage) ? BAL.bossFame : 1);
@@ -240,19 +233,21 @@ const clearFame = (stage) => BAL.fameClear(stage) * fameMult() * (isBoss(stage) 
 // ---------- the live battle ----------
 export let battle = null;
 export function startBattle() {
-  battle = createBattle(state.stage, state.realm, partyStats(), rng.int(0, 2 ** 31));
+  const st = partyStats(); statSig = sigOf(st);
+  battle = createBattle(state.stage, state.realm, st, rng.int(0, 2 ** 31));
   changed('battle');
 }
 /** Apply a tick's battle events to the economy. Returns rewards for the UI to show. */
 function settle(events) {
   const out = [];
   for (const ev of events) {
-    if (ev.k === 'die') { const f = killFame(state.stage); gainFame(f); state.stats.kills++; out.push({ k: 'fame', n: f, id: ev.id }); }
-    if (ev.k === 'waveClear') {
-      const drops = ev.boss ? 2 : rng.next() < BAL.dropChancePerWave ? 1 : 0;
-      for (let i = 0; i < drops; i++) out.push({ k: 'drop', ...stash(rollDrop(state.stage)) });
-      const u = rollUnique(state.stage, ev.boss);
-      if (u) out.push({ k: 'drop', ...u });
+    if (ev.k === 'die') {
+      const f = killFame(state.stage) * (ev.boss ? 20 : ev.elite ? 4 : 1); gainFame(f); state.stats.kills++;
+      const at = { x: ev.x, y: ev.y };
+      out.push({ k: 'fame', n: f, id: ev.id, at });
+      // the only loot: Uniques, from bosses now and then, and very rarely from anything else (elites a bit more)
+      const u = rollUnique(state.stage, ev.boss) || (ev.elite ? rollUnique(state.stage, false) : null);
+      if (u) out.push({ k: 'drop', at, ...u });
     }
     if (ev.k === 'won') {
       const f = clearFame(state.stage); gainFame(f); state.stats.clears++;
@@ -266,20 +261,33 @@ function settle(events) {
   return out;
 }
 /** Advance the live battle by one tick. Returns that tick's battle events and the rewards they paid. */
+let statSig = '', statT = 0;
+const sigOf = (st) => JSON.stringify(st.map((s) => [s.cls, Math.round(s.atk), Math.round(s.hp), Math.round(s.def), +s.spd.toFixed(2), s.crit, s.fx]));
 export function tickBattle() {
   if (!battle) startBattle();
+  // level-ups and new gear reach the fighting party within a second; a new line-up starts a fresh fight
+  if ((statT += 1) >= 20) {
+    statT = 0;
+    const st = partyStats(), sig = sigOf(st);
+    if (sig !== statSig) { statSig = sig; if (!refreshHeroes(battle, st)) startBattle(); }
+  }
   stepBattle(battle);
   const events = battle.events;
   battle.events = [];
-  return { events, rewards: settle(events) };
+  const rewards = settle(events);
+  if (battle.cleared) { pickNextStage(true); advanceStage(battle, state.stage); save(); changed('stage'); }
+  return { events, rewards };
 }
-/** Called by the UI once a finished battle's last effects have played. */
-export function nextBattle() {
-  const won = battle.state === 'won';
+function pickNextStage(won) {
   if (won && state.autoPush && state.stage === state.best && state.stage < LAST_STAGE) state.stage++;
-  else if (!won) { state.flags.wallPower = partyPower(); state.stage = Math.max(0, state.best); if (state.best < 0) state.stage = 0; state.flags.wallAt = state.best + 1; }
+  else if (!won) { state.flags.wallPower = partyPower(); state.stage = Math.max(0, state.best); state.flags.wallAt = state.best + 1; }
   // after a wall, try again once the party has grown 8%
   if (state.autoPush && state.flags.wallAt != null && state.stage === state.best && partyPower() >= state.flags.wallPower * 1.08 && state.best < LAST_STAGE) { state.stage = state.best + 1; state.flags.wallAt = null; }
+}
+/** Called by the UI once a finished battle's last effects have played. */
+/** Called by the UI after the party has fallen and the defeat has played out: regroup a stage back. */
+export function nextBattle() {
+  pickNextStage(false);
   startBattle();
   save();
 }
@@ -313,15 +321,15 @@ export function collectOffline(now = Date.now()) {
   const clears = fights * r.winRate;
   const fame = clears * (clearFame(stage) + r.kills * killFame(stage)) + (fights - clears) * r.kills * 0.5 * killFame(stage);
   gainFame(fame); state.stats.clears += Math.floor(clears); state.stats.kills += Math.floor(fights * r.kills);
-  const nDrops = Math.min(60, Math.floor(clears * BAL.waves * BAL.dropChancePerWave * (isBoss(stage) ? 3 : 1)));
-  const drops = []; let salvaged = 0;
-  for (let i = 0; i < nDrops; i++) { const d = stash(rollDrop(stage)); drops.push(d.it); salvaged += d.salvaged; }
+  const salvaged = 0;
   // Uniques: one roll per boss kill (or per wave on other stages), at most three
   const uniques = [];
-  const tries = Math.min(4000, Math.floor(isBoss(stage) ? clears : clears * BAL.waves));
-  for (let i = 0; i < tries && uniques.length < 3; i++) { const u = rollUnique(stage, isBoss(stage)); if (u) uniques.push(u.it); }
+  const zone = Math.min(ZONES.length - 1, Math.floor(stage / STAGES_PER_ZONE));
+  const expect = clears * ((isBoss(stage) ? uniqueChance(zone, true) : 0) + BAL.stageKills * uniqueChance(zone, false));
+  const n = Math.min(3, Math.floor(expect) + (rng.next() < expect % 1 ? 1 : 0));
+  for (let i = 0; i < n; i++) uniques.push(rollUnique(stage, isBoss(stage), true));
   save(); changed('offline');
-  return { away, capped: raw > away, fame, clears: Math.floor(clears), drops: [...uniques, ...drops], uniques, salvaged, stage };
+  return { away, capped: raw > away, fame, clears: Math.floor(clears), drops: uniques.map((u) => u.it), uniques, salvaged, stage };
 }
 
 // ---------- Ascension ----------

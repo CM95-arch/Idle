@@ -55,9 +55,8 @@ export function showOffline(r, onCollect) {
       h('div', { class: 'kicker' }, 'Welcome back'),
       h('div', { class: 'muted', style: { fontWeight: 800 } }, `Your party fought for ${fmtDur(r.away * 1000)}${r.capped ? ' (the most it can bank)' : ''}`),
       h('div', { class: 'row', style: { justifyContent: 'center', gap: '10px' } }, h('i', { class: 'mini-coin', style: { width: '30px', height: '30px' } }), num),
-      h('div', { class: 'statline' }, h('span', {}, h('b', {}, fmt(r.clears)), ' stages cleared'), h('span', {}, h('b', {}, r.drops.length), ' items found')),
+      h('div', { class: 'statline' }, h('span', {}, h('b', {}, fmt(r.clears)), ' stages cleared'), h('span', {}, h('b', {}, r.drops.length), ` Unique${r.drops.length === 1 ? '' : 's'} found`)),
       shown.length ? h('div', { class: 'lootrow' }, shown.map((it, i) => { const t = itemTile(it, { upFor: false, size: 28 }); t.style.animationDelay = `${0.4 + i * 0.06}s`; return t; }), r.drops.length > shown.length ? h('div', { class: 'itile empty', style: { width: '46px' } }, `+${r.drops.length - shown.length}`) : null) : null,
-      r.salvaged ? h('div', { class: 'dim', style: { fontSize: '12px', fontWeight: 800 } }, `${fmt(r.salvaged)} Fame of that came from auto-salvaged or overflow gear.`) : null,
       h('button', { class: 'btn block', onclick: () => { play('clear'); close(); onCollect?.(); } }, 'Collect'));
   });
 }
@@ -87,14 +86,14 @@ export function showAscended(P) {
       h('div', { class: 'gain' }, h('small', {}, 'Fame'), h('b', {}, `×${(1 + P.gain).toFixed(2)}`)),
       h('div', { class: 'gain' }, h('small', {}, 'Damage'), h('b', {}, `×${(1 + P.gain * 0.3).toFixed(2)}`)),
       h('div', { class: 'gain' }, h('small', {}, 'Offline'), h('b', {}, `+${Math.round(P.gain * 15)}%`)),
-      h('div', { class: 'gain' }, h('small', {}, 'Drop quality'), h('b', {}, `+${Math.round(P.gain * 30)}%`))),
+      h('div', { class: 'gain' }, h('small', {}, 'Unique find'), h('b', {}, `+${Math.round(P.gain * 30)}%`))),
     h('button', { class: 'btn violet block', onclick: close }, 'Begin anew')));
 }
 
 /** The white bag: a Unique dropped. */
-export function showUnique(it, onSee) {
+export function showUnique(it, onSee, dupe = null) {
   enqueue((close) => {
-    const U = UNIQUE[it.u], n = Object.keys(G.state.uniques).length, dupe = G.state.uniques[it.u] > 1, ex = !!U.exalted;
+    const U = UNIQUE[it.u], n = Object.keys(G.state.uniques).length, ex = !!U.exalted;
     const icon = itemTile(it, { upFor: false, size: 96 }); icon.classList.add('hero-item');
     play(ex ? 'exalted' : 'unique');
     return h('div', { class: `celebrate unique${ex ? ' exalted' : ''}` }, h('div', { class: 'rays' }),
@@ -103,7 +102,8 @@ export function showUnique(it, onSee) {
       h('div', { class: 'big', style: { fontSize: '30px', color: ex ? '#fff3c0' : '#ffffff', textShadow: ex ? '0 0 28px rgba(255,210,90,.9), 0 3px 0 #5a3a0a' : '0 0 24px rgba(111,242,255,.8), 0 3px 0 #2a3050' } }, U.name),
       h('div', { class: 'muted', style: { fontWeight: 800, fontSize: '13px' } }, `Dropped by ${ZONES[U.zone].boss[0]}`),
       h('div', { class: 'panel', style: { textAlign: 'left' } }, h('b', { style: { color: '#6ff2ff' } }, '✦ Unique effect'), h('div', { style: { fontSize: '14px', fontWeight: 700, marginTop: '2px' } }, U.desc)),
-      h('div', { class: 'dim', style: { fontSize: '12px', fontWeight: 800 } }, `Collection ${n} / ${UNIQUES.length} · Uniques keep pace with your progress and stay with you when you Ascend.`),
+      dupe ? h('div', { class: 'gold', style: { fontWeight: 900 } }, dupe.ups ? `Melted into your copy: +${dupe.ups} upgrade${dupe.ups === 1 ? '' : 's'} (now +${it.up})` : '', dupe.fame ? `${dupe.ups ? ' and ' : 'Your copy is maxed: '}+${fmt(dupe.fame)} Fame` : '') : null,
+      h('div', { class: 'dim', style: { fontSize: '12px', fontWeight: 800 } }, `Collection ${n} / ${UNIQUES.length} · Bonuses are percentages, so Uniques grow with your heroes. Kept when you Ascend.`),
       h('div', { class: 'row' }, h('button', { class: 'btn alt grow', onclick: () => { close(); onSee?.(it); } }, 'View'), h('button', { class: 'btn grow', onclick: close }, 'Excellent')));
   });
 }

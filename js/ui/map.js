@@ -3,10 +3,10 @@ import { ZONES, STAGES_PER_ZONE, stageLabel, isBoss, realmName } from '../data/z
 import * as G from '../core/game.js';
 import { h } from './dom.js';
 import { fmt, tap } from './common.js';
-import { backdrop } from './art/scenes.js';
+import { arena } from './art/arena.js';
 
 const thumbs = new Map();
-const thumb = (id) => { if (!thumbs.has(id)) thumbs.set(id, backdrop(id).toDataURL('image/jpeg', 0.7)); return thumbs.get(id); };
+const thumb = (id) => { if (!thumbs.has(id)) thumbs.set(id, arena(id).toDataURL('image/jpeg', 0.7)); return thumbs.get(id); };
 
 export function createMapScreen(root, { goBattle }) {
   function render() {

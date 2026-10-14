@@ -1,6 +1,6 @@
 // Items: making them, reading their stats, upgrading and salvaging them.
 import { BAL } from '../data/balance.js';
-import { KINDS, MAIN, RING_STATS, EXTRA, PREFIX } from '../data/gear.js';
+import { KINDS } from '../data/gear.js';
 import { CLASSES } from '../data/classes.js';
 import { UNIQUE } from '../data/uniques.js';
 
@@ -8,10 +8,10 @@ export const RARITY = BAL.rarities;
 export const slotOf = (it) => KINDS[it.kind].slot;
 export const UNIQUE_RARITY = RARITY.length - 1;
 export const uniqueOf = (it) => (it?.u ? UNIQUE[it.u] : null);
-// Uniques keep pace with you: their item level is always that of your best stage (set by the game).
+// Uniques keep pace with you: their item level (for upgrade costs and salvage) follows your best stage.
 let uniqueLevel = 0;
 export const setUniqueLevel = (n) => { uniqueLevel = Math.max(0, n); };
-export const ilvlOf = (it) => (it.u ? uniqueLevel : it.ilvl);
+export const ilvlOf = () => uniqueLevel; // costs and salvage keep pace with your progress
 
 /** Which kind a class wears in a slot. */
 export function kindFor(cls, slot) {
@@ -20,28 +20,11 @@ export function kindFor(cls, slot) {
 }
 export const fits = (cls, it) => kindFor(cls, slotOf(it)) === it.kind;
 
-/** Rarity roll; `quality` (0 = base) shifts the odds toward rarer pieces. */
-export function rollRarity(rng, quality = 0) {
-  const w = RARITY.map((r, i) => r.weight * (1 + quality) ** i);
-  let roll = rng.next() * w.reduce((a, b) => a + b, 0);
-  for (let i = 0; i < w.length; i++) { roll -= w[i]; if (roll < 0) return i; }
-  return 0;
-}
-
-export function makeItem(rng, id, kind, ilvl, rarity) {
-  const slot = KINDS[kind].slot, R = RARITY[rarity];
-  const keys = Object.keys(EXTRA).filter((k) => !(slot === 'weapon' && k === 'atkPct'));
-  const extras = [];
-  for (let i = 1; i < R.stats; i++) {
-    const k = keys.splice(Math.floor(rng.next() * keys.length), 1)[0], E = EXTRA[k];
-    extras.push({ k, v: Math.round(E.min + (E.max - E.min) * rng.next() * (0.7 + rarity * 0.06)) });
-  }
-  const it = { id, kind, ilvl, rarity, up: 0, extras };
-  if (slot === 'ring') it.ring = Object.keys(RING_STATS)[Math.floor(rng.next() * 3)];
-  const P = PREFIX[rarity], N = KINDS[kind].names;
-  it.name = `${P[Math.floor(rng.next() * P.length)]} ${N[Math.floor(rng.next() * N.length)]}`;
-  return it;
-}
+// Every item is a Unique. Its stats are percentages, so they grow with your heroes forever and a Unique is
+// never outgrown: weapons add Attack, armor HP and Defense, ability items ability power and Attack, rings their
+// stat. Exalted ones give half as much again. Each upgrade adds another share of the base.
+const UT_BASE = { weapon: { atkPct: 40 }, armor: { hpPct: 30, defPct: 30 }, ability: { pow: 0.25, atkPct: 15 } };
+const RING_BASE = { hp: { hpPct: 30 }, atk: { atkPct: 25 }, def: { defPct: 40 } };
 
 export function makeUnique(id, uid) {
   const U = UNIQUE[uid];
@@ -50,22 +33,21 @@ export function makeUnique(id, uid) {
   return it;
 }
 
-/** Flat stats an item gives (hp, atk, def, pow) plus its percent extras. */
+/** What an item gives: percent bonuses (and ability power), its fixed extra stat included. */
 export function itemStats(it) {
-  const slot = slotOf(it), R = RARITY[it.rarity];
-  const scale = BAL.gearGrowth ** ilvlOf(it) * R.mult * (1 + BAL.upgradeStep * it.up);
+  const slot = slotOf(it), U = uniqueOf(it);
+  const k = (U?.exalted ? 1.5 : 1) * (1 + BAL.upgradeStep * it.up);
   const out = {};
-  const base = slot === 'ring' ? { [it.ring]: RING_STATS[it.ring] } : slot === 'ability' ? { atk: 3, ...MAIN.ability } : MAIN[slot];
-  for (const [k, v] of Object.entries(base)) out[k] = k === 'pow' ? v * R.mult * (1 + BAL.upgradeStep * it.up) : v * scale;
-  for (const e of it.extras) out[e.k] = (out[e.k] || 0) + e.v;
+  for (const [s, v] of Object.entries(slot === 'ring' ? RING_BASE[it.ring] || RING_BASE.atk : UT_BASE[slot])) out[s] = v * k;
+  for (const e of it.extras || []) out[e.k] = (out[e.k] || 0) + e.v;
   return out;
 }
-/** A single number for comparing items of the same slot. */
+/** A single number for comparing items of the same slot (the special effect counts for a lot). */
 export function itemScore(it) {
   const s = itemStats(it);
-  return ((s.atk || 0) * 5 + (s.hp || 0) + (s.def || 0) * 12 + (s.pow || 0) * 300 + ((s.atkPct || 0) + (s.hpPct || 0) + (s.defPct || 0) + (s.spdPct || 0) * 1.5 + (s.crit || 0) * 1.5 + (s.famePct || 0)) * 3 * BAL.gearGrowth ** ilvlOf(it)) * (it.u ? 1.25 : 1);
+  return ((s.atkPct || 0) + (s.hpPct || 0) * 0.6 + (s.defPct || 0) * 0.5 + (s.pow || 0) * 100 + (s.spdPct || 0) + (s.crit || 0) + (s.famePct || 0) * 0.3 + 20) * (uniqueOf(it)?.exalted ? 1.3 : 1);
 }
 export const upgradeCost = (it) => BAL.upgradeCost(ilvlOf(it), it.up, it.rarity);
 export const canUpgrade = (it) => it.up < RARITY[it.rarity].maxUp;
-export const salvageValue = (it) => BAL.salvage(ilvlOf(it), it.rarity) + Math.round(upgradeSpent(it) * 0.5);
+export const salvageValue = (it) => BAL.salvage(ilvlOf(it)) + Math.round(upgradeSpent(it) * 0.5);
 export function upgradeSpent(it) { let t = 0; for (let u = 0; u < it.up; u++) t += BAL.upgradeCost(ilvlOf(it), u, it.rarity); return t; }

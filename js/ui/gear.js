@@ -3,19 +3,18 @@ import { CLASSES } from '../data/classes.js';
 import { SLOT_NAME, EXTRA, STAT_NAME } from '../data/gear.js';
 import { BAL } from '../data/balance.js';
 import * as G from '../core/game.js';
-import { itemStats, slotOf, fits, itemScore, upgradeCost, canUpgrade, salvageValue, ilvlOf, uniqueOf } from '../core/items.js';
+import { itemStats, slotOf, fits, itemScore, upgradeCost, canUpgrade, salvageValue, uniqueOf } from '../core/items.js';
 import { h, openSheet, toast } from './dom.js';
 import { UNIQUES } from '../data/uniques.js';
 import { ZONES } from '../data/zones.js';
 import { itemImage } from './art/items.js';
 import { artImg } from './art/core.js';
-import { coin, fmt, itemTile, itemIcon, portrait, rcolor, tap } from './common.js';
+import { coin, fmt, itemTile, itemIcon, portrait, tap } from './common.js';
 
 const listNames = (cls) => (cls.length > 2 ? `${cls.slice(0, -1).map((c) => CLASSES[c].name).join(', ')} and ${CLASSES[cls[cls.length - 1]].name}` : cls.map((c) => CLASSES[c].name).join(' and '));
 const PLURAL = { staff: 'Staves', wand: 'Wands', bow: 'Bows', dagger: 'Daggers', sword: 'Swords', robe: 'Robes', leather: 'Leather armor', heavy: 'Heavy armor', ring: 'Rings', spell: 'Spells', tome: 'Tomes', quiver: 'Quivers', cloak: 'Cloaks', helm: 'Helms', shield: 'Shields', trap: 'Traps', skull: 'Skulls', poison: 'Poisons', seal: 'Seals', scepter: 'Scepters' };
 const KIND_LABEL = (it) => PLURAL[it.kind] || it.kind;
 const FILTERS = [['all', 'All'], ['weapon', 'Weapons'], ['ability', 'Abilities'], ['armor', 'Armor'], ['ring', 'Rings']];
-const AUTO = [[-1, 'Off'], [0, 'Common'], [1, '≤ Uncommon'], [2, '≤ Rare']];
 
 function statRows(it, vs) {
   const a = itemStats(it), b = vs ? itemStats(vs) : null;
@@ -40,9 +39,9 @@ export function openItemSheet(id, onChange) {
         h('div', { class: `itile r${it.rarity}${uniqueOf(it)?.exalted ? ' ex' : ''}`, style: { '--rc': R.color, width: '72px' } }, itemIcon(it, 56)),
         h('div', { class: 'grow' },
           h('div', { style: { fontWeight: 900, fontSize: '18px', color: uniqueOf(it)?.exalted ? '#ffe08a' : R.color } }, `${it.name}${it.up ? ` +${it.up}` : ''}`),
-          h('div', { class: 'muted', style: { fontWeight: 800, fontSize: '12px' } }, `${uniqueOf(it)?.exalted ? 'Exalted Unique' : R.name} ${SLOT_NAME[slot]} · item level ${ilvlOf(it) + 1}`),
+          h('div', { class: 'muted', style: { fontWeight: 800, fontSize: '12px' } }, `${uniqueOf(it)?.exalted ? 'Exalted Unique' : 'Unique'} ${SLOT_NAME[slot]} · from ${ZONES[uniqueOf(it)?.zone ?? 0].boss[0]}`),
           wornBy ? h('div', { class: 'gold', style: { fontWeight: 800, fontSize: '12px' } }, `Worn by ${CLASSES[wornBy].name}`) : null)),
-      uniqueOf(it) ? h('div', { class: 'panel ufx' }, h('b', {}, '✦ Unique effect'), h('div', { style: { fontSize: '14px', fontWeight: 700, marginTop: '2px' } }, uniqueOf(it).desc), h('div', { class: 'dim', style: { fontSize: '11px', fontWeight: 800, marginTop: '4px' } }, 'Grows with you: always as strong as gear from just behind your best stage. Kept when you Ascend (upgrades reset).')) : null,
+      uniqueOf(it) ? h('div', { class: 'panel ufx' }, h('b', {}, '✦ Unique effect'), h('div', { style: { fontSize: '14px', fontWeight: 700, marginTop: '2px' } }, uniqueOf(it).desc), h('div', { class: 'dim', style: { fontSize: '11px', fontWeight: 800, marginTop: '4px' } }, 'Its bonuses are percentages, so it grows with your heroes and never goes stale. Kept when you Ascend (upgrades reset).')) : null,
       h('div', { class: 'panel stats', style: { gridTemplateColumns: '1fr' } }, statRows(it)),
       !wornBy && owners.length ? h('div', {}, h('div', { class: 'h2', style: { marginTop: 0 } }, 'Equip on'),
         ...owners.map((c) => {
@@ -57,7 +56,7 @@ export function openItemSheet(id, onChange) {
         h('button', { class: 'btn grow', disabled: !canUpgrade(it) || G.state.fame < upgradeCost(it), onclick: () => { if (G.upgrade(it.id)) { tap('upgrade'); rerender(); onChange?.(); } } },
           canUpgrade(it) ? [h('span', {}, `Upgrade to +${it.up + 1}`), coin(upgradeCost(it))] : 'Fully upgraded'),
         !wornBy ? h('button', { class: 'btn alt', onclick: () => { const v = G.salvage([it.id]); tap('fame'); toast({ title: `+${fmt(v)} Fame`, body: `Salvaged ${it.name}`, kind: 'gold' }); onChange?.(); close(); } }, h('span', {}, 'Salvage'), coin(salvageValue(it))) : null),
-      h('div', { class: 'dim center', style: { fontSize: '11px', fontWeight: 800 } }, `Upgrades ${it.up} / ${R.maxUp} · each adds ${Math.round(BAL.upgradeStep * 100)}% to its main stats`),
+      h('div', { class: 'dim center', style: { fontSize: '11px', fontWeight: 800 } }, `Upgrades ${it.up} / ${R.maxUp} · each adds ${Math.round(BAL.upgradeStep * 100)}% to its bonus · duplicates add ${BAL.dupeUpgrades}`),
     ];
   });
 }
@@ -88,8 +87,7 @@ export function createGearScreen(root, { onChange }) {
     const allOn = items.length && items.every((it) => sel.has(it.id));
     return h('div', { class: 'salvbar' },
       h('div', { class: 'row' },
-        h('button', { class: 'chip', onclick: () => { for (const it of items) if (it.rarity === 0) sel.add(it.id); tap(); render(); } }, 'All Common'),
-        h('button', { class: 'chip', disabled: !items.length, onclick: () => { for (const it of items) if (allOn) sel.delete(it.id); else if (!it.u) sel.add(it.id); tap(); render(); } }, allOn ? 'Clear shown' : 'Select shown'),
+        h('button', { class: 'chip', disabled: !items.length, onclick: () => { for (const it of items) if (allOn) sel.delete(it.id); else sel.add(it.id); tap(); render(); } }, allOn ? 'Clear shown' : 'Select shown'),
         picked.length ? h('button', { class: 'chip', onclick: () => { sel.clear(); tap(); render(); } }, 'Clear') : null),
       h('div', { class: 'row' },
         h('button', { class: 'btn alt sm', onclick: endSalvage }, 'Cancel'),
@@ -98,33 +96,23 @@ export function createGearScreen(root, { onChange }) {
   }
   function render() {
     root.classList.remove('fit');
-    const s = G.state;
-    const items = s.inv.filter((it) => filter === 'all' || slotOf(it) === filter).sort((a, b) => b.rarity - a.rarity || b.ilvl - a.ilvl || b.up - a.up);
-    const auto = AUTO.find(([v]) => v === s.settings.autoSalvage) || AUTO[0];
+    const s = G.state, found = Object.keys(s.uniques).length;
+    const items = s.inv.filter((it) => filter === 'all' || slotOf(it) === filter).sort((a, b) => !!uniqueOf(b)?.exalted - !!uniqueOf(a)?.exalted || b.up - a.up || a.name.localeCompare(b.name));
     root.replaceChildren(
-      h('div', { class: 'row between' }, h('div', { class: 'h1' }, 'Gear'), h('div', { class: 'chip', style: { color: s.inv.length >= G.invCap() ? 'var(--red)' : '' } }, `Bag ${s.inv.length} / ${G.invCap()}`)),
+      h('div', { class: 'row between' }, h('div', { class: 'h1' }, 'Uniques'),
+        h('button', { class: 'chip', onclick: openCollection }, `✦ ${found} / ${UNIQUES.length} found`)),
       h('div', { class: 'row', style: { overflowX: 'auto', paddingBottom: '4px' } }, FILTERS.map(([k, l]) => h('button', { class: `chip${k === filter ? ' on' : ''}`, onclick: () => { filter = k; tap(); render(); } }, l))),
-      h('div', { class: 'h2' }, sel ? 'Tap items to salvage them' : items.length ? `${items.length} item${items.length === 1 ? '' : 's'} · ▲ = better for someone in your party` : ''),
+      h('div', { class: 'h2' }, sel ? 'Tap Uniques to salvage them' : items.length ? `In your vault · ${items.length} · ▲ = better for someone in your party` : ''),
       items.length ? h('div', { class: 'igrid' }, items.map(tile))
-        : h('div', { class: 'panel center muted' }, s.inv.length ? 'Nothing in this category.' : 'Your bag is empty. Gear drops from waves and bosses.'),
+        : h('div', { class: 'panel center muted' }, s.inv.length ? 'Nothing in this category.' : 'No spare Uniques. Bosses guard them, and the horde drops them very rarely. Worn ones live on your heroes.'),
       sel ? salvageBar(items) : h('div', {},
         h('div', { class: 'row', style: { marginTop: '14px' } },
-          h('button', { class: 'btn grow sm', disabled: !G.bestUpgrades(), onclick: () => { let n = 0; for (const c of s.party) n += G.equipBest(c); tap('equip'); toast({ title: n ? `Equipped ${n} upgrade${n === 1 ? '' : 's'}` : 'Nothing better to equip', kind: n ? 'gold' : '' }); render(); onChange?.(); } }, 'Equip best for party')),
-        h('button', { class: 'btn alt block sm', style: { marginTop: '8px' }, onclick: openCollection }, `✦ Uniques found: ${Object.keys(s.uniques).length} / ${UNIQUES.length}`),
-        h('div', { class: 'row', style: { marginTop: '8px' } },
-          h('button', { class: 'btn alt grow sm', disabled: !s.inv.length, onclick: startSalvage }, 'Salvage'),
-          h('button', { class: `btn ${auto[0] >= 0 ? '' : 'alt '}grow sm`, onclick: () => {
-            const next = AUTO[(AUTO.indexOf(auto) + 1) % AUTO.length];
-            const r = G.setAutoSalvage(next[0]); tap(r.n ? 'fame' : 'tap');
-            toast(next[0] < 0 ? { title: 'Auto-salvage off', body: 'Every drop goes into your bag.' }
-              : { title: `Auto-salvage: ${next[1]}`, body: r.n ? `Salvaged ${r.n} item${r.n === 1 ? '' : 's'} already in your bag for +${fmt(r.fame)} Fame.` : 'Nothing in your bag to salvage right now.', kind: 'gold' });
-            render(); onChange?.();
-          } }, `Auto-salvage: ${auto[1]}`)),
-        h('p', { class: 'dim center', style: { fontSize: '12px', fontWeight: 700 } },
-          auto[0] >= 0 ? `New ${auto[1] === 'Common' ? 'Common' : `${auto[1].replace('≤ ', '')} and lower`} drops turn straight into Fame, unless they’re an upgrade for someone in your party. Uniques are never salvaged.` : 'Tap Auto-salvage to turn low-rarity drops straight into Fame.',
-          s.stats.auto?.n ? h('div', { class: 'gold', style: { marginTop: '4px' } }, `Auto-salvaged so far: ${fmt(s.stats.auto.n)} items, +${fmt(s.stats.auto.fame)} Fame`) : null,
-          h('div', { style: { marginTop: '4px' } }, 'When the bag is full, new drops turn into Fame too.'))));
-    void rcolor;
+          h('button', { class: 'btn grow sm', disabled: !G.bestUpgrades(), onclick: () => { let n = 0; for (const c of s.party) n += G.equipBest(c); tap('equip'); toast({ title: n ? `Equipped ${n} Unique${n === 1 ? '' : 's'}` : 'Nothing better to equip', kind: n ? 'gold' : '' }); render(); onChange?.(); } }, 'Equip best for party'),
+          h('button', { class: 'btn alt sm', disabled: !s.inv.length, onclick: startSalvage }, 'Salvage')),
+        h('button', { class: 'btn alt block sm', style: { marginTop: '8px' }, onclick: openCollection }, 'Collection: every Unique and where it drops'),
+        h('p', { class: 'dim center', style: { fontSize: '12px', fontWeight: 700, lineHeight: 1.45 } },
+          'Uniques are the only loot. Their bonuses are percentages, so they grow with your heroes and never go stale. ',
+          `Find one you already own and it melts into your copy as +${BAL.dupeUpgrades} upgrades. They stay with you when you Ascend.`)));
   }
   return { render, frame() {} };
 }

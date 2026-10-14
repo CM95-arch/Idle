@@ -1,17 +1,15 @@
 // Unique balance report: `node tools/uniques.mjs [level]`
 // For each Unique: how many stages further a party gets when one member wears it, compared with wearing
-// a Rare of the same slot and item level. Aim for every Unique to be a clear but not game-breaking upgrade.
+// an empty slot. Every Unique should be a clear upgrade; Exalted ones a big one.
 import { CLASS_IDS } from '../js/data/classes.js';
-import { SLOTS } from '../js/data/gear.js';
 import { UNIQUES } from '../js/data/uniques.js';
 import { heroStats } from '../js/core/heroes.js';
-import { kindFor, fits, slotOf, makeUnique, setUniqueLevel } from '../js/core/items.js';
+import { fits, slotOf, makeUnique, setUniqueLevel } from '../js/core/items.js';
 import { simulate } from '../js/core/battle.js';
 
 const LV = Number(process.argv[2] || 30), ILVL = Math.round(LV / 1.55);
 setUniqueLevel(ILVL);
-const rare = (cls, s) => ({ id: 0, kind: kindFor(cls, s), ilvl: ILVL, rarity: 2, up: 3, extras: [], ring: 'atk' });
-const gear = (cls, swap) => Object.fromEntries(SLOTS.map((s) => [s, swap && slotOf(swap) === s ? swap : rare(cls, s)]));
+const gear = (cls, swap) => (swap ? { [slotOf(swap)]: swap } : {});
 const stats = (cls, swap) => heroStats(cls, { lv: LV, gear: gear(cls, swap) }, {});
 function reach(st) {
   const S = ILVL - (ILVL % 10) + 8;

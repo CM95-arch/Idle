@@ -33,11 +33,11 @@ export function createAscendScreen(root, { onAscend }) {
     const m = s.mult, gain = P.gain;
     const now = [
       ['Fame', `×${m.fame < 1000 ? m.fame.toFixed(2) : fmt(m.fame)}`], ['Damage', `×${m.dmg.toFixed(2)}`],
-      ['Offline', `${Math.round(G.offlineEff() * 100)}%`], ['Drop quality', `+${Math.round(m.drops * 100)}%`],
+      ['Offline', `${Math.round(G.offlineEff() * 100)}%`], ['Unique find', `+${Math.round(m.drops * 100)}%`],
     ];
     const next = [
       ['Fame', `×${(1 + gain).toFixed(2)}`, 'more Fame from everything'], ['Damage', `×${(1 + gain * BAL.ascendDmg).toFixed(2)}`, 'more damage for every class'],
-      ['Offline', `+${Math.round(gain * 15)}%`, 'better earnings while away'], ['Drop quality', `+${Math.round(gain * 30)}%`, 'rarer gear drops'],
+      ['Offline', `+${Math.round(gain * 15)}%`, 'better earnings while away'], ['Unique find', `+${Math.round(gain * 30)}%`, 'Uniques drop more often'],
     ];
     root.replaceChildren(
       h('div', { class: 'h1' }, 'Ascend'),
@@ -54,7 +54,7 @@ export function createAscendScreen(root, { onAscend }) {
         h('div', { class: 'stat' }, h('span', {}, 'Ascensions'), h('b', {}, `${s.ascensions}`)), h('div', { class: 'stat' }, h('span', {}, 'Realm'), h('b', {}, realmName(s.realm)))),
       h('div', { class: 'h2' }, 'What Ascending resets'),
       h('div', { class: 'panel', style: { fontSize: '13px', fontWeight: 700, lineHeight: 1.5 } },
-        h('div', {}, '↺ Stage progress, Fame and all gear except Uniques'),
+        h('div', {}, '↺ Stage progress and Fame'),
         h('div', {}, `↺ Class levels drop to a quarter (at least ${BAL.realmStartLevel(P.realm)}): `, h('span', { class: 'muted' }, Object.entries(P.levels).map(([c, lv]) => `${CLASSES[c].name} ${s.classes[c].lv}→${lv}`).join(', '))),
         h('div', { class: 'gold' }, '✓ Every class you’ve unlocked, and all bonuses above'),
         h('div', { style: { color: '#ffffff' } }, '✦ Your Uniques, worn ones staying on (their upgrades reset)')),

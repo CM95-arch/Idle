@@ -1,15 +1,13 @@
 // Class balance report: `node tools/classes.mjs [level]`
-// Every class at the same level with the same gear. For each class: how far every party it can be in gets
+// Every class at the same level, with no Uniques. For each class: how far every party it can be in gets
 // (averaged over all partner pairs), plus its solo damage per second against a three-enemy wave.
 import { CLASSES, CLASS_IDS } from '../js/data/classes.js';
-import { SLOTS } from '../js/data/gear.js';
 import { heroStats } from '../js/core/heroes.js';
-import { kindFor } from '../js/core/items.js';
 import { simulate, createBattle, stepBattle } from '../js/core/battle.js';
 
 const LV = Number(process.argv[2] || 30), ILVL = Math.round(LV / 1.55);
-const gear = (cls) => Object.fromEntries(SLOTS.map((s) => [s, { id: 0, kind: kindFor(cls, s), ilvl: ILVL, rarity: 2, up: 3, extras: [], ring: 'atk' }]));
-const stats = (cls) => heroStats(cls, { lv: LV, gear: gear(cls) }, {});
+// no Uniques: just the class and its level
+const stats = (cls) => heroStats(cls, { lv: LV, gear: {} }, {});
 function reach(party) {
   // the hardest fight this party wins 2 of 3 times, found by scaling enemy HP and ATK continuously
   // (a fractional Realm). Reported as stages: +1 means it beats enemies one stage stronger.

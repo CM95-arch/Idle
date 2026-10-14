@@ -10,11 +10,11 @@ Plain HTML/CSS/JavaScript, no build step. Save it to the iPhone home screen from
 
 | | |
 |---|---|
-| **Fame** | The one currency you earn: from kills, stage clears, bosses, salvaging gear, and while you're away. Spend it on class levels and gear upgrades. |
+| **Fame** | The one currency you earn: from kills, stage clears, bosses, and while you're away. Spend it on class levels and Unique upgrades. |
 | **Gold** | Premium currency for convenience only (bag space, offline time, more slots). Never needed to progress. The store isn't open yet. |
 | **Party** | Three classes fight at once. Start with the Wizard; Level 5 unlocks the next class (Priest → Archer → Rogue → Warrior), and higher classes unlock when two classes reach Level 20 (Knight, Huntress, Necromancer, Assassin, Paladin, Sorcerer). Each class has a role and an auto-ability. |
-| **Gear** | Four slots per class (weapon, ability, armor, ring), six rarities from Common to Mythic. Rarer pieces roll extra stats. Upgrade with Fame; salvage spares into Fame. Better weapons glow on your heroes. |
-| **Uniques** | 52 named items with special effects: slow staffs whose orbs explode, chain lightning, burning and freezing shots, corpse explosions, barriers, raising fallen allies, glass cannons… Rare gold **Exalted** Uniques are the top chase. Each zone boss guards its own; other enemies drop them very rarely. A white bag, a flash and a chime when one drops. They grow with your progress and are kept when you Ascend. Tracked in a collection on the Gear screen. |
+| **Uniques** | The only loot. 52 named items with special effects: slow staffs whose orbs explode, chain lightning, burning and freezing shots, corpse explosions, barriers, raising fallen allies, glass cannons… Rare gold **Exalted** Uniques are the top chase. Each zone boss guards its own (and drops one fairly often); the rest of the horde drops them very rarely. Their bonuses are percentages, so they grow with your heroes and never go stale. A duplicate melts into the copy you own as +2 upgrades. A white bag, a flash and a chime when one drops; kept when you Ascend. Each class wears its own kinds (weapon, ability, armor, ring). |
+| **The horde** | No waves: enemies stream in without end while the party holds the middle of the field. Slay 50 to clear a stage and the fight rolls straight on into the next; every tenth stage a boss joins the horde. Enemies get tougher with every stage and zone, and the horde grows thicker. |
 | **Stages** | 7 zones × 10 stages; every tenth is a boss. Auto-push moves you forward and falls back to farm when you hit a wall, retrying once you're 8% stronger. |
 | **Offline** | Up to 8 hours of farming your best stage, with drops, shown on the Welcome Back screen. |
 | **Ascension** | Beat Oryx to Ascend: stages, Fame and gear reset, classes keep a quarter of their levels, and you gain permanent Fame, damage, offline and drop-quality bonuses (big at first, smaller later) in a harder Realm that pays more. |
@@ -24,11 +24,11 @@ Plain HTML/CSS/JavaScript, no build step. Save it to the iPhone home screen from
 - `js/data/uniques.js`: the Unique items and their effects (applied in `js/core/battle.js`).
 - `js/data/balance.js`: **every tuning number** (growth curves, costs, rewards, rarities, Ascension).
 - `js/data/classes.js`, `zones.js`, `gear.js`: classes and abilities, the Realm's zones and bosses, gear kinds and stats.
-- `js/core/battle.js`: the auto-battle simulation (runs live, offline and in the balance tool).
+- `js/core/battle.js`: the horde battle simulation on a flat field (runs live, offline and in the balance tools).
 - `js/core/game.js`: the save and every action (leveling, gear, rewards, offline, Ascension).
 - `js/core/heroes.js`, `items.js`: hero stats and party power; items.
-- `js/ui/battleView.js`: the battle renderer (effects, numbers, loot, banners).
-- `js/ui/art/`: all the art, as vector SVG built in code: `heroes.js` (11 classes, front and back), `monsters.js` (enemy and boss archetypes), `items.js` (gear icons by rarity), `scenes.js` (zone backdrops), `core.js` (shading helpers).
+- `js/ui/battleView.js`: the battle renderer, top-down at a three-quarter angle (horde, tracers, blasts, splats, numbers, loot).
+- `js/ui/art/`: all the art, as vector SVG built in code: `heroes.js` (11 classes, portraits), `chibi.js` (the chunky battle figures), `monsters.js` (enemy and boss archetypes), `items.js` (gear icons by rarity), `arena.js` (each zone's battlefield, lit at night), `core.js` (shading helpers).
 - `js/ui/*.js`: the screens (battle, party, gear, map, ascend) and celebration overlays.
 
 ## Tools
@@ -38,5 +38,5 @@ npm start                                   # local server on :8080
 node tools/sim.mjs 48 30 90                 # pacing: 48h of a scripted player, 30 min active / 90 min away
 node tools/sim.mjs 24 30 90 levelCostGrowth=1.18   # try a balance change without editing the file
 node tools/classes.mjs 30                   # class balance: every class at level 30 across every party
-node tools/uniques.mjs 30                   # what each Unique is worth, in stages, against a Rare
+node tools/uniques.mjs 30                   # what each Unique is worth, in stages, against an empty slot
 ```

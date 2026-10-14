@@ -11,8 +11,8 @@
 //                   this share)  double (chance to fire twice)  charge/chargeX (every Nth shot hits ×X)
 //                   ramp (+this per hit on the same target, 10 stacks)  critDmg  execute  bossDmg
 //   on any kill:    corpse (the body explodes for this share of its max HP)  frenzy (fire faster for 2.5s)
-//   defense:        regen  partyRegen  barrier (shield each wave)  partyBarrier  guard  dodge  thorns  revive
-//                   rezAlly (raise the first ally to fall)  waveHeal (party heals at each wave)
+//   defense:        regen  partyRegen  barrier (shield at each surge)  partyBarrier  guard  dodge  thorns  revive
+//                   rezAlly (raise the first ally to fall)  waveHeal (party heals at each surge)
 //   power:          aura (party damage)  glass (own damage)  lastStand (damage below 40% HP)  haste  cdr  echo
 //                   abilityDmg  firstStrike  luck
 export const UNIQUES = [
@@ -24,9 +24,9 @@ export const UNIQUES = [
   { id: 'pearl', name: 'Pearl of the Deep', kind: 'ring', ring: 'hp', zone: 0, fx: { regen: 0.02 }, extra: { k: 'hpPct', v: 12 }, pal: ['#6a7a9a', '#e8eef8', '#ffffff'],
     desc: 'Restores 2% of max HP every second.' },
   { id: 'driftShield', name: 'Driftwood Bulwark', kind: 'shield', zone: 0, fx: { barrier: 0.2 }, extra: { k: 'hpPct', v: 10 }, pal: ['#6a4a2a', '#a8804a', '#7ae0ff'],
-    desc: 'Starts every wave behind a barrier worth 20% of max HP.' },
-  { id: 'brineCloak', name: 'Brine-Soaked Cloak', kind: 'cloak', zone: 0, fx: { dodge: 0.18, regen: 0.012 }, extra: { k: 'spdPct', v: 6 }, pal: ['#1a3a4a', '#3a8a9a', '#a0fff0'],
-    desc: 'Dodges 18% of enemy shots and restores 1.2% of max HP every second.' },
+    desc: 'Every 8 seconds, raises a barrier worth 20% of max HP.' },
+  { id: 'brineCloak', name: 'Brine-Soaked Cloak', kind: 'cloak', zone: 0, fx: { dodge: 0.22, regen: 0.015 }, extra: { k: 'spdPct', v: 6 }, pal: ['#1a3a4a', '#3a8a9a', '#a0fff0'],
+    desc: 'Dodges 22% of enemy attacks and restores 1.5% of max HP every second.' },
   { id: 'inkVial', name: 'Kraken Ink Vial', kind: 'poison', zone: 0, fx: { abilityDmg: 0.5 }, extra: { k: 'crit', v: 5 }, pal: ['#1a1a2a', '#4a3a6a', '#c070ff'],
     desc: 'Ability deals 50% more damage.' },
 
@@ -38,7 +38,7 @@ export const UNIQUES = [
   { id: 'forgeWand', name: 'Forgefire Wand', kind: 'wand', zone: 1, fx: { burn: 0.6 }, extra: { k: 'atkPct', v: 6 }, pal: ['#5a2a14', '#ff6a2a', '#ffe08a'],
     desc: 'Shots set enemies ablaze: 60% extra damage over 3 seconds.' },
   { id: 'hearthRing', name: 'Hearthstone Ring', kind: 'ring', ring: 'def', zone: 1, fx: { waveHeal: 0.2, barrier: 0.1 }, extra: { k: 'defPct', v: 10 }, pal: ['#5a3a2a', '#d08a4a', '#ff9a4a'],
-    desc: 'At the start of every wave, the whole party heals 20% of max HP, and the wearer gains a barrier worth 10%.' },
+    desc: 'Every 8 seconds, the whole party heals 20% of max HP and the wearer gains a barrier worth 10%.' },
   { id: 'anvilPlate', name: 'Anvil Plate', kind: 'heavy', zone: 1, fx: { guard: 0.12, thorns: 0.25 }, extra: { k: 'defPct', v: 12 }, pal: ['#3a3a44', '#8a8a96', '#ff7a3a'],
     desc: 'Takes 12% less damage, and attackers take 25% of their attack back.' },
   { id: 'runeTome', name: 'Tome of the Last Rite', kind: 'tome', zone: 1, fx: { rezAlly: 0.5 }, extra: { k: 'hpPct', v: 8 }, pal: ['#2a2a5a', '#6a6ad8', '#ffe08a'],
@@ -74,19 +74,19 @@ export const UNIQUES = [
   { id: 'groveRing', name: 'Ring of the Old Grove', kind: 'ring', ring: 'atk', zone: 3, fx: { haste: 0.12, regen: 0.006 }, extra: { k: 'atkPct', v: 6 }, pal: ['#2a4a2a', '#5a9a4a', '#ffe08a'],
     desc: 'Attacks 12% faster and slowly restores HP.' },
   { id: 'verdantHeart', name: 'Verdant Heart', kind: 'ring', ring: 'hp', zone: 3, exalted: true, fx: { partyRegen: 0.012, waveHeal: 0.15, haste: 0.15 }, extra: { k: 'hpPct', v: 18 }, pal: ['#1a5a2a', '#4aff8a', '#ffffff'],
-    desc: 'The party restores 1.2% HP every second and heals 15% at every wave. Attacks 15% faster.' },
+    desc: 'The party restores 1.2% HP every second and heals 15% every 8 seconds. Attacks 15% faster.' },
 
   // ---- Desert · Grand Sphinx ----
   { id: 'sphinxFang', name: 'Fang of the Sphinx', kind: 'dagger', zone: 4, fx: { execute: 1.5 }, extra: { k: 'crit', v: 8 }, pal: ['#8a6a2a', '#d8b070', '#ffffff'],
     desc: 'Attacks deal 2.5× damage to enemies below 30% HP.' },
   { id: 'riddleRing', name: 'Riddle Ring', kind: 'ring', ring: 'atk', zone: 4, fx: { luck: 0.2 }, extra: { k: 'famePct', v: 20 }, pal: ['#8a6a1a', '#ffd34d', '#4aa3ff'],
     desc: 'Luck: gear drops rarer, and Uniques drop more often. Also +20% Fame.' },
-  { id: 'duskCloak', name: 'Cloak of Dusk', kind: 'cloak', zone: 4, fx: { dodge: 0.25 }, extra: { k: 'spdPct', v: 8 }, pal: ['#2a1a3a', '#6a3a8a', '#ffb070'],
-    desc: 'Dodges 25% of enemy shots.' },
+  { id: 'duskCloak', name: 'Cloak of Dusk', kind: 'cloak', zone: 4, fx: { dodge: 0.35 }, extra: { k: 'spdPct', v: 8 }, pal: ['#2a1a3a', '#6a3a8a', '#ffb070'],
+    desc: 'Dodges 35% of enemy attacks.' },
   { id: 'sandWand', name: 'Wand of the Sandstorm', kind: 'wand', zone: 4, fx: { chain: 0.55 }, extra: { k: 'atkPct', v: 6 }, pal: ['#8a6a3a', '#e8c890', '#5de0ff'],
     desc: 'Shots arc on through every other enemy: 55% damage on the first jump, 30% on the next.' },
   { id: 'scarabRobe', name: 'Scarab-Woven Robe', kind: 'robe', zone: 4, fx: { barrier: 0.3 }, extra: { k: 'hpPct', v: 10 }, pal: ['#1a3a4a', '#3a8a8a', '#ffd34d'],
-    desc: 'Starts every wave behind a barrier worth 30% of max HP.' },
+    desc: 'Every 8 seconds, raises a barrier worth 30% of max HP.' },
   { id: 'flareSpell', name: 'Spell of the Noon Sun', kind: 'spell', zone: 4, fx: { abilityDmg: 0.6 }, extra: { k: 'crit', v: 5 }, pal: ['#8a4a14', '#ffb02e', '#ffffff'],
     desc: 'Ability deals 60% more damage.' },
   { id: 'mirageDagger', name: 'Mirage Dirk', kind: 'dagger', zone: 4, fx: { double: 0.3 }, extra: { k: 'spdPct', v: 6 }, pal: ['#6a5a8a', '#c0b0ff', '#ffe0ff'],
@@ -104,7 +104,7 @@ export const UNIQUES = [
   { id: 'runeHelm', name: 'Helm of the Last Stand', kind: 'helm', zone: 5, fx: { lastStand: 0.6, guard: 0.05 }, extra: { k: 'hpPct', v: 12 }, pal: ['#4a4a5a', '#9a9aaa', '#ff6a3a'],
     desc: 'Below 40% HP, deals 60% more damage. Takes 5% less damage.' },
   { id: 'mountainSeal', name: 'Seal of the Mountain', kind: 'seal', zone: 5, fx: { partyBarrier: 0.12 }, extra: { k: 'defPct', v: 10 }, pal: ['#5a5a6a', '#d8d8e0', '#40a0ff'],
-    desc: 'The whole party starts every wave behind a barrier worth 12% of their max HP.' },
+    desc: 'Every 8 seconds, the whole party gains a barrier worth 12% of their max HP.' },
   { id: 'stormBow', name: 'Bow of Gathering Storms', kind: 'bow', zone: 5, fx: { charge: 4, chargeX: 3.5 }, extra: { k: 'atkPct', v: 6 }, pal: ['#2a2a5a', '#6a8ad8', '#e0f0ff'],
     desc: 'Every 4th arrow is a storm arrow that hits for 3.5×.' },
   { id: 'quakeRing', name: 'Ring of Cracked Earth', kind: 'ring', ring: 'atk', zone: 5, fx: { stun: 0.08 }, extra: { k: 'atkPct', v: 6 }, pal: ['#5a4a3a', '#a08a6a', '#ffb070'],
@@ -118,7 +118,7 @@ export const UNIQUES = [
   { id: 'madHide', name: 'Hide of the Mad God', kind: 'leather', zone: 6, fx: { haste: 0.3 }, extra: { k: 'hpPct', v: 12 }, pal: ['#2a1a2a', '#6a2a3a', '#d8a830'],
     desc: 'Attacks 30% faster.' },
   { id: 'conflictOrb', name: 'Orb of Conflict', kind: 'scepter', zone: 6, fx: { firstStrike: 1 }, extra: { k: 'atkPct', v: 12 }, pal: ['#2a1a3a', '#8a2a8a', '#ff4a8a'],
-    desc: 'Ability is ready the instant each wave begins.' },
+    desc: 'Every 8 seconds, the ability is instantly ready again.' },
   { id: 'doomBow', name: 'Doom Bow', kind: 'bow', zone: 6, rate: 0.3, fx: { critDmg: 1, multishot: 1 }, extra: { k: 'crit', v: 15 }, pal: ['#1a0a0a', '#5a1a1a', '#ff2a2a'],
     desc: 'One enormous arrow at a time (30% the fire rate, 3.3× the damage) that punches through into a second enemy. Crits deal 3×.' },
   { id: 'chronoDirk', name: 'Dirk of the Endless Hour', kind: 'dagger', zone: 6, fx: { ramp: 0.08 }, extra: { k: 'spdPct', v: 10 }, pal: ['#2a2a4a', '#8a8ad8', '#ffe08a'],
@@ -128,11 +128,11 @@ export const UNIQUES = [
   { id: 'madVestments', name: 'Vestments of the Mad God', kind: 'robe', zone: 6, fx: { glass: 0.9 }, extra: { k: 'hpPct', v: -20 }, pal: ['#2a0a2a', '#7a1a5a', '#ff4af0'],
     desc: 'Glass cannon: deals 90% more damage, but has 20% less HP.' },
   { id: 'feastTome', name: 'Tome of the Endless Feast', kind: 'tome', zone: 6, fx: { rezAlly: 0.8, waveHeal: 0.1 }, extra: { k: 'hpPct', v: 12 }, pal: ['#4a1a2a', '#c04a6a', '#ffe08a'],
-    desc: 'Once per fight, raises the first fallen ally with 80% HP. The party heals 10% at every wave.' },
+    desc: 'Once per fight, raises the first fallen ally with 80% HP. The party heals 10% every 8 seconds.' },
   { id: 'cataclysm', name: 'Staff of the Cataclysm', kind: 'staff', zone: 6, exalted: true, rate: 0.35, fx: { splash: 1.2, burn: 0.6 }, extra: { k: 'crit', v: 10 }, pal: ['#3a0a0a', '#ff4a1a', '#ffe08a'],
     desc: 'Hurls a world-ending meteor (35% the fire rate, 2.9× the damage) that detonates on every enemy for even more than the direct hit, and leaves them all burning.' },
-  { id: 'madCrown', name: 'Crown of the Mad God', kind: 'helm', zone: 6, exalted: true, fx: { aura: 0.12, cdr: 0.25, guard: 0.1 }, extra: { k: 'hpPct', v: 15 }, pal: ['#3a2a0a', '#d8a830', '#ff3a8a'],
-    desc: 'The party deals 12% more damage. Ability recharges 25% faster. Takes 10% less damage.' },
+  { id: 'madCrown', name: 'Crown of the Mad God', kind: 'helm', zone: 6, exalted: true, fx: { aura: 0.2, cdr: 0.3, guard: 0.12 }, extra: { k: 'hpPct', v: 15 }, pal: ['#3a2a0a', '#d8a830', '#ff3a8a'],
+    desc: 'The party deals 20% more damage. Ability recharges 30% faster. Takes 12% less damage.' },
 ];
 export const UNIQUE = Object.fromEntries(UNIQUES.map((u) => [u.id, u]));
 /** One-time effects take the strongest; everything else adds up. */
