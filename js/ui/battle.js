@@ -28,11 +28,21 @@ export function createBattleScreen(root, { onFame, openClass, onDrop }) {
     update(true);
   }
   // hold a level button to keep leveling, faster the longer you hold
+  // (A button that turns disabled mid-hold, out of Fame, never hears the finger lift, so the release is
+  // watched on the whole page, and the hold also ends the moment the button is disabled or gone.)
   function holdable(btn, fn) {
     let t = null, delay = 0;
-    const stop = () => { window.clearTimeout(t); t = null; };
-    btn.addEventListener('pointerdown', (e) => { e.preventDefault(); fn(); delay = 380; const go = () => { t = setTimeout(() => { fn(); delay = Math.max(60, delay * 0.8); go(); }, delay); }; go(); });
-    for (const ev of ['pointerup', 'pointerleave', 'pointercancel']) btn.addEventListener(ev, stop);
+    const stop = () => {
+      window.clearTimeout(t); t = null;
+      for (const ev of ['pointerup', 'pointercancel', 'touchend', 'touchcancel']) window.removeEventListener(ev, stop, true);
+    };
+    const go = () => { t = setTimeout(() => { if (btn.disabled || !btn.isConnected) return stop(); fn(); delay = Math.max(60, delay * 0.8); go(); }, delay); };
+    btn.addEventListener('pointerdown', (e) => {
+      e.preventDefault(); stop(); fn(); delay = 380;
+      for (const ev of ['pointerup', 'pointercancel', 'touchend', 'touchcancel']) window.addEventListener(ev, stop, true);
+      go();
+    });
+    btn.addEventListener('pointerleave', stop);
   }
 
   function heroCard(cls) {
