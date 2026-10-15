@@ -154,7 +154,7 @@ export class BattleView {
         }
         case 'stunned': this.fx.push({ k: 'stars', id: ev.id, t: 0, life: 0.8 }); break;
         case 'status': { const e = byId(ev.id); if (e) this.num(e.x, e.y - sizeOf(e) - 4, ev.s === 'curse' ? 'Cursed' : 'Armor Broken', ev.s === 'curse' ? '#ff6ad8' : '#ffb070', 9); break; }
-        case 'zap': for (let k = 0; k < 3; k++) { const a = rand(0, TAU), d = rand(10, ev.r); this.fx.push({ k: 'zap', x0: ev.x + Math.cos(this.t * 2 + k * 2.1) * ev.r * 0.6, y0: ev.y - 30 + Math.sin(this.t * 2 + k * 2.1) * ev.r * 0.3, x1: ev.x + Math.cos(a) * d, y1: ev.y + Math.sin(a) * d * 0.5 - 10, t: 0, life: 0.2, c: '#c8b8ff' }); } sound?.('zap'); break;
+        case 'zap': for (let k = 0; k < 3; k++) { const a = rand(0, TAU), d = rand(10, ev.r); this.fx.push({ k: 'zap', x0: ev.x + (ev.look === 'portal' ? Math.cos(this.t * 2 + k * 2.1) * ev.r * 0.6 : 0), y0: ev.y - (ev.look === 'plant' ? 10 : 30) + (ev.look === 'portal' ? Math.sin(this.t * 2 + k * 2.1) * ev.r * 0.3 : 0), x1: ev.x + Math.cos(a) * d, y1: ev.y + Math.sin(a) * d * 0.5 - 10, t: 0, life: 0.2, c: ev.look === 'plant' ? '#9aff6a' : ev.look === 'soul' ? '#e0e8ff' : '#c8b8ff' }); } sound?.('zap'); break;
         case 'beam': { const h = B.heroes[ev.hero]; this.fx.push({ k: 'beam', x0: h.x, y0: h.y - 40, x1: ev.x, y1: ev.y - 20, t: 0, life: 0.3, c: '#fff3b0', w: 9 }); this.fx.push({ k: 'groundring', x: ev.x, y: ev.y, t: 0, life: 0.5, c: '#fff3b0', r: ev.r }); this.fx.push({ k: 'boom', x: ev.x, y: ev.y - 12, t: 0, life: 0.5, c: '#fff3b0', big: true }); this.shake = Math.max(this.shake, 3); sound?.('blast'); break; }
         case 'barrier': for (const i of ev.heroes) { this.hv[i].aura = 0.8; this.hv[i].auraColor = '#7ad0ff'; } break;
         case 'dodge': { const h = B.heroes[ev.hero]; if (ev.invuln) { this.hv[ev.hero].aura = 0.3; this.hv[ev.hero].auraColor = '#ffffff'; } else if (Math.random() < 0.5) this.num(h.x + rand(-10, 10), h.y - 52, 'dodge', '#b8c0d8', 10); break; }
@@ -284,9 +284,19 @@ export class BattleView {
 
     // Genesis portals hovering over their area
     g.globalCompositeOperation = 'lighter';
-    for (const z of B.zones || []) for (let k = 0; k < 4; k++) {
-      const a = this.t * 2 + (k * TAU) / 4, x = z.x + Math.cos(a) * z.r * 0.6, y = z.y - 30 + Math.sin(a) * z.r * 0.3;
-      g.globalAlpha = 0.8; g.drawImage(glow('#b6a0ff', 16), x - 16, y - 16); g.strokeStyle = '#efe8ff'; g.lineWidth = 2; g.beginPath(); g.ellipse(x, y, 7, 10, 0, 0, TAU); g.stroke();
+    for (const z of B.zones || []) {
+      if (z.plant || z.soul) {
+        // a skull-flower rooted in the ground, or a wandering soul drifting over the pack
+        const c = z.plant ? '#9aff6a' : '#c8d8ff', y = z.y - (z.soul ? 30 + Math.sin(this.t * 3) * 6 : 10);
+        g.globalAlpha = 0.85; g.drawImage(glow(c, 22), z.x - 22, y - 22);
+        g.fillStyle = z.plant ? '#ffb0d0' : '#ffffff'; g.beginPath(); g.arc(z.x, y, z.plant ? 5 : 6, 0, TAU); g.fill();
+        if (z.plant) for (let k = 0; k < 5; k++) { const a = this.t + (k * TAU) / 5; g.beginPath(); g.ellipse(z.x + Math.cos(a) * 8, y + Math.sin(a) * 5, 5, 3, a, 0, TAU); g.fill(); }
+        continue;
+      }
+      for (let k = 0; k < 4; k++) {
+        const a = this.t * 2 + (k * TAU) / 4, x = z.x + Math.cos(a) * z.r * 0.6, y = z.y - 30 + Math.sin(a) * z.r * 0.3;
+        g.globalAlpha = 0.8; g.drawImage(glow('#b6a0ff', 16), x - 16, y - 16); g.strokeStyle = '#efe8ff'; g.lineWidth = 2; g.beginPath(); g.ellipse(x, y, 7, 10, 0, 0, TAU); g.stroke();
+      }
     }
     g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
     // effects, light on top

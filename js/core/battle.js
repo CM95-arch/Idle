@@ -155,6 +155,7 @@ function hurtHero(B, h, dmg, raw, from, big) {
   h.hp -= dmg - absorbed;
   B.events.push({ k: 'ehit', hero: h.i, dmg: dmg - absorbed, big, shield: absorbed > 0 });
   if (from && h.fx.thorns && from.hp > 0) damageEnemy(B, from, raw * h.fx.thorns, { hero: h.i, thorns: true });
+  if (from && h.buff.retaliateUntil > B.t && from.hp > 0) { damageEnemy(B, from, h.atk * h.buff.retaliate, { hero: h.i, thorns: true }); h.hp = Math.min(h.maxHp, h.hp + h.maxHp * 0.01); } // Crystal Shield
   if (h.hp <= 0 && h.fx.revive && !h.revived) { h.revived = true; h.hp = h.maxHp * h.fx.revive; B.events.push({ k: 'revive', hero: h.i }); }
   if (h.hp > 0) return;
   h.hp = 0; h.dead = true; B.events.push({ k: 'fall', hero: h.i });
@@ -174,7 +175,7 @@ function cluster(es) {
 // ---------- abilities ----------
 const ECHOES = new Set(['aoe', 'heal', 'pierce', 'execute', 'stun', 'dot', 'drain', 'poison', 'chain']);
 function useAbility(B, h, scale = 1) {
-  const A = CLASSES[h.cls].ability, p = A.pow * h.pow * scale, es = alive(B.enemies), hs = alive(B.heroes);
+  const A = CLASSES[h.cls].ability, p = A.pow * h.pow * scale * (h.buff.powUntil > B.t ? 1 + h.buff.pow : 1), es = alive(B.enemies), hs = alive(B.heroes);
   if (!es.length) return;
   const dmg = h.atk * dmgMult(B, h) * (1 + (h.fx.abilityDmg || 0));
   const src = { hero: h.i, ab: true };
@@ -206,6 +207,53 @@ function useAbility(B, h, scale = 1) {
       for (const e of within(es, c, BAL.aoeRadius * 0.6)) { ev.targets.push(e.id); e.dots.push({ left: 4, dps: (dmg * p * M.inner) / 4, hero: h.i }); }
       for (const e of within(es, c, BAL.aoeRadius * 1.2)) { if (!ev.targets.includes(e.id)) ev.targets.push(e.id); e.dots.push({ left: 4, dps: (dmg * p * M.outer) / 4, hero: h.i }); }
       B.events.push(ev); return;
+    }
+    case 'vile': { // Trap of the Vile Spirit: a huge blast that Curses
+      const c = cluster(es), list = within(es, c, BAL.aoeRadius); ev.x = c.x; ev.y = c.y;
+      for (const e of list) e.curseUntil = B.t + M.curse; strike(list, M.pow); B.events.push({ ...ev, mode: 'paralyze' }); return;
+    }
+    case 'archerang': { // Archerang: out and back through a line, Slowing and Paralyzing all it passes
+      const t = nearest(es, h), dx = t.x - h.x, dy = t.y - h.y, L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L;
+      ev.x = h.x + ux * 300; ev.y = h.y + uy * 300;
+      const list = es.filter((e) => { const along = (e.x - h.x) * ux + (e.y - h.y) * uy, off = Math.abs((e.x - h.x) * uy - (e.y - h.y) * ux); return along > 0 && along < 300 && off < 20 + e.r; });
+      for (const e of list) { e.slowUntil = Math.max(e.slowUntil, B.t + M.dur); e.stunUntil = Math.max(e.stunUntil, B.t + M.dur * (e.boss ? 0.3 : 1)); }
+      strike(list, M.pow * 2); B.events.push({ ...ev, fx: 'pierce' }); return;
+    }
+    case 'souls': { // Wandering Souls Spell: heavy armor-ignoring ghost bolts into the nearest pack, sometimes freeing a soul
+      const t = nearest(es, h); ev.x = t.x; ev.y = t.y;
+      for (const e of within(es, t, 70)) { ev.targets.push(e.id); damageEnemy(B, e, dmg * p * M.pow, src); }
+      if (B.rng.next() < M.soul) B.zones.push({ x: t.x, y: t.y, r: 60, until: B.t + 6, next: B.t, every: 0.5, dmg: dmg * p * 0.12, hero: h.i, soul: true });
+      B.events.push({ ...ev, fx: 'aoe' }); return;
+    }
+    case 'plague': { // Plague Poison: a vast cloud that poisons nearly everything over 10 seconds
+      const c = cluster(es); ev.x = c.x; ev.y = c.y;
+      for (const e of within(es, c, 9 * TILE)) { ev.targets.push(e.id); e.dots.push({ left: 10, dps: (dmg * p * M.pow) / 10, hero: h.i }); }
+      B.events.push({ ...ev, mode: 'twinBombs' }); return;
+    }
+    case 'crystal': { // Crystal Shield: turtle up, Armored, firing back at every attacker
+      h.buff.armorUntil = B.t + M.dur; h.buff.retaliateUntil = B.t + M.dur; h.buff.retaliate = M.retaliate; ev.x = h.x; ev.y = h.y;
+      B.events.push({ ...ev, fx: 'berserk' }); return;
+    }
+    case 'plant': { // Perennial Cranium: a skull-flower that blasts and heals for 5 seconds
+      const c = cluster(es), x = (c.x + h.x) / 2, y = (c.y + h.y) / 2; ev.x = x; ev.y = y;
+      B.zones.push({ x, y, r: 5 * TILE * 0.6, until: B.t + M.dur, next: B.t, every: 0.8, dmg: (dmg * p * M.pow) / (M.dur / 0.8), hero: h.i, heal: 0.03, plant: true });
+      B.events.push({ ...ev, mode: 'portals' }); return;
+    }
+    case 'pain': { // Tome of Pain: blast everything within 6 tiles, heal weakly
+      ev.x = h.x; ev.y = h.y; strike(within(es, h, 6 * TILE), M.dmg / A.pow);
+      for (const o of hs) heal(B, o, o.maxHp * p * M.heal * 0.5); ev.heroes = hs.map((o) => o.i);
+      B.events.push({ ...ev, fx: 'stun' }); return;
+    }
+    case 'scholar': { // Scholar's Seal: no heal, no damage buff; the party's abilities come round sooner
+      for (const o of hs) { if (o !== h) o.cd = Math.max(0, o.cd - M.cd); o.buff.powUntil = B.t + 6; o.buff.pow = M.wis; } ev.heroes = hs.map((o) => o.i);
+      B.events.push({ ...ev, fx: 'buff' }); return;
+    }
+    case 'visage': { // Vanguard's Visage: party Berserk, plus a piercing, armor-ignoring bolt
+      h.buff.taunt = B.t + 3; for (const o of hs) { o.buff.hasteUntil = B.t + 3; o.buff.haste = Math.max(o.buff.haste || 0, p * 0.6); }
+      const t = nearest(es, h), dx = t.x - h.x, dy = t.y - h.y, L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L;
+      ev.x = h.x + ux * 400; ev.y = h.y + uy * 400; ev.heroes = hs.map((o) => o.i);
+      for (const e of es) { const along = (e.x - h.x) * ux + (e.y - h.y) * uy, off = Math.abs((e.x - h.x) * uy - (e.y - h.y) * ux); if (along > 0 && off < 16 + e.r) { ev.targets.push(e.id); damageEnemy(B, e, h.atk * dmgMult(B, h) * M.pow, src); } }
+      B.events.push({ ...ev, fx: 'pierce' }); return;
     }
     case 'fulminate': case 'devastate': { // scepters: chain lightning, with their own reach and falloff
       let at = nearest(es, h); const seen = new Set();
@@ -384,7 +432,12 @@ export function stepBattle(B) {
   }
   // lingering ability zones (Genesis Spell portals)
   B.zones = B.zones.filter((z) => z.until > B.t);
-  for (const z of B.zones) if (B.t >= z.next) { z.next += z.every; for (const e of within(alive(B.enemies), z, z.r)) damageEnemy(B, e, hit(z.dmg, e.def), { hero: z.hero, ab: true }); B.events.push({ k: 'zap', x: z.x, y: z.y, r: z.r }); }
+  for (const z of B.zones) if (B.t >= z.next) {
+    z.next += z.every;
+    for (const e of within(alive(B.enemies), z, z.r)) damageEnemy(B, e, hit(z.dmg, e.def), { hero: z.hero, ab: true });
+    if (z.heal) for (const o of alive(B.heroes)) heal(B, o, o.maxHp * z.heal);
+    B.events.push({ k: 'zap', x: z.x, y: z.y, r: z.r, look: z.plant ? 'plant' : z.soul ? 'soul' : 'portal' });
+  }
   // heroes: each shoots the nearest enemy
   for (const h of B.heroes) {
     if (h.dead) continue;
