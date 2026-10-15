@@ -272,3 +272,38 @@ img.figure.locked { filter: brightness(0) opacity(.55); }
 .hcard .pipbtn small { font-size: 9px; font-weight: 900; color: var(--ink-3); letter-spacing: .5px; }
 .hcard .pipbtn small.full { color: var(--gold-2); }
 .zone.endgame { border-color: #6a4aa8; box-shadow: 0 0 0 1px rgba(176,122,255,.25), 0 0 22px rgba(176,122,255,.15); }
+
+/* ---------- battle dock: hero tabs + the chosen hero's level and potions ---------- */
+.dock { display: flex; flex-direction: column; gap: 6px; padding: 6px 8px 8px; }
+.htabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.htab { position: relative; display: flex; align-items: center; gap: 4px; padding: 5px 6px 5px 2px; border-radius: 12px; background: var(--panel); border: 1px solid var(--edge); text-align: left; min-width: 0; color: var(--ink); }
+.htab.on { background: linear-gradient(180deg, var(--panel-2), var(--panel)); border-color: var(--gold); box-shadow: 0 0 0 1px rgba(255,194,58,.25); }
+.htab.ready::after { content: ''; position: absolute; top: 5px; right: 6px; width: 7px; height: 7px; border-radius: 50%; background: var(--gold); box-shadow: 0 0 6px var(--gold); }
+.htab.empty { flex-direction: column; justify-content: center; align-items: center; border-style: dashed; color: var(--ink-3); font-weight: 800; font-size: 11px; min-height: 52px; }
+.htab .tp { width: 32px; flex: none; display: grid; place-items: end center; height: 42px; overflow: hidden; }
+.htab .tt { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.htab .tt b { font-size: 12px; font-weight: 900; line-height: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.htab .tt small { font-size: 10px; font-weight: 800; color: var(--ink-3); white-space: nowrap; }
+.htab .tt small .full { color: var(--gold-2); }
+.htab .pips { padding: 0; gap: 1.5px; }
+.htab .pips i { height: 4px; }
+.hpanel { position: relative; display: grid; grid-template-columns: 96px 1fr; gap: 6px; border-radius: 14px; overflow: visible; }
+.hpanel.levelup::after { content: ''; position: absolute; inset: 0; border-radius: 14px; background: radial-gradient(circle at 15% 50%, rgba(255,214,90,.5), transparent 60%); animation: flashOut .5s ease-out forwards; pointer-events: none; }
+.hpanel .lvbtn { min-height: 0; height: 100%; padding: 4px; flex-direction: column; gap: 1px; line-height: 1.1; font-size: 14px; border-radius: 12px; }
+.hpanel .lvbtn small { font-size: 10px; font-weight: 900; opacity: .8; }
+.hpanel .lvbtn small .cost { font-size: 12px; }
+.dpots { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+.dpot { position: relative; display: flex; flex-direction: column; align-items: center; gap: 0; padding: 4px 2px 6px; border-radius: 10px; overflow: hidden; line-height: 1.05; color: var(--ink);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--c) 48%, var(--panel-2)), color-mix(in srgb, var(--c) 24%, var(--panel))); border: 1px solid color-mix(in srgb, var(--c) 75%, var(--edge)); }
+.dpot b { font-size: 11px; font-weight: 900; letter-spacing: .4px; }
+.dpot .v { font-family: var(--pixel); font-size: 13px; font-weight: 800; }
+.dpot small { font-size: 9px; font-weight: 900; display: inline-flex; align-items: center; gap: 1px; white-space: nowrap; }
+.dpot small .cost { font-size: 10px; }
+.dpot small .mini-coin { width: 9px; height: 9px; }
+.dpot small.mx { color: var(--gold-2); }
+.dpot > i { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: linear-gradient(90deg, var(--c) var(--p), rgba(0,0,0,.4) var(--p)); }
+.dpot:disabled { opacity: .5; }
+.dpot.maxed { opacity: 1; border-color: var(--gold); }
+.dpot.maxed > i { background: var(--gold); }
+.hpanel .lvbtn.pulse { animation: lvPulse 1s ease-in-out infinite; }
+@keyframes lvPulse { 50% { box-shadow: 0 3px 0 var(--gold-dark), 0 0 0 4px rgba(255,214,90,.45), 0 0 26px rgba(255,194,58,.6); } }
