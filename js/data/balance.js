@@ -8,6 +8,12 @@ export const BAL = {
   tankGuard: 0.2,         // tanks take this much less damage from every hit
   tankFallback: 0.35,     // below this share of HP a tank stops drawing fire
   stageHeal: 0.3,          // heroes recover this share of max HP each time a stage is cleared
+  // stat potions (js/data/stats.js): a potion's price follows how far toward its max the stat is, rising with
+  // the Fame a stage pays, so a stat at x% of its max costs about what stage x% × potStage pays. Drinking as you
+  // go lands a party at 8/8 around potStage, just before Oryx's Castle.
+  // each stat tops out a little apart (Speed first, Life last), so 8/8 builds up across the Castle Approaches
+  potBase: 30, potRef: 25, potStage: { spd: 51, dex: 52, att: 53, wis: 54, vit: 55, def: 56, mp: 57, hp: 58 },
+  potionCost: (k, K, s) => Math.round(BAL.potBase * BAL.fameGrowth ** (((k + 0.5) / K) * BAL.potStage[s]) * (BAL.potRef / K)),
   // ---- enemies ----
   stageGrowth: 1.18,       // enemy HP/ATK grows this much per stage
   enemyBase: { hp: 8, atk: 2, armor: 0.05 }, // armor: damage share blocked, +5% per zone

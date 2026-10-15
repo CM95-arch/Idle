@@ -8,6 +8,7 @@ import { kindFor, fits, itemScore, slotOf, canUpgrade, upgradeCost } from '../co
 import { h, openSheet, closeSheet, toast } from './dom.js';
 import { portrait, coin, fmt, itemTile, tap } from './common.js';
 import { openItemSheet } from './gear.js';
+import { statPanel } from './potions.js';
 
 export function abilityText(cls, pow = 1) {
   const A = CLASSES[cls].ability;
@@ -36,12 +37,15 @@ export function openClassSheet(cls, onChange) {
         h('div', { style: { width: '92px', display: 'grid', placeItems: 'center' } }, portrait(cls, 118)),
         h('div', { class: 'grow' },
           h('div', { class: 'pixel', style: { fontSize: '24px' } }, C.name),
-          h('div', { class: 'muted', style: { fontWeight: 800, fontSize: '13px' } }, `${ROLES[C.role]} · Level ${me.lv}`),
+          h('div', { class: 'muted', style: { fontWeight: 800, fontSize: '13px' } }, `${ROLES[C.role]} · Level ${me.lv} · ${G.maxedCount(cls)}/8`),
           h('div', { class: 'dim', style: { fontSize: '12px', marginTop: '2px' } }, C.blurb))),
       h('div', { class: 'row' }, lvBtn(1, 'Level up'), lvBtn(10, '×10'), lvBtn('max', 'Max')),
+      statPanel(cls, rerender, onChange),
       h('div', { class: 'panel stats' },
         stat('HP', fmt(st.hp)), stat('Attack', fmt(st.atk)), stat('Defense', fmt(st.def)), stat('Fire rate', `${st.spd.toFixed(1)} shots/s`),
-        stat('Crit', `${Math.round(st.crit * 100)}%`), stat('Ability power', `${Math.round(st.pow * 100)}%`)),
+        stat('Crit', `${Math.round(st.crit * 100)}%`), stat('Ability power', `${Math.round(st.pow * 100)}%`),
+        stat('Dodge', `${Math.round(Math.min(0.6, st.fx.dodge || 0) * 100)}%`), stat('Regen', `${((st.fx.regen || 0) * 100).toFixed(1)}%/s`),
+        stat('Recharge', `+${Math.round(Math.min(0.6, st.fx.cdr || 0) * 100)}%`)),
       h('div', { class: 'panel' },
         h('div', { class: 'row between' }, h('b', {}, `✦ ${C.ability.name}`), h('small', { class: 'dim', style: { fontWeight: 800 } }, `every ${C.ability.cd}s`)),
         h('div', { class: 'muted', style: { fontSize: '13px', marginTop: '4px' } }, abilityText(cls, st.pow)),
@@ -94,11 +98,11 @@ export function createPartyScreen(root) {
     const slots = [0, 1, 2].map((i) => {
       const cls = s.party[i];
       if (!cls) return h('div', { class: 'ccard', style: { borderStyle: 'dashed', justifyContent: 'center', minHeight: '120px' } }, h('small', {}, 'Empty'), h('small', { class: 'dim' }, 'Add a class below'));
-      return h('button', { class: 'ccard inparty', onclick: () => openClassSheet(cls, render) }, h('div', { class: 'por' }, portrait(cls, 76)), h('b', {}, CLASSES[cls].name), h('small', {}, `Lv ${s.classes[cls].lv} · ${ROLES[CLASSES[cls].role]}`));
+      return h('button', { class: 'ccard inparty', onclick: () => openClassSheet(cls, render) }, h('div', { class: 'por' }, portrait(cls, 76)), h('b', {}, CLASSES[cls].name), h('small', {}, `Lv ${s.classes[cls].lv} · ${G.maxedCount(cls)}/8`));
     });
     const cards = CLASS_IDS.map((cls) => {
       const C = CLASSES[cls], me = s.classes[cls];
-      if (me) return h('button', { class: `ccard${s.party.includes(cls) ? ' inparty' : ''}`, onclick: () => openClassSheet(cls, render) }, h('div', { class: 'por' }, portrait(cls, 76)), h('b', {}, C.name), h('small', {}, `Lv ${me.lv} · ${ROLES[C.role]}`));
+      if (me) return h('button', { class: `ccard${s.party.includes(cls) ? ' inparty' : ''}`, onclick: () => openClassSheet(cls, render) }, h('div', { class: 'por' }, portrait(cls, 76)), h('b', {}, C.name), h('small', {}, `Lv ${me.lv} · ${G.maxedCount(cls)}/8`));
       const needs = Object.entries(C.unlock.needs);
       const prog = Math.min(...needs.map(([k, lv]) => Math.min(1, (s.classes[k]?.lv || 0) / lv)));
       return h('div', { class: 'ccard locked' }, h('div', { class: 'por' }, portrait(cls, 76, true)), h('b', {}, C.name),

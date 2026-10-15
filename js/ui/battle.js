@@ -5,7 +5,9 @@ import * as G from '../core/game.js';
 import { TICK } from '../core/battle.js';
 import { BattleView, VW, VH } from './battleView.js';
 import { h, toast } from './dom.js';
-import { portrait, coin, fmt, tap } from './common.js';
+import { portrait, coin, fmt, tap, holdable } from './common.js';
+import { statPips } from './potions.js';
+import { STATS } from '../data/stats.js';
 import { play } from './sound.js';
 
 const MODES = [1, 10, 'Max'];
@@ -27,24 +29,6 @@ export function createBattleScreen(root, { onFame, openClass, onDrop }) {
     }
     update(true);
   }
-  // hold a level button to keep leveling, faster the longer you hold
-  // (A button that turns disabled mid-hold, out of Fame, never hears the finger lift, so the release is
-  // watched on the whole page, and the hold also ends the moment the button is disabled or gone.)
-  function holdable(btn, fn) {
-    let t = null, delay = 0;
-    const stop = () => {
-      window.clearTimeout(t); t = null;
-      for (const ev of ['pointerup', 'pointercancel', 'touchend', 'touchcancel']) window.removeEventListener(ev, stop, true);
-    };
-    const go = () => { t = setTimeout(() => { if (btn.disabled || !btn.isConnected) return stop(); fn(); delay = Math.max(60, delay * 0.8); go(); }, delay); };
-    btn.addEventListener('pointerdown', (e) => {
-      e.preventDefault(); stop(); fn(); delay = 380;
-      for (const ev of ['pointerup', 'pointercancel', 'touchend', 'touchcancel']) window.addEventListener(ev, stop, true);
-      go();
-    });
-    btn.addEventListener('pointerleave', stop);
-  }
-
   function heroCard(cls) {
     if (!cls) return h('div', { class: 'hcard empty' }, 'Empty slot', h('small', { class: 'dim' }, 'Unlock classes'));
     const C = CLASSES[cls], card = h('div', { class: 'hcard', 'data-cls': cls });
@@ -55,7 +39,8 @@ export function createBattleScreen(root, { onFame, openClass, onDrop }) {
       h('button', { class: 'por', onclick: () => openClass(cls), 'aria-label': `${C.name} details` }, portrait(cls, 66)),
       h('div', { class: 'nm' }, C.name),
       h('div', { class: 'lv' }, ''),
-      btn);
+      btn,
+      h('button', { class: 'pipbtn', onclick: () => openClass(cls), 'aria-label': `${C.name} stats` }));
     return card;
   }
 
@@ -112,6 +97,8 @@ export function createBattleScreen(root, { onFame, openClass, onDrop }) {
       if (btn.disabled !== !can) btn.disabled = !can;
       patch(btn, `${n}|${fmt(cost)}`, () => [h('span', {}, `Level up${n > 1 ? ` ×${n}` : ''}`), h('small', {}, coin(cost))]);
       card.classList.toggle('ready', can);
+      const pb = card.querySelector('.pipbtn'), n8 = G.maxedCount(cls);
+      patch(pb, STATS.map((x) => G.potions(cls, x)).join(','), () => [statPips(cls), h('small', { class: n8 === 8 ? 'full' : '' }, n8 === 8 ? '★ 8/8 ★' : `Stats ${n8}/8`)]);
       const wantHint = can && !s.flags.leveled && cls === party[0], hint = card.querySelector('.hint');
       if (wantHint && !hint) card.append(h('div', { class: 'hint' }, 'Tap to level up!'));
       else if (!wantHint && hint) hint.remove();

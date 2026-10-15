@@ -5,6 +5,7 @@ import { SLOTS } from '../data/gear.js';
 import { STAGE_COUNT, STAGES_PER_ZONE, ZONES, isBoss } from '../data/zones.js';
 import { UNIQUES, UNIQUE } from '../data/uniques.js';
 import { makeRng } from './rng.js';
+import { STATS, potionsToMax } from '../data/stats.js';
 import { heroStats, powerOf } from './heroes.js';
 import { makeUnique, setUniqueLevel, slotOf, fits, upgradeCost, canUpgrade, salvageValue, itemScore, RARITY } from './items.js';
 import { createBattle, stepBattle, simulate, enemyStats, advanceStage, refreshHeroes } from './battle.js';
@@ -119,6 +120,29 @@ export function affordableLevels(cls) {
   let f = state.fame, lv = state.classes[cls].lv, n = 0;
   while (f >= BAL.levelCost(lv)) { f -= BAL.levelCost(lv); lv++; n++; if (n > 500) break; }
   return n;
+}
+
+// ---------- stat potions ----------
+// Prices scale with the Realm and the Ascension Fame bonus, so every run reaches 8/8 near the Castle.
+const potScale = () => BAL.realmFame ** state.realm * state.mult.fame;
+const potsOf = (cls) => (state.classes[cls].pots ||= {});
+export const potions = (cls, s) => state.classes[cls]?.pots?.[s] || 0;
+export const statMaxed = (cls, s) => potions(cls, s) >= potionsToMax(cls, s);
+export const maxedCount = (cls) => STATS.filter((s) => statMaxed(cls, s)).length;
+export const potionCost = (cls, s, k = potions(cls, s)) => Math.round(BAL.potionCost(k, potionsToMax(cls, s), s) * potScale());
+/** Drink up to `times` potions of one stat. Returns how many. */
+export function drink(cls, s, times = 1) {
+  let n = 0;
+  while (n < times && !statMaxed(cls, s) && state.fame >= potionCost(cls, s)) { state.fame -= potionCost(cls, s); potsOf(cls)[s] = potions(cls, s) + 1; n++; }
+  if (n) changed({ potion: cls, stat: s, n, maxed: statMaxed(cls, s), eight: maxedCount(cls) === 8 && statMaxed(cls, s) });
+  return n;
+}
+/** How many potions of a stat the current Fame buys, and what they cost. */
+export function affordablePotions(cls, s, cap = Infinity) {
+  let f = state.fame, k = potions(cls, s), n = 0, cost = 0;
+  const K = potionsToMax(cls, s);
+  while (n < cap && k < K && f >= potionCost(cls, s, k)) { const c = potionCost(cls, s, k); f -= c; cost += c; k++; n++; }
+  return { n, cost };
 }
 
 // ---------- party ----------
@@ -265,7 +289,7 @@ function settle(events) {
 }
 /** Advance the live battle by one tick. Returns that tick's battle events and the rewards they paid. */
 let statSig = '', statT = 0;
-const sigOf = (st) => JSON.stringify(st.map((s) => [s.cls, Math.round(s.atk), Math.round(s.hp), Math.round(s.def), +s.spd.toFixed(2), s.crit, s.fx]));
+const sigOf = (st) => JSON.stringify(st.map((s) => [s.cls, Math.round(s.atk), Math.round(s.hp), Math.round(s.def), +s.spd.toFixed(2), s.crit, +s.pow.toFixed(2), s.fx]));
 export function tickBattle() {
   if (!battle) startBattle();
   // level-ups and new gear reach the fighting party within a second; a new line-up starts a fresh fight
@@ -347,7 +371,7 @@ export function ascend() {
   state.mult.offline += P.gain * 0.15; state.mult.drops += P.gain * 0.3;
   state.ascensions = P.n; state.realm = P.realm;
   // Uniques are kept (worn ones stay on) but lose their upgrades; everything else is gone
-  for (const [c, C] of Object.entries(state.classes)) { C.lv = P.levels[c]; C.gear = Object.fromEntries(Object.entries(C.gear).filter(([, it]) => it?.u)); }
+  for (const [c, C] of Object.entries(state.classes)) { C.lv = P.levels[c]; C.pots = {}; C.gear = Object.fromEntries(Object.entries(C.gear).filter(([, it]) => it?.u)); }
   state.inv = state.inv.filter((it) => it.u); state.fame = 0;
   for (const it of [...state.inv, ...Object.values(state.classes).flatMap((C) => Object.values(C.gear))]) if (it) it.up = 0; state.stage = 0; state.best = -1; state.flags.wallAt = null;
   syncUniques();

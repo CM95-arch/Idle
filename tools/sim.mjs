@@ -7,18 +7,20 @@ import { CLASSES } from '../js/data/classes.js';
 import { SLOTS } from '../js/data/gear.js';
 import { ZONES, STAGES_PER_ZONE, stageLabel } from '../js/data/zones.js';
 import { TICK } from '../js/core/battle.js';
+import { STATS, potionsToMax } from '../js/data/stats.js';
 import { itemScore, slotOf, upgradeCost, canUpgrade, fits } from '../js/core/items.js';
 
 // extra args like levelCostGrowth=1.13 override numbers in js/data/balance.js for this run
 const args = process.argv.slice(2).filter((a) => !a.includes('='));
 for (const a of process.argv.slice(2).filter((x) => x.includes('='))) { const [k, v] = a.split('='); BAL[k] = Number(v); }
+const POT = Number(process.env.POT || 1);
 const HOURS = Number(args[0] || 24), ACTIVE = Number(args[1] || 20), AWAY = Number(args[2] || 120);
 G.resetAll();
 const S = () => G.state;
 let now = Date.now(), simT = 0;
 const fmt = (s) => `${Math.floor(s / 3600)}h${String(Math.floor((s % 3600) / 60)).padStart(2, '0')}m${String(Math.floor(s % 60)).padStart(2, '0')}s`;
 const log = (m) => console.log(`${fmt(simT).padStart(7)}  ${m}`);
-G.onChange((w) => { if (w?.unlock) log(`unlocked ${CLASSES[w.unlock].name}`); });
+G.onChange((w) => { if (w?.unlock) log(`unlocked ${CLASSES[w.unlock].name}`); if (w?.eight) log(`${CLASSES[w.potion].name} is 8/8 at ${stageLabel(S().best)}`); });
 
 function manage() {
   const st = S();
@@ -33,12 +35,16 @@ function manage() {
   // salvage what nobody in the party can use better
   G.salvage(st.inv.filter((it) => !Object.keys(st.classes).some((c) => G.isUpgradeFor(c, it))).map((it) => it.id));
   // spend: cheapest of (lowest-level party member's level, an upgrade on equipped gear)
-  for (let guard = 0; guard < 400; guard++) {
+  for (let guard = 0; guard < 4000; guard++) {
     const lowest = st.party.reduce((a, b) => (st.classes[b].lv < st.classes[a].lv ? b : a));
     const lc = G.levelCost(lowest);
     let best = null;
     for (const c of st.party) for (const s of SLOTS) { const it = st.classes[c].gear[s]; if (it && canUpgrade(it) && (!best || upgradeCost(it) < upgradeCost(best))) best = it; }
-    if (best && upgradeCost(best) < lc * 0.6 && st.fame >= upgradeCost(best)) G.upgrade(best.id);
+    // the cheapest stat potion (per share of its max) in the party
+    let pot = null;
+    for (const c of st.party) for (const s of STATS) if (!G.statMaxed(c, s)) { const e = (G.potionCost(c, s) * potionsToMax(c, s)) / BAL.potRef; if (!pot || e < pot.e) pot = { c, s, e }; }
+    if (pot && pot.e < lc * POT && st.fame >= G.potionCost(pot.c, pot.s)) G.drink(pot.c, pot.s);
+    else if (best && upgradeCost(best) < lc * 0.6 && st.fame >= upgradeCost(best)) G.upgrade(best.id);
     else if (st.fame >= lc) G.levelUp(lowest);
     else break;
   }
@@ -58,7 +64,7 @@ while (simT < HOURS * 3600) {
     if (mt > 20) { mt = 0; manage(); if (G.canAscend()) { G.ascend(); log(`ASCENDED → Realm ${S().realm + 1}`); } }
     if ((S().stats.uniques || 0) !== lastU) { lastU = S().stats.uniques; const it = [...S().inv].reverse().find((x) => x.u); log(`UNIQUE #${lastU}: ${it?.name}`); }
     if (S().best !== lastBest) {
-      if (S().best >= 0 && (S().best + 1) % STAGES_PER_ZONE === 0 && (!process.env.QUIET || S().best === 69)) log(`beat ${ZONES[Math.floor(S().best / STAGES_PER_ZONE)].boss[0]} (${stageLabel(S().best)}, realm ${S().realm + 1})  power ${G.partyPower()}  lv ${S().party.map((c) => `${c}:${S().classes[c].lv}`).join(' ')}`);
+      if (S().best >= 0 && (S().best + 1) % STAGES_PER_ZONE === 0 && (!process.env.QUIET || S().best === 69)) log(`beat ${ZONES[Math.floor(S().best / STAGES_PER_ZONE)].boss[0]} (${stageLabel(S().best)}, realm ${S().realm + 1})  power ${G.partyPower()}  lv ${S().party.map((c) => `${c}:${S().classes[c].lv} ${G.maxedCount(c)}/8`).join(' ')}`);
       lastBest = S().best;
     }
   }
