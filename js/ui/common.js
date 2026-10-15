@@ -2,7 +2,7 @@
 import { CLASSES } from '../data/classes.js';
 import { BAL } from '../data/balance.js';
 import { h } from './dom.js';
-import { heroImage } from './art/heroes.js';
+import { chibiImage } from './art/chibi.js';
 import { itemImage } from './art/items.js';
 import { uniqueOf } from '../core/items.js';
 import { artImg } from './art/core.js';
@@ -11,9 +11,9 @@ import * as G from '../core/game.js';
 import { play } from './sound.js';
 
 export { fmt };
-/** A class's full-figure portrait (front view), `size` px tall. */
+/** A class's figure (the same art as on the battlefield), `size` px tall. */
 export function portrait(cls, size = 64, locked = false) {
-  const img = artImg(heroImage(cls, false));
+  const img = artImg(chibiImage(cls));
   img.className = `figure${locked ? ' locked' : ''}`; img.alt = locked ? 'Locked class' : CLASSES[cls].name;
   img.style.height = `${size}px`; img.style.width = 'auto';
   return img;

@@ -35,6 +35,8 @@ Plain HTML/CSS/JavaScript, no build step. Save it to the iPhone home screen from
 
 ## Tools
 
+- `tools/gallery.html` (open on the dev server): every hero, monster, boss and Unique icon on one page, for reviewing the art.
+
 ```
 npm start                                   # local server on :8080
 node tools/sim.mjs 48 30 90                 # pacing: 48h of a scripted player, 30 min active / 90 min away

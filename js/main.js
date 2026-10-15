@@ -13,7 +13,7 @@ import { showWelcome, showOffline, showUnlock, showAscended, showUnique } from '
 import { icon } from './ui/icons.js';
 import { runTour, touring } from './ui/tour.js';
 import { CLASSES } from './data/classes.js';
-import { heroImage } from './ui/art/heroes.js';
+import { chibiImage } from './ui/art/chibi.js';
 
 // show any error as a toast, so problems on a phone can be reported
 window.addEventListener('error', (e) => toast({ title: 'Something went wrong', body: String(e.message || e.error || 'unknown error').slice(0, 140) }));
@@ -180,4 +180,4 @@ if (!G.state.flags.intro) showWelcome(() => { G.state.flags.intro = true; G.save
 else { collect(); if (!G.state.flags.tour) setTimeout(() => { if (!document.querySelector('#overlay-root .overlay')) startTour(); }, 900); }
 requestAnimationFrame(frame);
 // decode every hero's art in the background so unlocks and swaps show instantly
-setTimeout(() => { for (const c of Object.keys(CLASSES)) for (const back of [false, true]) heroImage(c, back); }, 1500);
+setTimeout(() => { for (const c of Object.keys(CLASSES)) chibiImage(c); }, 1500);

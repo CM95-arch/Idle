@@ -159,5 +159,5 @@ function shield(x, y, g) {
 
 /** Cached image of a hero. */
 export function heroImage(cls, back = false, gem = null) {
-  return svgImage(`hero|${cls}|${back}|${gem}`, 200, 260, () => heroMarkup(cls, { back, gem, g: `h${cls.slice(0, 3)}${back ? 'b' : 'f'}` }), 1.7);
+  return svgImage(`hero|${cls}|${back}|${gem}`, 200, 260, () => heroMarkup(cls, { back, gem, g: `h${cls.slice(0, 3)}${back ? 'b' : 'f'}` }), 1.7, { inset: 0.012 });
 }

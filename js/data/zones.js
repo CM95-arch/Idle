@@ -6,7 +6,7 @@ export const ZONES = [
     boss: ['Kraken King', ['kraken'], { a: '#6a2a5a', b: '#c070a0', c: '#ffe08a' }] },
   { id: 'lowlands', name: 'Lowlands', bg: ['#8fce6a', '#5fa84a', '#3a7a3a'], ground: '#7fbf5a', deco: ['tree', 'grass'],
     enemies: [['Hobbit Mage', ['humanoid', { hat: 'hood', weapon: 'staff', skin: '#c9a080' }], { a: '#5a4a2a', b: '#a08050', c: '#5de0ff' }], ['Goblin', ['humanoid', { hat: 'horns', weapon: 'blade', skin: '#6a8a3a' }], { a: '#4a3a2a', b: '#7a5a3a', c: '#ff4040' }], ['Viper', ['serpent'], { a: '#4a6a24', b: '#c6c96a', c: '#ffde3d' }]],
-    boss: ['Dwarf King', ['humanoid', { hat: 'crown', weapon: 'axe', skin: '#c08a6a', big: true }], { a: '#6a3a24', b: '#c09040', c: '#ffd34d' }] },
+    boss: ['Dwarf King', ['humanoid', { hat: 'crown', weapon: 'axe', skin: '#c08a6a', big: true, beard: true }], { a: '#6a3a24', b: '#c09040', c: '#ffd34d' }] },
   { id: 'midlands', name: 'Midlands', bg: ['#6aa05a', '#4a7a4a', '#2a4a3a'], ground: '#5a8a4a', deco: ['tree', 'rock'],
     enemies: [['Orc Warrior', ['humanoid', { hat: 'helm', weapon: 'axe', skin: '#5a7a3a' }], { a: '#3a3a2a', b: '#6a6a4a', c: '#ff5a3a' }], ['Dark Elf', ['humanoid', { hat: 'hood', weapon: 'spear', skin: '#8a7aa0' }], { a: '#2a2240', b: '#5a4a7a', c: '#ff40ff' }], ['Skeleton', ['skeleton'], { a: '#d8d2bc', b: '#f0ead8', c: '#ff4040' }]],
     boss: ['Lich', ['lich'], { a: '#2a1a40', b: '#d8d2c0', c: '#40ffe0' }] },

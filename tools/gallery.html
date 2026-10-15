@@ -1,0 +1,33 @@
+<!doctype html>
+<!-- Dev tool: every sprite on one page, for reviewing the art. Open /tools/gallery.html on the dev server. -->
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sprite gallery</title>
+<style>body{margin:0;background:#16121f;color:#ddd;font:12px system-ui}h2{margin:10px;font-size:14px}.row{display:flex;flex-wrap:wrap;gap:6px;padding:0 10px}.c{display:flex;flex-direction:column;align-items:center;background:#211a30;border-radius:8px;padding:4px}canvas{display:block}</style></head>
+<body><div id="out"></div>
+<script type="module">
+import { chibiImage } from '../js/ui/art/chibi.js';
+import { heroImage } from '../js/ui/art/heroes.js';
+import { monsterImage } from '../js/ui/art/monsters.js';
+import { itemImage } from '../js/ui/art/items.js';
+import { ready } from '../js/ui/art/core.js';
+import { CLASS_IDS } from '../js/data/classes.js';
+import { ZONES } from '../js/data/zones.js';
+import { UNIQUES } from '../js/data/uniques.js';
+const out = document.getElementById('out');
+const which = new URLSearchParams(location.search).get('show') || 'chibi,monsters,bosses,portraits,items';
+const groups = [];
+const add = (title, list) => groups.push({ title, list });
+if (which.includes('chibi')) add('Heroes (battle)', CLASS_IDS.map((c) => [c, chibiImage(c), 80 * 1.4, 96 * 1.4]));
+if (which.includes('portraits')) add('Portraits', CLASS_IDS.map((c) => [c, heroImage(c, false), 100, 130]));
+if (which.includes('monsters')) add('Monsters', ZONES.flatMap((Z) => Z.enemies.map(([n, sp, pal]) => [n, monsterImage(sp, pal), 80, 80])));
+if (which.includes('bosses')) add('Bosses', ZONES.map((Z) => [Z.boss[0], monsterImage(Z.boss[1], Z.boss[2]), 130, 130]));
+if (which.includes('items')) add('Uniques', UNIQUES.slice(0, 40).map((U) => [U.name, itemImage(U.kind, 6, U.pal), 48, 48]));
+for (const G of groups) {
+  out.insertAdjacentHTML('beforeend', `<h2>${G.title}</h2>`); const row = document.createElement('div'); row.className = 'row'; out.append(row);
+  for (const [name, art, w, h] of G.list) {
+    const c = document.createElement('div'); c.className = 'c'; const cv = document.createElement('canvas'); cv.width = w * 2; cv.height = h * 2; cv.style.width = `${w}px`; cv.style.height = `${h}px`;
+    c.append(cv, Object.assign(document.createElement('span'), { textContent: name })); row.append(c);
+    const tick = () => { if (ready(art)) cv.getContext('2d').drawImage(art.bmp, 0, 0, cv.width, cv.height); else setTimeout(tick, 50); }; tick();
+  }
+}
+window.galleryDone = () => groups.every((G) => G.list.every(([, a]) => ready(a)));
+</script></body></html>

@@ -14,6 +14,7 @@ function pump() {
     const cv = document.createElement('canvas');
     cv.width = art.img.naturalWidth; cv.height = art.img.naturalHeight;
     cv.getContext('2d').drawImage(art.img, 0, 0);
+    if (art.light) relight(cv, art.light === true ? {} : art.light);
     art.bmp = cv;
     try { art.png = cv.toDataURL('image/png'); } catch { art.png = art.img.src; }
     for (const el of art.waiting) el.src = art.png;
@@ -22,11 +23,57 @@ function pump() {
   };
   setTimeout(run, 0);
 }
-/** Art built from SVG markup on demand: { bmp (canvas, for drawing), png (for <img>) } once ready. */
-export function svgImage(key, w, h, build, scale = 1.6) {
+// ---- the lighting pass ----
+// Every figure gets the same studio lighting once it's rasterized, so the whole cast reads as one set: a key
+// light from the upper left (a warm rim along the lit edges, just inside the ink outline), a cool core shadow
+// along the far edges, a soft falloff to the lower right, and the feet sinking into shade.
+const layer = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; };
+function silhouette(src, w, h) {
+  const c = layer(w, h), g = c.getContext('2d');
+  g.drawImage(src, 0, 0); g.globalCompositeOperation = 'source-in'; g.fillStyle = '#fff'; g.fillRect(0, 0, w, h);
+  return c;
+}
+/** The silhouette shrunk by r px (so effects stay inside the ink outline). */
+function erode(S, w, h, r) {
+  const c = layer(w, h), g = c.getContext('2d');
+  g.drawImage(S, 0, 0); g.globalCompositeOperation = 'destination-in';
+  for (const [dx, dy] of [[r, 0], [-r, 0], [0, r], [0, -r], [r * 0.7, r * 0.7], [-r * 0.7, -r * 0.7], [r * 0.7, -r * 0.7], [-r * 0.7, r * 0.7]]) g.drawImage(S, dx, dy);
+  return c;
+}
+/** The part of A that B, moved by (dx, dy), doesn't cover: an inner edge band facing away from the move. */
+function band(A, w, h, dx, dy, color, alpha) {
+  const c = layer(w, h), g = c.getContext('2d');
+  g.drawImage(A, 0, 0); g.globalCompositeOperation = 'destination-out'; g.drawImage(A, dx, dy);
+  g.globalCompositeOperation = 'source-in'; g.globalAlpha = alpha; g.fillStyle = color; g.fillRect(0, 0, w, h);
+  return c;
+}
+export function relight(cv, { rim = '#fff4dc', core = '#1a0f33', inset = 0.022, strength = 1 } = {}) {
+  const w = cv.width, h = cv.height, g = cv.getContext('2d');
+  const r = Math.max(2, Math.round(Math.min(w, h) * inset)), d = Math.max(2, Math.round(r * 0.9));
+  const S = silhouette(cv, w, h), E = erode(S, w, h, r);
+  g.save(); g.globalCompositeOperation = 'source-atop';
+  // falloff: lit at the upper left, into shadow at the lower right
+  let gr = g.createLinearGradient(0, 0, w, h);
+  gr.addColorStop(0, `rgba(255,236,210,${0.10 * strength})`); gr.addColorStop(0.45, 'rgba(0,0,0,0)'); gr.addColorStop(1, `rgba(16,8,36,${0.34 * strength})`);
+  g.fillStyle = gr; g.fillRect(0, 0, w, h);
+  // the feet sink into shade
+  gr = g.createLinearGradient(0, h * 0.72, 0, h); gr.addColorStop(0, 'rgba(10,6,24,0)'); gr.addColorStop(1, `rgba(10,6,24,${0.3 * strength})`);
+  g.fillStyle = gr; g.fillRect(0, 0, w, h);
+  // core shadow along the far (lower right) edges, in two soft steps
+  g.drawImage(band(E, w, h, -d * 2.4, -d * 2.4, core, 0.22 * strength), 0, 0);
+  g.drawImage(band(E, w, h, -d, -d, core, 0.25 * strength), 0, 0);
+  // the rim light along the near (upper left) edges
+  g.drawImage(band(E, w, h, d * 0.9, d * 0.9, rim, 0.6 * strength), 0, 0);
+  g.drawImage(band(E, w, h, d * 2, d * 2, rim, 0.16 * strength), 0, 0);
+  g.restore();
+}
+
+/** Art built from SVG markup on demand: { bmp (canvas, for drawing), png (for <img>) } once ready.
+ * `light` runs the lighting pass over it (true, or options for relight). */
+export function svgImage(key, w, h, build, scale = 1.6, light = false) {
   let art = cache.get(key);
   if (art) return art;
-  art = { key, vw: w, vh: h, bmp: null, png: null, waiting: [], img: new Image() };
+  art = { key, vw: w, vh: h, bmp: null, png: null, waiting: [], img: new Image(), light };
   art.img.onload = () => { queue.push(art); pump(); };
   art.img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${Math.round(w * scale)}" height="${Math.round(h * scale)}">${build()}</svg>`)}`;
   cache.set(key, art);

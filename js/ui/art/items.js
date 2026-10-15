@@ -1,4 +1,5 @@
-// Gear icons as vector art in a 64×64 box, colored by rarity: main (a), light (b), accent/gem (c).
+// Gear icons as vector art in a 64×64 box, colored by rarity: main (a), light (b), accent/gem (c), over a soft aura
+// in the accent color.
 import { svgImage, lit, metal, rad, blur, glowDot, ol } from './core.js';
 
 const RAR = [
@@ -34,10 +35,11 @@ const ICON = {
 export function itemMarkup(kind, rarity, g = 'i', pal = null) {
   const [a, b, c] = pal || RAR[rarity];
   return `<defs>${lit(`${g}a`, a)}${lit(`${g}b`, b)}${metal(`${g}m`, kind === 'heavy' || kind === 'helm' || kind === 'trap' ? b : '#b8bcc8')}${rad(`${g}gm`, [[0, '#fff'], [0.4, c], [1, a]])}${blur(`${g}bl`, 2.6)}</defs>
-    <g style="--c:${c}">${(ICON[kind] || ICON.bag)(g)}</g>`.replace(/var\(--c\)/g, c);
+    ${rad(`${g}au`, [[0, c, 0.42], [0.55, c, 0.12], [1, c, 0]])}<circle cx="32" cy="33" r="30" fill="url(#${g}au)"/>
+    <g transform="translate(32 34) scale(1.08) translate(-32 -33)">${(ICON[kind] || ICON.bag)(g)}</g>`.replace(/var\(--c\)/g, c);
 }
 export function itemImage(kind, rarity, pal = null) {
   const key = pal ? pal.join('').replace(/#/g, '') : rarity;
-  return svgImage(`item|${kind}|${key}`, 64, 64, () => itemMarkup(kind, rarity, `i${kind.slice(0, 3)}${key}`, pal), 2);
+  return svgImage(`item2|${kind}|${key}`, 64, 64, () => itemMarkup(kind, rarity, `i${kind.slice(0, 3)}${key}`, pal), 2, { inset: 0.03, strength: 0.8 });
 }
 export const RARITY_SHADES = RAR;

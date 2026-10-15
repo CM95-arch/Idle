@@ -15,8 +15,21 @@ const MOD_COLOR = { chain: '#7ae8ff', burn: '#ff8a2a', chill: '#bfe8ff' };
 const EXALT_PAL = ['#a07a20', '#fff3c0', '#ffffff'];
 const TAU = Math.PI * 2;
 const rand = (a, b) => a + Math.random() * (b - a);
-const HERO_W = 46, HERO_H = 55;
-const sizeOf = (e) => (e.boss ? 112 : e.elite ? 48 : 36);
+const HERO_W = 70, HERO_H = 76; // the chibi art is a 120×130 box
+// ambient particles per biome: how many, and how each one starts (`fresh` = anywhere, else at its source)
+const rnd = (a, b) => a + Math.random() * (b - a);
+const AMBIENT = {
+  beach: { n: 14, twinkle: 3, spawn: (f) => ({ x: f ? rnd(0, 360) : -10, y: rnd(20, 140), vx: rnd(10, 22), vy: rnd(-2, 2), r: rnd(1.2, 2.4), c: '#bfefff', core: '#ffffff', a: 0.55, t: 0, life: rnd(8, 16), ph: rnd(0, 6) }) },
+  lowlands: { n: 16, wander: true, twinkle: 4, spawn: () => ({ x: rnd(0, 360), y: rnd(60, 420), vx: rnd(-6, 6), vy: rnd(-6, 6), r: rnd(1.6, 2.6), c: '#d8ff6a', core: '#ffffe0', a: 0.8, t: 0, life: rnd(4, 9), ph: rnd(0, 6) }) },
+  midlands: { n: 16, wander: true, twinkle: 4, spawn: () => ({ x: rnd(0, 360), y: rnd(60, 420), vx: rnd(-6, 6), vy: rnd(-6, 6), r: rnd(1.6, 2.6), c: '#6affc0', core: '#e0fff4', a: 0.8, t: 0, life: rnd(4, 9), ph: rnd(0, 6) }) },
+  highlands: { n: 18, spawn: (f) => ({ x: f ? rnd(0, 360) : -10, y: rnd(0, 430), vx: rnd(6, 14), vy: rnd(-3, 3), r: rnd(1.5, 3.5), c: '#c8d0e0', a: 0.18, t: 0, life: rnd(10, 20), ph: rnd(0, 6) }) },
+  godlands: { n: 18, twinkle: 5, spawn: () => ({ x: rnd(0, 360), y: rnd(0, 430), vx: rnd(-3, 3), vy: rnd(-8, -2), r: rnd(1.2, 2.4), c: '#d8a0ff', core: '#ffffff', a: 0.75, t: 0, life: rnd(3, 7), ph: rnd(0, 6) }) },
+  approach: { n: 20, spawn: (f) => ({ x: rnd(0, 360), y: f ? rnd(0, 430) : 440, vx: rnd(-6, 6), vy: rnd(-34, -16), r: rnd(1, 2), c: '#ff8a3a', core: '#fff0c0', a: 0.75, t: 0, life: rnd(5, 12), ph: rnd(0, 6) }) },
+  castle: { n: 22, spawn: (f) => ({ x: rnd(0, 360), y: f ? rnd(0, 430) : 440, vx: rnd(-6, 6), vy: rnd(-30, -14), r: rnd(1, 2.2), c: Math.random() < 0.5 ? '#ff5a2a' : '#c06aff', core: '#fff0e0', a: 0.75, t: 0, life: rnd(5, 12), ph: rnd(0, 6) }) },
+  halls: { n: 16, twinkle: 2, spawn: (f) => ({ x: rnd(0, 360), y: f ? rnd(0, 430) : 440, vx: rnd(-3, 3), vy: rnd(-12, -5), r: rnd(1.4, 2.6), c: '#8ad8ff', core: '#ffffff', a: 0.6, t: 0, life: rnd(8, 16), ph: rnd(0, 6) }) },
+  shatters: { n: 22, wander: true, twinkle: 3, spawn: (f) => ({ x: rnd(0, 360), y: f ? rnd(0, 430) : 440, vx: rnd(-5, 5), vy: rnd(-16, -6), r: rnd(1.4, 3), c: '#a05aff', core: '#f0e0ff', a: 0.7, t: 0, life: rnd(6, 12), ph: rnd(0, 6) }) },
+};
+const sizeOf = (e) => (e.boss ? 120 : e.elite ? 54 : 42);
 
 // soft round glow sprites, cached per color
 const glowCache = new Map();
@@ -352,6 +365,7 @@ export class BattleView {
       g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.85)'; g.strokeText(n.text, n.x, y); g.fillStyle = n.c; g.fillText(n.text, n.x, y);
     }
     g.globalAlpha = 1;
+    this.ambience(g, zoneOf(B.stage).id, dt);
     this.hud(g, B);
     // banners
     this.banners = this.banners.filter((b) => (b.t += dt) < b.life);
@@ -408,6 +422,23 @@ export class BattleView {
       if (h.shield > 0) bar(g, h.x - 16, h.y + 12, 32, 2, Math.min(1, h.shield / h.maxHp / 0.3), '#7ad0ff');
       bar(g, h.x - 16, h.y + 15, 32, 4, h.hp / h.maxHp, h.hp / h.maxHp > 0.5 ? '#3fdf6c' : h.hp / h.maxHp > 0.25 ? '#e8b928' : '#e0483e');
     }
+  }
+  /** Each biome's air: sea spray, fireflies, drifting dust, sparkles, embers and void motes. */
+  ambience(g, zone, dt) {
+    const A = AMBIENT[zone] || AMBIENT.beach;
+    if (this.ambZone !== zone) { this.ambZone = zone; this.amb = []; }
+    while (this.amb.length < A.n) this.amb.push(A.spawn(this.amb.length === 0 || Math.random() < 0.5));
+    g.globalCompositeOperation = 'lighter';
+    for (const p of this.amb) {
+      p.t += dt; p.x += p.vx * dt; p.y += p.vy * dt;
+      if (A.wander) { p.vx += Math.sin(this.t * 1.3 + p.ph) * 14 * dt; p.vy += Math.cos(this.t * 1.1 + p.ph) * 10 * dt; }
+      const life = Math.min(1, p.t / 0.8, (p.life - p.t) / 0.8), tw = A.twinkle ? 0.5 + 0.5 * Math.sin(this.t * A.twinkle + p.ph) : 1;
+      g.globalAlpha = Math.max(0, life) * p.a * tw;
+      g.drawImage(glow(p.c, p.r * 3), p.x - p.r * 3, p.y - p.r * 3);
+      g.fillStyle = p.core || p.c; g.beginPath(); g.arc(p.x, p.y, p.r * 0.45, 0, TAU); g.fill();
+    }
+    this.amb = this.amb.filter((p) => p.t < p.life && p.x > -20 && p.x < VW + 20 && p.y > -20 && p.y < VH + 20);
+    g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
   }
   /** Stage progress along the top, and the boss's life bar when one is on the field. */
   hud(g, B) {
