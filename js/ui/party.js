@@ -24,7 +24,7 @@ export function openClassSheet(cls, onChange) {
     const lvBtn = (n, label) => {
       const k = n === 'max' ? Math.max(1, G.affordableLevels(cls)) : n;
       let cost = 0; for (let i = 0; i < k; i++) cost += G.levelCostForLevel(me.lv + i);
-      return h('button', { class: 'btn grow sm', disabled: s.fame < G.levelCost(cls), onclick: () => { if (G.levelUp(cls, k)) tap('upgrade'); rerender(); onChange?.(); } }, h('span', {}, label), coin(cost));
+      return h('button', { class: 'btn grow sm stack', disabled: s.fame < G.levelCost(cls), onclick: () => { if (G.levelUp(cls, k)) tap('upgrade'); rerender(); onChange?.(); } }, h('span', {}, label), coin(cost));
     };
     const slotTile = (slot) => {
       const it = me.gear[slot];
@@ -33,6 +33,12 @@ export function openClassSheet(cls, onChange) {
         itemTile(it, { upFor: false, who: false, label: '+', onclick: () => openSlotSheet(cls, slot, () => { rerender(); onChange?.(); }) }),
         h('div', { class: 'lab' }, SLOT_NAME[slot], better ? h('span', { class: 'delta-up' }, ' ▲') : null));
     };
+    const partyAction = inParty
+        ? h('button', { class: 'btn alt block', disabled: s.party.length <= 1, onclick: () => { G.removeFromParty(cls); tap(); onChange?.(); close(); } }, s.party.length <= 1 ? 'Your only hero' : 'Remove from party')
+        : s.party.length < BAL.partySize
+          ? h('button', { class: 'btn block', onclick: () => { G.setParty(s.party.length, cls); tap('equip'); onChange?.(); rerender(); } }, 'Add to party')
+          : h('div', {}, h('div', { class: 'h2', style: { marginTop: '4px' } }, 'Swap into the party for…'),
+            h('div', { class: 'row' }, s.party.map((p, i) => h('button', { class: 'btn alt grow sm', onclick: () => { G.setParty(i, cls); tap('equip'); onChange?.(); rerender(); } }, portrait(p, 30), CLASSES[p].name))));
     return [
       h('div', { class: 'row' },
         h('div', { style: { width: '92px', display: 'grid', placeItems: 'center' } }, portrait(cls, 118)),
@@ -40,27 +46,23 @@ export function openClassSheet(cls, onChange) {
           h('div', { class: 'pixel', style: { fontSize: '24px' } }, C.name),
           h('div', { class: 'muted', style: { fontWeight: 800, fontSize: '13px' } }, `${ROLES[C.role]} · Level ${me.lv} · ${G.maxedCount(cls)}/8`),
           h('div', { class: 'dim', style: { fontSize: '12px', marginTop: '2px' } }, C.blurb))),
-      h('div', { class: 'row' }, lvBtn(1, 'Level up'), lvBtn(10, '×10'), lvBtn('max', 'Max')),
-      statPanel(cls, rerender, onChange),
-      h('div', { class: 'panel stats' },
-        stat('HP', fmt(st.hp)), stat('Attack', fmt(st.atk)), stat('Defense', fmt(st.def)), stat('Fire rate', `${st.spd.toFixed(1)} shots/s`),
-        stat('Crit', `${Math.round(st.crit * 100)}%`), stat('Ability power', `${Math.round(st.pow * 100)}%`),
-        stat('Dodge', `${Math.round(Math.min(0.6, st.fx.dodge || 0) * 100)}%`), stat('Regen', `${((st.fx.regen || 0) * 100).toFixed(1)}%/s`),
-        stat('Recharge', `+${Math.round(Math.min(0.6, st.fx.cdr || 0) * 100)}%`)),
-      h('div', { class: 'panel' },
-        h('div', { class: 'row between' }, h('b', {}, `✦ ${C.ability.name}`), h('small', { class: 'dim', style: { fontWeight: 800 } }, `every ${C.ability.cd}s`)),
-        h('div', { class: 'muted', style: { fontSize: '13px', marginTop: '4px' } }, abilityText(cls, st.pow)),
-        C.role === 'tank' ? h('div', { class: 'dim', style: { fontSize: '12px', marginTop: '6px', fontWeight: 700 } }, `Tank: takes ${Math.round(BAL.tankGuard * 100)}% less damage and draws enemy fire while above ${Math.round(BAL.tankFallback * 100)}% HP.`) : null),
+      inParty ? null : partyAction,
+      h('div', { class: 'row' }, lvBtn(1, `Level ${me.lv + 1}`), lvBtn(10, '+10'), lvBtn('max', 'Max')),
       h('div', { class: 'row between' }, h('div', { class: 'h2', style: { margin: 0 } }, 'Gear'),
         h('button', { class: 'btn sm', disabled: !s.inv.some((x) => G.isUpgradeFor(cls, x)), onclick: () => { const n = G.equipBest(cls); tap('equip'); toast({ title: n ? `Equipped ${n} upgrade${n === 1 ? '' : 's'}` : 'Nothing better in your bag', kind: n ? 'gold' : '' }); rerender(); onChange?.(); } }, 'Equip best')),
       h('div', { class: 'gslots' }, SLOTS.map(slotTile)),
       h('div', { class: 'dim center', style: { fontSize: '11px', fontWeight: 800 } }, `${C.name}s wear ${{ staff: 'staves', wand: 'wands', bow: 'bows', dagger: 'daggers', sword: 'swords' }[C.weapon]}, ${{ robe: 'robes', leather: 'leather armor', heavy: 'heavy armor' }[C.armor]}, ${{ spell: 'spells', tome: 'tomes', quiver: 'quivers', cloak: 'cloaks', helm: 'helms', shield: 'shields', trap: 'traps', skull: 'skulls', poison: 'poisons', seal: 'seals', scepter: 'scepters' }[C.abilityItem]} and rings. Tap a slot to choose.`),
-      inParty
-        ? h('button', { class: 'btn alt block', disabled: s.party.length <= 1, onclick: () => { G.removeFromParty(cls); tap(); onChange?.(); close(); } }, s.party.length <= 1 ? 'Your only hero' : 'Remove from party')
-        : s.party.length < BAL.partySize
-          ? h('button', { class: 'btn block', onclick: () => { G.setParty(s.party.length, cls); tap('equip'); onChange?.(); rerender(); } }, 'Add to party')
-          : h('div', {}, h('div', { class: 'h2', style: { marginTop: '4px' } }, 'Swap into the party for…'),
-            h('div', { class: 'row' }, s.party.map((p, i) => h('button', { class: 'btn alt grow sm', onclick: () => { G.setParty(i, cls); tap('equip'); onChange?.(); rerender(); } }, portrait(p, 30), CLASSES[p].name)))),
+      statPanel(cls, rerender, onChange),
+      h('div', { class: 'panel stats' },
+        stat('HP', fmt(st.hp)), stat('Attack', fmt(st.atk)), stat('Defense', fmt(st.def)), stat('Fire rate', `${st.spd.toFixed(1)} shots/s`),
+        stat('Crit', `${Math.round(st.crit * 100)}%`), stat('Ability power', `${Math.round(st.pow * 100)}%`),
+        st.fx.dodge ? stat('Dodge', `${Math.round(Math.min(0.6, st.fx.dodge) * 100)}%`) : null, st.fx.regen ? stat('Regen', `${(st.fx.regen * 100).toFixed(1)}%/s`) : null,
+        st.fx.cdr ? stat('Recharge', `+${Math.round(Math.min(0.6, st.fx.cdr) * 100)}%`) : null),
+      h('div', { class: 'panel' },
+        h('div', { class: 'row between' }, h('b', {}, `✦ ${C.ability.name}`), h('small', { class: 'dim', style: { fontWeight: 800 } }, `every ${C.ability.cd}s`)),
+        h('div', { class: 'muted', style: { fontSize: '13px', marginTop: '4px' } }, abilityText(cls, st.pow)),
+        C.role === 'tank' ? h('div', { class: 'dim', style: { fontSize: '12px', marginTop: '6px', fontWeight: 700 } }, `Tank: takes ${Math.round(BAL.tankGuard * 100)}% less damage and draws enemy fire while above ${Math.round(BAL.tankFallback * 100)}% HP.`) : null),
+      inParty ? partyAction : null,
     ];
   });
   return sheet;

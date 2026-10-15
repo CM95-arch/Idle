@@ -27,7 +27,7 @@ export function statPanel(cls, rerender, onChange) {
     const buy = G.affordablePotions(cls, s, want), n = Math.max(1, buy.n);
     const cost = buy.n ? buy.cost : G.potionCost(cls, s);
     return h('button', {
-      class: `pot${maxed ? ' maxed' : ''}`, style: { '--c': I.color, '--ink': I.ink, '--p': `${(k / K) * 100}%` },
+      class: `pot${maxed ? ' maxed' : ''}`, style: { '--c': I.color, '--p': `${(k / K) * 100}%` },
       disabled: maxed || G.state.fame < G.potionCost(cls, s), 'aria-label': `${I.name} potion`,
       onclick: () => {
         const got = G.drink(cls, s, n);

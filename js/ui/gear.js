@@ -54,7 +54,7 @@ export function openItemSheet(id, onChange) {
       !wornBy && owners.length ? h('div', { class: 'dim center', style: { fontSize: '11px', fontWeight: 800 } }, `${KIND_LABEL(it)} are worn by ${listNames(G.wearers(it))}.`) : null,
       h('div', { class: 'row' },
         h('button', { class: 'btn grow', disabled: !canUpgrade(it) || G.state.fame < upgradeCost(it), onclick: () => { if (G.upgrade(it.id)) { tap('upgrade'); rerender(); onChange?.(); } } },
-          canUpgrade(it) ? [h('span', {}, `Upgrade to +${it.up + 1}`), coin(upgradeCost(it))] : 'Fully upgraded'),
+          canUpgrade(it) ? [h('span', {}, `Upgrade +${it.up + 1}`), coin(upgradeCost(it))] : 'Fully upgraded'),
         !wornBy ? h('button', { class: 'btn alt', onclick: () => { const v = G.salvage([it.id]); tap('fame'); toast({ title: `+${fmt(v)} Fame`, body: `Salvaged ${it.name}`, kind: 'gold' }); onChange?.(); close(); } }, h('span', {}, 'Salvage'), coin(salvageValue(it))) : null),
       h('div', { class: 'dim center', style: { fontSize: '11px', fontWeight: 800 } }, `Upgrades ${it.up} / ${R.maxUp} · each adds ${Math.round(BAL.upgradeStep * 100)}% to its bonus · duplicates add ${BAL.dupeUpgrades}`),
     ];
@@ -76,7 +76,7 @@ export function createGearScreen(root, { onChange }) {
     endSalvage(); onChange?.();
   }
   function tile(it) {
-    if (!sel) return itemTile(it, { onclick: () => openItemSheet(it.id, () => { render(); onChange?.(); }) });
+    if (!sel) return h('div', { class: 'vtile' }, itemTile(it, { onclick: () => openItemSheet(it.id, () => { render(); onChange?.(); }) }), h('div', { class: `vname${uniqueOf(it)?.exalted ? ' ex' : ''}` }, `${it.name}${it.up ? ` +${it.up}` : ''}`));
     const t = itemTile(it, { onclick: () => toggle(it.id) });
     if (sel.has(it.id)) { t.classList.add('picked'); t.append(h('span', { class: 'check' }, '✓')); }
     return t;
@@ -102,7 +102,8 @@ export function createGearScreen(root, { onChange }) {
       h('div', { class: 'row between' }, h('div', { class: 'h1' }, 'Uniques'),
         h('button', { class: 'chip', onclick: openCollection }, `✦ ${found} / ${UNIQUES.length} found`)),
       h('div', { class: 'row', style: { overflowX: 'auto', paddingBottom: '4px' } }, FILTERS.map(([k, l]) => h('button', { class: `chip${k === filter ? ' on' : ''}`, onclick: () => { filter = k; tap(); render(); } }, l))),
-      h('div', { class: 'h2' }, sel ? 'Tap Uniques to salvage them' : items.length ? `In your vault · ${items.length} · ▲ = better for someone in your party` : ''),
+      h('div', { class: 'row between', style: { margin: '14px 2px 8px' } }, h('div', { class: 'h2', style: { margin: 0 } }, sel ? 'Tap Uniques to salvage them' : `Vault · ${items.length}`),
+        !sel && items.length ? h('small', { class: 'dim', style: { fontWeight: 800, fontSize: '11px' } }, h('span', { class: 'delta-up' }, '▲'), ' better for your party') : null),
       items.length ? h('div', { class: 'igrid' }, items.map(tile))
         : h('div', { class: 'panel center muted' }, s.inv.length ? 'Nothing in this category.' : 'No spare Uniques. Bosses guard them, and the horde drops them very rarely. Worn ones live on your heroes.'),
       sel ? salvageBar(items) : h('div', {},

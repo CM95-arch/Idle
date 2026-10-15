@@ -36,7 +36,7 @@ const RING_BASE = { hp: { hpPct: 30 }, atk: { atkPct: 25 }, def: { defPct: 40 } 
 
 export function makeUnique(id, uid) {
   const U = UNIQUE[uid];
-  const it = { id, kind: U.kind, ilvl: uniqueLevel, rarity: UNIQUE_RARITY, up: 0, u: uid, name: U.name, extras: [{ ...U.extra }] };
+  const it = { id, kind: U.kind, ilvl: uniqueLevel, rarity: UNIQUE_RARITY, up: 0, u: uid, name: U.name, extras: U.extra ? [{ ...U.extra }] : [] };
   if (U.ring) it.ring = U.ring;
   return it;
 }
@@ -50,7 +50,7 @@ export function itemStats(it) {
   const base = U?.rot && (slot === 'armor' || slot === 'ring') ? rotStats(U.rot) : { ...(slot === 'ring' ? RING_BASE[it.ring] || RING_BASE.atk : UT_BASE[slot]) };
   if (U?.rot && slot !== 'armor' && slot !== 'ring') for (const [s, v] of Object.entries(rotStats(U.rot))) base[s] = (base[s] || 0) + v;
   for (const [s, v] of Object.entries(base)) out[s] = v * k;
-  for (const e of it.extras || []) out[e.k] = (out[e.k] || 0) + e.v;
+  for (const e of it.extras || []) if (e?.k) out[e.k] = (out[e.k] || 0) + e.v; // (older saves hold empty ones)
   return out;
 }
 /** A single number for comparing items of the same slot (the special effect counts for a lot). */

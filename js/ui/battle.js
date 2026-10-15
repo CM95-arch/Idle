@@ -48,7 +48,7 @@ export function createBattleScreen(root, { onFame, openClass, onDrop }) {
     refs.pots = {};
     const grid = h('div', { class: 'dpots' });
     for (const st of STATS) {
-      const I = STAT_INFO[st], b = h('button', { class: 'dpot', style: { '--c': I.color, '--ink': I.ink }, 'aria-label': `${I.name} potion` });
+      const I = STAT_INFO[st], b = h('button', { class: 'dpot', style: { '--c': I.color }, 'aria-label': `${I.name} potion` });
       holdable(b, () => doDrink(st));
       refs.pots[st] = b; grid.append(b);
     }

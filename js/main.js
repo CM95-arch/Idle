@@ -115,7 +115,6 @@ function openSettings() {
   openSheet((close, rerender) => [
     h('div', { class: 'pixel center', style: { fontSize: '22px' } }, 'Settings'),
     h('button', { class: 'btn alt block', onclick: () => { close(); startTour(); } }, 'Replay the walkthrough'),
-    h('button', { class: 'btn alt block', onclick: () => { G.state.settings.tapDebug = !G.state.settings.tapDebug; G.save(); tapDebug(G.state.settings.tapDebug); rerender(); } }, `Tap debugger: ${G.state.settings.tapDebug ? 'On' : 'Off'}`),
     h('button', { class: 'btn alt block', onclick: () => { G.state.settings.sound = !G.state.settings.sound; setSoundEnabled(G.state.settings.sound); G.save(); rerender(); } }, `Sound: ${G.state.settings.sound ? 'On' : 'Off'}`),
     h('div', { class: 'panel', style: { fontSize: '13px', fontWeight: 700 } },
       h('div', { class: 'stat' }, h('span', {}, 'Enemies defeated'), h('b', {}, fmt(G.state.stats.kills))),
@@ -123,9 +122,12 @@ function openSettings() {
       h('div', { class: 'stat' }, h('span', {}, 'Bosses slain'), h('b', {}, fmt(G.state.stats.bosses))),
       h('div', { class: 'stat' }, h('span', {}, 'Fame earned'), h('b', {}, fmt(G.state.stats.fameEarned))),
       h('div', { class: 'stat' }, h('span', {}, 'Offline limit'), h('b', {}, `${G.offlineCapH()}h`))),
-    h('div', { class: 'panel dim', style: { fontSize: '12px', fontWeight: 700 } }, 'Gold (for extra bag space, offline time and party slots) arrives with the store in a later update. Everything in the game can be earned with Fame.'),
+    h('div', { class: 'panel', style: { fontSize: '13px', fontWeight: 700 } },
+      h('div', { class: 'stat' }, h('span', {}, 'Uniques found'), h('b', {}, `${Object.keys(G.state.uniques).length}`)),
+      h('div', { class: 'stat' }, h('span', {}, 'Ascensions'), h('b', {}, `${G.state.ascensions}`))),
     h('button', { class: 'btn red block', onclick: async () => { if (await confirmDialog({ title: 'Erase all progress?', body: 'This deletes your save on this device. It cannot be undone.', ok: 'Erase', danger: true })) { G.resetAll(); close(); location.reload(); } } }, 'Erase progress'),
-    h('div', { class: 'dim center', style: { fontSize: '11px', fontWeight: 800 } }, `Realm Idle · build ${BUILD}`),
+    h('div', { class: 'dim center', style: { fontSize: '11px', fontWeight: 800 } }, `Realm Idle · build ${BUILD} · `,
+      h('button', { class: 'linkbtn', onclick: () => { G.state.settings.tapDebug = !G.state.settings.tapDebug; G.save(); tapDebug(G.state.settings.tapDebug); rerender(); } }, `tap debugger ${G.state.settings.tapDebug ? 'on' : 'off'}`)),
   ]);
 }
 
