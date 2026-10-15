@@ -35,7 +35,10 @@ const alive = (arr) => arr.filter((x) => !x.dead && x.hp > 0);
 const within = (es, p, R) => es.filter((e) => d2(e, p) <= (R + e.r) ** 2);
 const nearest = (es, p) => { let best = null, bd = Infinity; for (const e of es) { const d = d2(e, p); if (d < bd) { bd = d; best = e; } } return best; };
 
+// formation spots, [left, front, right] (see FORM_SLOTS in game.js)
+const FORM_POS = [{ x: 122, y: 338 }, { x: 180, y: 290 }, { x: 238, y: 338 }];
 function placeHeroes(stats) {
+  if (stats.every((s) => s.slot >= 0 && s.slot < 3)) return stats.map((s) => FORM_POS[s.slot]);
   const front = Math.max(0, stats.findIndex((s) => s.role === 'tank'));
   const order = [front, ...stats.map((_, i) => i).filter((i) => i !== front)];
   const spots = stats.length === 1 ? [{ x: 180, y: 318 }] : stats.length === 2 ? [SPOTS[0], { x: 180, y: 346 }] : SPOTS;
@@ -43,8 +46,8 @@ function placeHeroes(stats) {
   return pos;
 }
 function makeHero(s, i, pos, keep) {
-  const h = { ...s, fx: s.fx || {}, i, x: pos.x, y: pos.y, maxHp: s.hp, hp: s.hp, atkT: 0.15 * i, cd: abilityCd(s) * (0.35 + 0.15 * i), buff: {}, dead: false, shield: 0, shots: 0, rampId: 0, ramp: 0 };
-  if (keep) { h.hp = keep.dead ? 0 : Math.max(1, (keep.hp / keep.maxHp) * h.maxHp); h.dead = keep.dead; h.cd = Math.min(h.cd, keep.cd); h.shield = keep.shield; h.revived = keep.revived; }
+  const h = { ...s, fx: s.fx || {}, i, x: pos.x, y: pos.y, hx: pos.x, hy: pos.y, maxHp: s.hp, hp: s.hp, atkT: 0.15 * i, cd: abilityCd(s) * (0.35 + 0.15 * i), buff: {}, dead: false, shield: 0, shots: 0, rampId: 0, ramp: 0 };
+  if (keep) { h.x = keep.x; h.y = keep.y; h.hp = keep.dead ? 0 : Math.max(1, (keep.hp / keep.maxHp) * h.maxHp); h.dead = keep.dead; h.cd = Math.min(h.cd, keep.cd); h.shield = keep.shield; h.revived = keep.revived; }
   return h;
 }
 
@@ -481,6 +484,8 @@ export function stepBattle(B) {
     if (h.buff.vitUntil > B.t) h.hp = Math.min(h.maxHp, h.hp + h.maxHp * h.fx.vitProc * dt);
     if (h.fx.partyRegen) for (const o of alive(B.heroes)) o.hp = Math.min(o.maxHp, o.hp + o.maxHp * h.fx.partyRegen * dt);
     const es = alive(B.enemies).filter((e) => e.y > -e.r); // only what's on the field
+    // walking to a new spot in the formation
+    if (h.x !== h.hx || h.y !== h.hy) { const dx = h.hx - h.x, dy = h.hy - h.y, L = Math.hypot(dx, dy), st = 140 * dt; if (L <= st) { h.x = h.hx; h.y = h.hy; } else { h.x += (dx / L) * st; h.y += (dy / L) * st; } }
     h.cd -= dt;
     const A = CLASSES[h.cls].ability;
     const needHeal = A.fx === 'heal' ? alive(B.heroes).some((o) => o.hp < o.maxHp * 0.8) : true;

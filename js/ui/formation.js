@@ -1,0 +1,47 @@
+// The formation: a small battlefield with the party's three spots. Tap a hero, then a spot, to move them there.
+import { CLASSES, ROLES } from '../data/classes.js';
+import * as G from '../core/game.js';
+import { h, openSheet } from './dom.js';
+import { portrait, tap } from './common.js';
+
+/** The editor. `onChange` runs after a move; `openClass` opens a hero's sheet (tap a picked hero again). */
+export function formationEditor({ onChange, openClass, compact = false } = {}) {
+  let picked = null;
+  const root = h('div', { class: `formation${compact ? ' compact' : ''}` });
+  function render() {
+    const s = G.state;
+    for (const c of s.party) G.formSlot(c);
+    const form = s.form;
+    const spot = (k) => {
+      const c = form[k], C = c && CLASSES[c];
+      const cls = `fspot s${k}${c ? '' : ' empty'}${picked && picked === c ? ' picked' : ''}${picked && picked !== c ? ' target' : ''}`;
+      return h('button', {
+        class: cls, 'aria-label': `${G.FORM_SLOTS[k]} spot${c ? `: ${C.name}` : ''}`,
+        onclick: () => {
+          if (picked && picked !== c) { G.moveTo(picked, k); picked = null; tap('equip'); onChange?.(); }
+          else if (picked && picked === c) { picked = null; if (openClass) openClass(c); }
+          else if (c) { picked = c; tap(); }
+          render();
+        },
+      },
+      h('span', { class: 'flabel' }, G.FORM_SLOTS[k]),
+      c ? [h('div', { class: 'fpor' }, portrait(c, compact ? 58 : 72)), h('b', {}, C.name), h('small', {}, `${ROLES[C.role]} · Lv ${s.classes[c].lv}`)]
+        : h('small', { class: 'dim' }, picked ? 'Move here' : 'Empty'));
+    };
+    const tank = s.party.find((c) => CLASSES[c].role === 'tank');
+    const tip = picked ? `Now tap a spot for the ${CLASSES[picked].name}${openClass ? ' (or tap them again for details)' : ''}.`
+      : tank && form[1] !== tank ? `Tip: your ${CLASSES[tank].name} is a tank. Tanks hold the line best from the Front.`
+        : 'Tap a hero, then a spot, to move them. The Front spot meets the horde first.';
+    root.replaceChildren(h('div', { class: 'ffield' }, spot(1), spot(0), spot(2)), h('div', { class: `ftip${tank && form[1] !== tank && !picked ? ' warn' : ''}` }, tip));
+  }
+  render();
+  return { el: root, render };
+}
+
+/** The formation in a sheet (from the battle screen). */
+export function openFormationSheet(onChange, openClass) {
+  openSheet((close) => {
+    const ed = formationEditor({ onChange, openClass: openClass && ((c) => { close(); openClass(c); }) });
+    return [h('div', { class: 'pixel center', style: { fontSize: '22px' } }, 'Formation'), ed.el];
+  });
+}

@@ -75,7 +75,7 @@ export const owned = (cls) => !!state.classes[cls];
 export const partyStats = () => state.party.filter(Boolean).map((c) => {
   const C = state.classes[c], gear = Object.values(C.gear).filter(Boolean);
   // looks: the battle view colors each hero's weapon and aura by their gear
-  return { ...heroStats(c, C, state.mult), weaponRarity: C.gear.weapon?.rarity ?? -1, gearRarity: Math.max(-1, ...gear.map((it) => it.rarity)) };
+  return { ...heroStats(c, C, state.mult), slot: formSlot(c), weaponRarity: C.gear.weapon?.rarity ?? -1, gearRarity: Math.max(-1, ...gear.map((it) => it.rarity)) };
 });
 export const partyPower = () => powerOf(partyStats());
 export const offlineCapH = () => BAL.offlineCapHours + state.extra.offlineHours;
@@ -149,16 +149,42 @@ export function affordablePotions(cls, s, cap = Infinity) {
   return { n, cost };
 }
 
+// ---------- formation ----------
+// The party stands in three spots: [left, front, right]. The front spot stands ahead of the other two and meets
+// the horde first, which is where a tank belongs.
+export const FORM_SLOTS = ['Left', 'Front', 'Right'];
+function syncForm() {
+  const f = (Array.isArray(state.form) ? state.form : []).slice(0, 3).map((c) => (state.party.includes(c) ? c : null));
+  while (f.length < 3) f.push(null);
+  for (let i = 0; i < 3; i++) if (f[i] && f.indexOf(f[i]) !== i) f[i] = null;
+  // newcomers: tanks to the front if it's free, everyone else to the sides first
+  for (const c of state.party) if (!f.includes(c)) { const k = (CLASSES[c].role === 'tank' ? [1, 0, 2] : [0, 2, 1]).find((j) => !f[j]); if (k != null) f[k] = c; }
+  state.form = f;
+}
+export const formSlot = (cls) => { if (!state.form?.includes(cls)) syncForm(); return state.form.indexOf(cls); };
+/** Move a party member to a spot; whoever stood there takes its old spot. */
+export function moveTo(cls, slot) {
+  if (!state.party.includes(cls)) return;
+  syncForm();
+  const f = state.form, at = f.indexOf(cls), other = f[slot];
+  f[slot] = cls; f[at] = other ?? null;
+  changed('party');
+}
+
 // ---------- party ----------
 export function setParty(slot, cls) {
   const p = [...state.party];
   const at = p.indexOf(cls);
   if (at >= 0) p[at] = p[slot];
   p[slot] = cls;
+  const old = state.party.find((c) => !p.includes(c));
   state.party = p.filter(Boolean).slice(0, BAL.partySize);
+  // a class swapped in takes the spot of the one it replaced
+  if (old && state.form) { const k = state.form.indexOf(old); if (k >= 0 && !state.form.includes(cls)) state.form[k] = cls; }
+  syncForm();
   changed('party');
 }
-export function removeFromParty(cls) { if (state.party.length > 1) { state.party = state.party.filter((c) => c !== cls); changed('party'); } }
+export function removeFromParty(cls) { if (state.party.length > 1) { state.party = state.party.filter((c) => c !== cls); syncForm(); changed('party'); } }
 
 // ---------- gear ----------
 export function equip(cls, itemId) {
@@ -294,7 +320,7 @@ function settle(events) {
 }
 /** Advance the live battle by one tick. Returns that tick's battle events and the rewards they paid. */
 let statSig = '', statT = 0;
-const sigOf = (st) => JSON.stringify(st.map((s) => [s.cls, Math.round(s.atk), Math.round(s.hp), Math.round(s.def), +s.spd.toFixed(2), s.crit, +s.pow.toFixed(2), s.fx]));
+const sigOf = (st) => JSON.stringify(st.map((s) => [s.cls, s.slot, Math.round(s.atk), Math.round(s.hp), Math.round(s.def), +s.spd.toFixed(2), s.crit, +s.pow.toFixed(2), s.fx]));
 export function tickBattle() {
   if (!battle) startBattle();
   // level-ups and new gear reach the fighting party within a second; a new line-up starts a fresh fight

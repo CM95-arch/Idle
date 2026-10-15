@@ -9,6 +9,7 @@ import { h, openSheet, closeSheet, toast } from './dom.js';
 import { portrait, coin, fmt, itemTile, tap } from './common.js';
 import { openItemSheet } from './gear.js';
 import { statPanel } from './potions.js';
+import { formationEditor } from './formation.js';
 
 export function abilityText(cls, pow = 1) {
   const A = CLASSES[cls].ability;
@@ -95,11 +96,6 @@ export function createPartyScreen(root) {
   function render() {
     root.classList.remove('fit');
     const s = G.state;
-    const slots = [0, 1, 2].map((i) => {
-      const cls = s.party[i];
-      if (!cls) return h('div', { class: 'ccard', style: { borderStyle: 'dashed', justifyContent: 'center', minHeight: '120px' } }, h('small', {}, 'Empty'), h('small', { class: 'dim' }, 'Add a class below'));
-      return h('button', { class: 'ccard inparty', onclick: () => openClassSheet(cls, render) }, h('div', { class: 'por' }, portrait(cls, 76)), h('b', {}, CLASSES[cls].name), h('small', {}, `Lv ${s.classes[cls].lv} · ${G.maxedCount(cls)}/8`));
-    });
     const cards = CLASS_IDS.map((cls) => {
       const C = CLASSES[cls], me = s.classes[cls];
       if (me) return h('button', { class: `ccard${s.party.includes(cls) ? ' inparty' : ''}`, onclick: () => openClassSheet(cls, render) }, h('div', { class: 'por' }, portrait(cls, 76)), h('b', {}, C.name), h('small', {}, `Lv ${me.lv} · ${G.maxedCount(cls)}/8`));
@@ -111,10 +107,11 @@ export function createPartyScreen(root) {
     });
     root.replaceChildren(
       h('div', { class: 'h1' }, 'Party'),
-      h('div', { class: 'slotrow' }, slots),
+      h('div', { class: 'h2', style: { marginTop: 0 } }, 'Formation'),
+      formationEditor({ onChange: render, openClass: (c) => openClassSheet(c, render) }).el,
       h('div', { class: 'h2' }, `Classes · ${Object.keys(s.classes).length} / ${CLASS_IDS.length}`),
       h('div', { class: 'grid3' }, cards),
-      h('p', { class: 'dim center', style: { fontSize: '12px', fontWeight: 700 } }, 'Classes level up separately and keep their levels when you swap them.'));
+      h('p', { class: 'dim center', style: { fontSize: '12px', fontWeight: 700 } }, 'Tap a class for its stats, potions and gear, and to swap it into the party. Classes keep their levels when you swap them.'));
   }
   return { render, frame() {} , close: closeSheet };
 }

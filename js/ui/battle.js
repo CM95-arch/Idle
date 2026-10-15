@@ -7,6 +7,7 @@ import { BattleView, VW, VH } from './battleView.js';
 import { h, toast } from './dom.js';
 import { portrait, coin, fmt, tap, holdable } from './common.js';
 import { statPips } from './potions.js';
+import { openFormationSheet } from './formation.js';
 import { STATS, STAT_INFO, potionsToMax, statValue } from '../data/stats.js';
 import { play } from './sound.js';
 
@@ -21,8 +22,8 @@ export function createBattleScreen(root, { onFame, openClass, onDrop }) {
   }
   // The dock: a tab for each hero in the party, and for the chosen one a Level button and the eight stat
   // potions in their ROTMG colors. Every button can be held to keep buying.
-  let sel = 0;
-  const selCls = () => G.state.party[Math.min(sel, G.state.party.length - 1)];
+  let selC = null;
+  const selCls = () => (G.state.party.includes(selC) ? selC : G.state.party.find((c) => G.formSlot(c) === 1) || G.state.party[0]);
   function potionCount(cls, st) {
     const m = MODES[mode];
     return G.affordablePotions(cls, st, m === 'Max' ? Infinity : m).n;
@@ -67,7 +68,8 @@ export function createBattleScreen(root, { onFame, openClass, onDrop }) {
       refs.arena = h('div', { class: 'arena' }, cv),
       refs.dock = h('div', { class: 'dock' },
         h('div', { class: 'lvmode' },
-          h('small', { class: 'dim', style: { fontWeight: 800 } }, 'Level up and drink potions · hold to keep buying'),
+          h('button', { class: 'chip', onclick: () => { tap(); openFormationSheet(() => update(true), openClass); } }, '⇄ Formation'),
+          h('small', { class: 'dim grow center', style: { fontWeight: 800, fontSize: '11px' } }, 'Hold any button to keep buying'),
           refs.mode = h('button', { class: 'chip on', onclick: () => { mode = (mode + 1) % MODES.length; tap(); update(true); } }, ''))));
     buildDock();
     view = new BattleView(cv);
@@ -92,16 +94,17 @@ export function createBattleScreen(root, { onFame, openClass, onDrop }) {
     refs.auto.classList.toggle('on', s.autoPush);
     patch(refs.auto, String(s.autoPush), () => (s.autoPush ? 'Auto ▶▶' : 'Farm ⟳'));
     patch(refs.mode, String(mode), () => `Buy ×${MODES[mode]}`);
-    // hero tabs: tap one to choose who to upgrade; tap the chosen one again for its details
-    const party = s.party;
-    if (sel >= party.length) sel = 0;
+    // hero tabs, in formation order (left, front, right) like the field: tap one to choose who to upgrade; tap
+    // the chosen one again for its details
+    for (const c of s.party) G.formSlot(c);
+    const party = s.form.filter(Boolean), cur = selCls();
     const canAny = (c) => s.fame >= G.levelCost(c) || STATS.some((x) => !G.statMaxed(c, x) && s.fame >= G.potionCost(c, x));
-    const tabSig = party.map((c, i) => `${c}:${s.classes[c].lv}:${G.maxedCount(c)}:${STATS.map((x) => G.potions(c, x)).join('.')}:${i === sel}:${canAny(c)}`).join('|');
+    const tabSig = party.map((c) => `${c}:${s.classes[c].lv}:${G.maxedCount(c)}:${STATS.map((x) => G.potions(c, x)).join('.')}:${c === cur}:${canAny(c)}`).join('|');
     patch(refs.tabs, tabSig, () => [0, 1, 2].map((i) => {
       const c = party[i];
       if (!c) return h('div', { class: 'htab empty' }, h('small', {}, 'Empty'), h('small', { class: 'dim' }, 'Unlock classes'));
       const n8 = G.maxedCount(c);
-      return h('button', { class: `htab${i === sel ? ' on' : ''}${canAny(c) ? ' ready' : ''}`, onclick: () => { if (sel === i) openClass(c); else { sel = i; tap(); update(); } } },
+      return h('button', { class: `htab${c === cur ? ' on' : ''}${canAny(c) ? ' ready' : ''}`, onclick: () => { if (c === cur) openClass(c); else { selC = c; tap(); update(); } } },
         h('div', { class: 'tp' }, portrait(c, 40)),
         h('div', { class: 'tt' }, h('b', {}, CLASSES[c].name), h('small', {}, `Lv ${s.classes[c].lv} · `, h('span', { class: n8 === 8 ? 'full' : '' }, `${n8}/8`)), statPips(c)));
     }));
