@@ -6,13 +6,13 @@ import * as G from '../core/game.js';
 import { h } from './dom.js';
 import { monsterImage } from './art/monsters.js';
 import { artImg } from './art/core.js';
-import { ZONES } from '../data/zones.js';
+import { ZONES, MAIN_ZONES } from '../data/zones.js';
 import { fmt, tap } from './common.js';
 import { play } from './sound.js';
 
 export function createAscendScreen(root, { onAscend }) {
   function oryx(size) {
-    const [, spec, pal] = ZONES[ZONES.length - 1].boss;
+    const [, spec, pal] = ZONES[MAIN_ZONES - 1].boss;
     const out = artImg(monsterImage(spec, pal)); out.className = 'figure'; out.style.cssText = `height:${size}px;width:auto;margin:0 auto;display:block`;
     return out;
   }
@@ -45,7 +45,7 @@ export function createAscendScreen(root, { onAscend }) {
         oryx(170),
         h('h2', {}, ready ? 'Oryx has fallen' : 'Defeat Oryx'),
         h('div', { class: 'muted', style: { fontWeight: 700, fontSize: '13px' } }, ready
-          ? `Ascend to ${realmName(P.realm)}: a harder Realm that pays ${BAL.realmFame}× the Fame, with permanent bonuses that stack forever.`
+          ? `Ascend to ${realmName(P.realm)}: a harder Realm that pays ${BAL.realmFame}× the Fame, with permanent bonuses that stack forever.${s.best < G.END_STAGE ? ' Or first take on the Lost Halls and the Shatters from the Map: optional, very hard, with the best Uniques.' : ''}`
           : `Reach and defeat Oryx the Mad God at the end of the Realm (stage ${stageLabel(STAGE_COUNT - 1)}) to Ascend. Best so far: ${s.best >= 0 ? stageLabel(s.best) : '—'}.`),
         h('div', { class: 'pbar', style: { marginTop: '12px', height: '8px' } }, h('i', { style: { width: `${((s.best + 1) / STAGE_COUNT) * 100}%`, background: 'linear-gradient(90deg,#9b6bff,#ffd34d)' } })),
         h('div', { class: 'gainlist' }, next.map(([k, v, d]) => h('div', { class: 'gain' }, h('small', {}, `Ascension ${P.n}: ${k}`), h('b', {}, v), h('small', {}, d))))),
@@ -54,7 +54,8 @@ export function createAscendScreen(root, { onAscend }) {
         h('div', { class: 'stat' }, h('span', {}, 'Ascensions'), h('b', {}, `${s.ascensions}`)), h('div', { class: 'stat' }, h('span', {}, 'Realm'), h('b', {}, realmName(s.realm)))),
       h('div', { class: 'h2' }, 'What Ascending resets'),
       h('div', { class: 'panel', style: { fontSize: '13px', fontWeight: 700, lineHeight: 1.5 } },
-        h('div', {}, '↺ Stage progress and Fame'),
+        h('div', {}, '↺ Stage progress and Fame, and the endgame dungeons close again'),
+        h('div', {}, '↺ Stat potions: every class starts over at 0/8'),
         h('div', {}, `↺ Class levels drop to a quarter (at least ${BAL.realmStartLevel(P.realm)}): `, h('span', { class: 'muted' }, Object.entries(P.levels).map(([c, lv]) => `${CLASSES[c].name} ${s.classes[c].lv}→${lv}`).join(', '))),
         h('div', { class: 'gold' }, '✓ Every class you’ve unlocked, and all bonuses above'),
         h('div', { style: { color: '#ffffff' } }, '✦ Your Uniques, worn ones staying on (their upgrades reset)')),

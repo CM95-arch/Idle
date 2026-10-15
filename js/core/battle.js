@@ -5,7 +5,7 @@
 // that ui/battleView.js turns into visuals.
 import { BAL } from '../data/balance.js';
 import { CLASSES } from '../data/classes.js';
-import { zoneOf, isBoss } from '../data/zones.js';
+import { zoneOf, isBoss, MAIN_ZONES, STAGES_PER_ZONE } from '../data/zones.js';
 import { makeRng } from './rng.js';
 
 export const TICK = 0.05;
@@ -19,7 +19,9 @@ const RANGED = new Set(['beholder', 'ghost', 'lich', 'sphinx', 'oryx', 'kraken']
 /** Enemy strength at a stage in a Realm (one enemy of the horde). */
 export function enemyStats(stage, realm) {
   // the first zones are gentler, easing up to full strength by stage 30, so a new party gets going fast
-  const g = BAL.stageGrowth ** stage * BAL.realmGrowth ** realm * (0.55 + 0.45 * Math.min(1, stage / 30)), E = BAL.enemyBase;
+  // the endgame dungeons are each far harder again
+  const dun = Math.floor(stage / STAGES_PER_ZONE) - MAIN_ZONES;
+  const g = BAL.stageGrowth ** stage * BAL.realmGrowth ** realm * (dun >= 0 ? BAL.dungeonHard[Math.min(dun, BAL.dungeonHard.length - 1)] : 1) * (0.55 + 0.45 * Math.min(1, stage / 30)), E = BAL.enemyBase;
   return { hp: E.hp * g, atk: E.atk * g, def: Math.min(0.4, E.armor * Math.floor(stage / 10)) };
 }
 // Armor is a share of damage: enemies have a flat armor share per zone (def is 0..0.4); heroes' DEF is weighed
@@ -184,6 +186,7 @@ function useAbility(B, h, scale = 1) {
   // a Unique ability item changes what the ability does (ROTMG's UT abilities)
   const M = h.abil || {};
   ev.mode = M.mode;
+  if (h.fx.sourceHeal) heal(B, h, h.maxHp * h.fx.sourceHeal);
   switch (M.mode) {
     case 'snipe': { // Quiver of Thunder: one enormous arrow into the toughest enemy, Dazing it
       const t = es.reduce((a, b) => (b.hp > a.hp ? b : a)); ev.x = t.x; ev.y = t.y;
@@ -255,6 +258,39 @@ function useAbility(B, h, scale = 1) {
       for (const e of es) { const along = (e.x - h.x) * ux + (e.y - h.y) * uy, off = Math.abs((e.x - h.x) * uy - (e.y - h.y) * ux); if (along > 0 && off < 16 + e.r) { ev.targets.push(e.id); damageEnemy(B, e, h.atk * dmgMult(B, h) * M.pow, src); } }
       B.events.push({ ...ev, fx: 'pierce' }); return;
     }
+    case 'shadows': { // Quiver of Shadows: a fan of six armor-piercing arrows through the horde
+      const t = nearest(es, h), a0 = Math.atan2(t.y - h.y, t.x - h.x), hitSet = new Set(); ev.x = t.x; ev.y = t.y;
+      for (let k = 0; k < 6; k++) {
+        const a = a0 + ((k - 2.5) * M.arc * Math.PI) / 180, ux = Math.cos(a), uy = Math.sin(a);
+        for (const e of es) { const along = (e.x - h.x) * ux + (e.y - h.y) * uy, off = Math.abs((e.x - h.x) * uy - (e.y - h.y) * ux); if (along > 0 && along < 10 * TILE && off < 14 + e.r) hitSet.add(e); }
+      }
+      for (const e of hitSet) { ev.targets.push(e.id); damageEnemy(B, e, dmg * p * M.pow, src); }
+      B.events.push({ ...ev, fx: 'pierce' }); return;
+    }
+    case 'polarity': { // Polarity Poison: a grenade that poisons and Slows everything in the splash
+      const c = cluster(es); ev.x = c.x; ev.y = c.y;
+      for (const e of within(es, c, BAL.aoeRadius * 1.1)) { ev.targets.push(e.id); e.dots.push({ left: 3, dps: (dmg * p * M.pow) / 3, hero: h.i }); e.slowUntil = Math.max(e.slowUntil, B.t + M.slow); }
+      B.events.push({ ...ev, mode: 'twinBombs' }); return;
+    }
+    case 'sentinel': { // Sentinel's Bulwark: stuns everything nearby and breaks its armor
+      const list = within(es, h, 140); ev.x = h.x; ev.y = h.y;
+      for (const e of list) { e.stunUntil = Math.max(e.stunUntil, B.t + M.stun * (e.boss ? 0.4 : 1)); e.breakUntil = B.t + M.dur; }
+      strike(list, M.pow); B.events.push({ ...ev, fx: 'stun' }); return;
+    }
+    case 'starfall': { // Spell of Shattered Stars: three falling stars on the three thickest knots, Cursing them
+      ev.x = h.x; ev.y = h.y; let pool = es;
+      for (let k = 0; k < 3 && pool.length; k++) {
+        const c = cluster(pool), list = within(pool, c, BAL.aoeRadius * 0.8);
+        for (const e of list) e.curseUntil = B.t + M.curse;
+        strike(list, M.pow); B.events.push({ k: 'blast', x: c.x, y: c.y, big: true });
+        pool = pool.filter((e) => !list.includes(e));
+      }
+      B.events.push({ ...ev, fx: 'aoe', x: cluster(es).x, y: cluster(es).y }); return;
+    }
+    case 'marbleTome': { // Tome of the Marble Halls: heals the whole party and Armors them
+      for (const o of hs) { heal(B, o, o.maxHp * p * M.heal); o.buff.armorUntil = Math.max(o.buff.armorUntil || 0, B.t + M.dur); } ev.heroes = hs.map((o) => o.i);
+      B.events.push({ ...ev, fx: 'heal' }); return;
+    }
     case 'fulminate': case 'devastate': { // scepters: chain lightning, with their own reach and falloff
       let at = nearest(es, h); const seen = new Set();
       for (let k = 0; at && k < M.targets; k++) {
@@ -279,7 +315,7 @@ function useAbility(B, h, scale = 1) {
       strike(es.filter((e) => { const along = (e.x - h.x) * ux + (e.y - h.y) * uy, off = Math.abs((e.x - h.x) * uy - (e.y - h.y) * ux); return along > 0 && off < 22 + e.r; }));
       break;
     }
-    case 'execute': strike([...es].sort((a, b) => a.hp - b.hp).slice(0, 3), 1, { ...src, crit: true }); if (M.mode === 'planewalk') h.buff.invulnUntil = B.t + M.dur; if (M.mode === 'bloody') { h.buff.dmgUntil = B.t + M.dur; h.buff.dmg = M.dmg; } break;
+    case 'execute': strike([...es].sort((a, b) => a.hp - b.hp).slice(0, 3), 1, { ...src, crit: true }); if (M.mode === 'planewalk') h.buff.invulnUntil = B.t + M.dur; if (M.mode === 'bloody' || M.mode === 'twilight') { h.buff.dmgUntil = B.t + M.dur; h.buff.dmg = M.dmg; } if (M.mode === 'twilight') h.buff.invulnUntil = B.t + M.inv; break;
     case 'berserk': h.buff.taunt = B.t + 4; h.buff.hasteUntil = B.t + 4; h.buff.haste = p;
       if (M.mode === 'juggernaut') { h.buff.armorUntil = B.t + 4.5; for (const o of hs) { o.buff.hasteUntil = B.t + 4.5; o.buff.haste = Math.max(o.buff.haste || 0, p * 0.6); } ev.heroes = hs.map((o) => o.i); } for (const e of es) if (!e.ranged && B.rng.next() < 0.6) e.target = h.i; break;
     case 'stun': { const list = within(es, h, 120); for (const e of list) e.stunUntil = B.t + 1.2 * (e.boss ? 0.5 : 1); ev.x = h.x; ev.y = h.y; strike(list); break; }
@@ -291,7 +327,7 @@ function useAbility(B, h, scale = 1) {
       break;
     }
     case 'poison': { const e = es.reduce((a, b) => (b.hp > a.hp ? b : a)); ev.targets.push(e.id); e.dots.push({ left: 5, dps: (dmg * p) / 5, hero: h.i }); break; }
-    case 'buff': for (const o of hs) heal(B, o, o.maxHp * 0.1); h.buff.partyUntil = B.t + 5; h.buff.party = p; if (M.mode === 'invuln') h.buff.invulnUntil = B.t + M.dur; ev.heroes = hs.map((o) => o.i); break;
+    case 'buff': for (const o of hs) heal(B, o, o.maxHp * 0.1); h.buff.partyUntil = B.t + 5; h.buff.party = p; if (M.mode === 'invuln') h.buff.invulnUntil = B.t + M.dur; if (M.mode === 'marble') for (const o of hs) o.buff.armorUntil = Math.max(o.buff.armorUntil || 0, B.t + M.dur); ev.heroes = hs.map((o) => o.i); break;
     case 'chain': {
       // lightning leaps from enemy to nearby enemy, weaker with each jump
       let at = nearest(es, h); const seen = new Set();

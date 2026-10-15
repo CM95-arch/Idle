@@ -2,7 +2,7 @@
 import { BAL } from '../data/balance.js';
 import { CLASSES, CLASS_IDS } from '../data/classes.js';
 import { SLOTS } from '../data/gear.js';
-import { STAGE_COUNT, STAGES_PER_ZONE, ZONES, isBoss } from '../data/zones.js';
+import { STAGE_COUNT, STAGES_PER_ZONE, ZONES, MAIN_ZONES, END_STAGE, isBoss, isEndgame } from '../data/zones.js';
 import { UNIQUES, UNIQUE } from '../data/uniques.js';
 import { makeRng } from './rng.js';
 import { STATS, potionsToMax } from '../data/stats.js';
@@ -11,7 +11,11 @@ import { makeUnique, setUniqueLevel, slotOf, fits, upgradeCost, canUpgrade, salv
 import { createBattle, stepBattle, simulate, enemyStats, advanceStage, refreshHeroes } from './battle.js';
 
 const KEY = 'realm-idle-save-v1';
-export const LAST_STAGE = STAGE_COUNT - 1;
+export const LAST_STAGE = STAGE_COUNT - 1; // Oryx
+export { END_STAGE };
+/** The endgame dungeons open once Oryx falls; auto-push only goes into them after you've chosen to enter. */
+export const endgameOpen = () => state.best >= LAST_STAGE;
+const pushCap = () => (state.flags.endgame && endgameOpen() ? END_STAGE : LAST_STAGE);
 
 function fresh() {
   return {
@@ -225,7 +229,8 @@ export function bestUpgrades() {
 
 // ---------- rewards ----------
 function gainFame(n, earned = true) { state.fame += n; if (earned) state.stats.fameEarned += n; }
-const uniqueChance = (zone, boss) => (boss ? BAL.uniqueBoss * (zone === ZONES.length - 1 ? 2 : 1) : BAL.uniqueKill) * (1 + luck());
+// Oryx and the endgame bosses drop twice as often, and everything in the endgame drops a bit more
+const uniqueChance = (zone, boss) => (boss ? BAL.uniqueBoss * (zone >= MAIN_ZONES - 1 ? 2 : 1) : BAL.uniqueKill * (zone >= MAIN_ZONES ? BAL.endgameKillLuck : 1)) * (1 + luck());
 /** Maybe a Unique: the zone boss drops one now and then; its other enemies very rarely. */
 function rollUnique(stage, boss, force = false) {
   const zone = Math.min(ZONES.length - 1, Math.floor(stage / STAGES_PER_ZONE));
@@ -306,10 +311,10 @@ export function tickBattle() {
   return { events, rewards };
 }
 function pickNextStage(won) {
-  if (won && state.autoPush && state.stage === state.best && state.stage < LAST_STAGE) state.stage++;
+  if (won && state.autoPush && state.stage === state.best && state.stage < pushCap()) state.stage++;
   else if (!won) { state.flags.wallPower = partyPower(); state.stage = Math.max(0, state.best); state.flags.wallAt = state.best + 1; }
   // after a wall, try again once the party has grown 8%
-  if (state.autoPush && state.flags.wallAt != null && state.stage === state.best && partyPower() >= state.flags.wallPower * 1.08 && state.best < LAST_STAGE) { state.stage = state.best + 1; state.flags.wallAt = null; }
+  if (state.autoPush && state.flags.wallAt != null && state.stage === state.best && partyPower() >= state.flags.wallPower * 1.08 && state.best < pushCap()) { state.stage = state.best + 1; state.flags.wallAt = null; }
 }
 /** Called by the UI once a finished battle's last effects have played. */
 /** Called by the UI after the party has fallen and the defeat has played out: regroup a stage back. */
@@ -319,7 +324,8 @@ export function nextBattle() {
   save();
 }
 export function goToStage(s) {
-  if (s < 0 || s > Math.min(state.best + 1, LAST_STAGE)) return;
+  if (s < 0 || s > Math.min(state.best + 1, endgameOpen() ? END_STAGE : LAST_STAGE)) return;
+  if (isEndgame(s)) state.flags.endgame = true;
   state.stage = s; state.flags.wallAt = null; startBattle(); changed('stage');
 }
 export function setAutoPush(on) { state.autoPush = on; changed('auto'); }
@@ -373,7 +379,7 @@ export function ascend() {
   // Uniques are kept (worn ones stay on) but lose their upgrades; everything else is gone
   for (const [c, C] of Object.entries(state.classes)) { C.lv = P.levels[c]; C.pots = {}; C.gear = Object.fromEntries(Object.entries(C.gear).filter(([, it]) => it?.u)); }
   state.inv = state.inv.filter((it) => it.u); state.fame = 0;
-  for (const it of [...state.inv, ...Object.values(state.classes).flatMap((C) => Object.values(C.gear))]) if (it) it.up = 0; state.stage = 0; state.best = -1; state.flags.wallAt = null;
+  for (const it of [...state.inv, ...Object.values(state.classes).flatMap((C) => Object.values(C.gear))]) if (it) it.up = 0; state.stage = 0; state.best = -1; state.flags.wallAt = null; state.flags.endgame = false;
   syncUniques();
   rateCache.clear();
   startBattle(); save(); changed('ascend');

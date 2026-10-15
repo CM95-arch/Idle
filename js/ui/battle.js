@@ -72,7 +72,7 @@ export function createBattleScreen(root, { onFame, openClass, onDrop }) {
     if (!refs.where) return;
     if (force) for (const el of [refs.where, refs.power, refs.auto, refs.mode]) el._sig = null;
     const s = G.state, Z = zoneOf(s.stage), boss = isBoss(s.stage);
-    const walled = s.flags.wallAt != null && s.stage === s.best && s.best < G.LAST_STAGE && s.autoPush;
+    const walled = s.flags.wallAt != null && s.stage === s.best && s.best < G.END_STAGE && s.autoPush;
     const where = `${Z.name} ${stageLabel(s.stage)}${boss ? ' ☠' : ''}`;
     const sub = walled ? `Farming · ${stageLabel(s.flags.wallAt)} needs more power` : `${s.realm ? `${realmName(s.realm)} · ` : ''}${boss ? 'Boss stage' : `Best ${s.best >= 0 ? stageLabel(s.best) : '—'}`}`;
     patch(refs.where, where + sub, () => [h('b', {}, where), h('small', { class: walled ? 'walled' : '' }, sub)]);
@@ -116,7 +116,7 @@ export function createBattleScreen(root, { onFame, openClass, onDrop }) {
         if (visible && view) view.feed(G.battle, events, rewards, play);
         for (const r of rewards) {
           if (r.k === 'fame') onFame(r.n);
-          if (r.k === 'clear') { onFame(r.n); if (r.first && isBoss(r.stage)) toast({ title: `${zoneOf(r.stage).boss[0]} defeated!`, body: r.stage === G.LAST_STAGE ? 'Oryx has fallen. You can Ascend!' : `${zoneOf(r.stage + 1).name} is open.`, kind: 'gold' }); }
+          if (r.k === 'clear') { onFame(r.n); if (r.first && isBoss(r.stage)) toast({ title: `${zoneOf(r.stage).boss[0]} defeated!`, body: r.stage === G.LAST_STAGE ? 'Oryx has fallen. Ascend, or brave the Lost Halls (optional) from the Map.' : r.stage === G.END_STAGE ? 'The Shatters are cleared. Ascend when you’re ready.' : `${zoneOf(r.stage + 1).name} is open.`, kind: 'gold' }); }
           if (r.k === 'drop' && r.salvaged) onFame(r.salvaged);
           if (r.k === 'drop' && !r.salvaged) onDrop?.(r.it, r);
         }

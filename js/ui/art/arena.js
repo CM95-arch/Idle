@@ -179,6 +179,27 @@ const ZONE = {
       g.fillStyle = '#6a0a1e'; g.fillRect(140, 0, 80, AH); g.fillStyle = '#d8a830'; g.fillRect(140, 0, 4, AH); g.fillRect(216, 0, 4, AH);
       return [['pillar', 40, 140, 1.2, '#3a2e48'], ['pillar', 320, 140, 1.2, '#3a2e48'], ['pillar', 40, 330, 1.3, '#3a2e48'], ['pillar', 320, 330, 1.3, '#3a2e48'], ['brazier', 100, 80, 1, '#ff5a2a'], ['brazier', 260, 80, 1, '#ff5a2a'], ['brazier', 100, 250, 1, '#b05cff'], ['brazier', 260, 250, 1, '#b05cff'], ['banner', 76, 420, 1.1, '#6a0a1e'], ['banner', 268, 420, 1.1, '#6a0a1e']];
     } },
+  // ---- endgame dungeons ----
+  halls: { ground: '#6e6878', lane: '#b8b2c4', dark: 0.46, tint: '#0a0c22',
+    paint(g, r) {
+      // polished marble: big pale tiles with gold seams
+      tiles(g, r, '#8a8496', 'rgba(216,168,48,.35)');
+      g.strokeStyle = 'rgba(255,255,255,.08)'; g.lineWidth = 1;
+      for (let i = 0; i < 26; i++) { const x = r() * AW, y = r() * AH; g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + 14, y + 6, x + 28, y - 4); g.stroke(); }
+      return [['pillar', 34, 160, 1.2, '#cfc8da'], ['pillar', 326, 160, 1.2, '#cfc8da'], ['pillar', 34, 400, 1.3, '#cfc8da'], ['pillar', 326, 400, 1.3, '#cfc8da'], ['brazier', 96, 110, 1, '#7ad0ff'], ['brazier', 264, 110, 1, '#7ad0ff'], ['brazier', 80, 290, 1, '#b07aff'], ['brazier', 280, 290, 1, '#b07aff'], ['bones', 300, 240], ['bones', 70, 360], ['banner', 120, 430, 1, '#2a2a7a'], ['banner', 228, 430, 1, '#2a2a7a']];
+    } },
+  shatters: { ground: '#1c1a24', lane: '#3a3448', dark: 0.5, tint: '#0a0614',
+    paint(g, r) {
+      tiles(g, r, '#26222f', 'rgba(0,0,0,.45)');
+      // the floor is broken: glowing violet rifts run through it
+      for (let i = 0; i < 7; i++) {
+        let x = r() * AW, y = r() * AH;
+        g.strokeStyle = '#8a4aff'; g.lineWidth = 2.2; g.shadowColor = '#b07aff'; g.shadowBlur = 8; g.beginPath(); g.moveTo(x, y);
+        for (let k = 0; k < 6; k++) { x += (r() - 0.5) * 50; y += (r() - 0.3) * 30; g.lineTo(x, y); }
+        g.stroke(); g.shadowBlur = 0;
+      }
+      return [['ruin', 46, 150, 1.1, '#4a4458'], ['ruin', 316, 130, 1, '#4a4458'], ['pillar', 30, 420, 1.2, '#3a3448'], ['pillar', 330, 420, 1.2, '#3a3448'], ['crystal', 70, 300, 1, '#8a4aff'], ['crystal', 300, 290, 1.1, '#5de0ff'], ['rock', 300, 220, 1, '#3a3640'], ['brazier', 110, 70, 1, '#b07aff'], ['brazier', 250, 70, 1, '#b07aff'], ['bones', 140, 400]];
+    } },
 };
 
 const cache = new Map();

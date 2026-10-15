@@ -1,4 +1,4 @@
-// The Realm, from the beaches to Oryx. Ten stages per zone; the tenth is a boss.
+// The Realm, from the beaches to Oryx, then the optional endgame dungeons. Ten stages per zone; the tenth is a boss.
 // Enemies are [name, art, palette]: art is an archetype from ui/art/monsters.js plus options; `pal` colors it.
 export const ZONES = [
   { id: 'beach', name: 'Beaches', bg: ['#f2d79a', '#e0b86a', '#3fb6c8'], ground: '#e9cf8c', deco: ['rock', 'grass'],
@@ -22,11 +22,22 @@ export const ZONES = [
   { id: 'castle', name: 'Oryx’s Castle', bg: ['#3a2a4a', '#2a1a3a', '#100818'], ground: '#2a1d3a', deco: ['pillar', 'flame'],
     enemies: [['Henchman of Oryx', ['humanoid', { hat: 'horns', weapon: 'blade', skin: '#8a6a7a' }], { a: '#4a0a1a', b: '#8a1a2a', c: '#ffd34d' }], ['Royal Golem', ['golem', { crown: true }], { a: '#4a3a6a', b: '#8a6ab0', c: '#ffd34d' }], ['Mad God Servant', ['demon'], { a: '#2a1a3a', b: '#4a2a5a', c: '#ff40ff' }]],
     boss: ['Oryx the Mad God', ['oryx'], { a: '#3a2a4a', b: '#4a1a2a', c: '#d8a830' }] },
+  // ---- optional endgame dungeons, after Oryx and before Ascending: far harder, with their own Uniques ----
+  { id: 'halls', name: 'Lost Halls', tag: 'LH', endgame: true, bg: ['#8a8496', '#4a4458', '#1a1830'], ground: '#6e6878', deco: ['pillar', 'flame'],
+    enemies: [['Lost Sentry', ['golem'], { a: '#b8b2c4', b: '#e8e4f0', c: '#7ad0ff' }], ['Cultist', ['humanoid', { hat: 'hood', weapon: 'staff', skin: '#c8a0a0' }], { a: '#5a0a1a', b: '#a02030', c: '#ff4040' }], ['Void Pest', ['insect'], { a: '#1a1030', b: '#4a2a7a', c: '#b07aff' }]],
+    boss: ['Marble Colossus', ['golem', { big: true, crown: true }], { a: '#d8d2e0', b: '#f4f0fa', c: '#d8a830' }] },
+  { id: 'shatters', name: 'The Shatters', tag: 'SH', endgame: true, bg: ['#3a3448', '#22202a', '#0a0614'], ground: '#1c1a24', deco: ['ruin', 'crystal'],
+    enemies: [['Shattered Knight', ['humanoid', { hat: 'helm', weapon: 'blade', skin: '#7a7a8a' }], { a: '#2a2a3a', b: '#5a5a7a', c: '#8a4aff' }], ['Stone Mage', ['humanoid', { hat: 'hood', weapon: 'staff', skin: '#8a8a9a' }], { a: '#3a3448', b: '#6a6080', c: '#5de0ff' }], ['Twilight Wraith', ['ghost'], { a: '#4a2a7a', b: '#a07ad8', c: '#ff6ad8' }]],
+    boss: ['The Forgotten King', ['lich'], { a: '#1a1030', b: '#d8c8a0', c: '#b07aff' }] },
 ];
 export const STAGES_PER_ZONE = 10;
-export const STAGE_COUNT = ZONES.length * STAGES_PER_ZONE;
+/** The Realm proper ends with Oryx; the zones after it are the optional endgame. */
+export const MAIN_ZONES = ZONES.findIndex((z) => z.endgame);
+export const STAGE_COUNT = MAIN_ZONES * STAGES_PER_ZONE;
+export const END_STAGE = ZONES.length * STAGES_PER_ZONE - 1;
+export const isEndgame = (s) => s >= STAGE_COUNT;
 export const zoneOf = (s) => ZONES[Math.min(ZONES.length - 1, Math.floor(s / STAGES_PER_ZONE))];
 export const isBoss = (s) => s % STAGES_PER_ZONE === STAGES_PER_ZONE - 1;
-export const stageLabel = (s) => `${Math.floor(s / STAGES_PER_ZONE) + 1}-${(s % STAGES_PER_ZONE) + 1}`;
+export const stageLabel = (s) => `${zoneOf(s).tag || Math.floor(s / STAGES_PER_ZONE) + 1}-${(s % STAGES_PER_ZONE) + 1}`;
 export const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV'];
 export const realmName = (r) => `Realm ${ROMAN[r] || r + 1}`;

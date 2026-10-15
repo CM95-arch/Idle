@@ -271,3 +271,4 @@ img.figure.locked { filter: brightness(0) opacity(.55); }
 .hcard .pipbtn { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 3px 0 0; background: none; }
 .hcard .pipbtn small { font-size: 9px; font-weight: 900; color: var(--ink-3); letter-spacing: .5px; }
 .hcard .pipbtn small.full { color: var(--gold-2); }
+.zone.endgame { border-color: #6a4aa8; box-shadow: 0 0 0 1px rgba(176,122,255,.25), 0 0 22px rgba(176,122,255,.15); }
