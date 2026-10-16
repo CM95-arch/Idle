@@ -100,7 +100,7 @@ export function showUnique(it, onSee, dupe = null) {
       h('div', { class: 'kicker', style: { color: ex ? '#ffe08a' : '#ffffff' } }, `${ex ? 'Exalted gear' : 'Gear'}${dupe ? ' · found again' : ' found!'}`),
       h('div', { class: 'por' }, icon),
       h('div', { class: 'big', style: { fontSize: '30px', color: ex ? '#fff3c0' : '#ffffff', textShadow: ex ? '0 0 28px rgba(255,210,90,.9), 0 3px 0 #5a3a0a' : '0 0 24px rgba(111,242,255,.8), 0 3px 0 #2a3050' } }, U.name),
-      h('div', { class: 'muted', style: { fontWeight: 800, fontSize: '13px' } }, U.starter ? 'A starter, found on the Beaches' : `Dropped by ${ZONE_BY_ID[U.src]?.boss[0] || 'a boss'}`),
+      h('div', { class: 'muted', style: { fontWeight: 800, fontSize: '13px' } }, U.starter ? 'Dropped on the Beaches' : `Dropped by ${ZONE_BY_ID[U.src]?.boss[0] || 'a boss'}`),
       h('div', { class: 'panel', style: { textAlign: 'left' } }, h('b', { style: { color: '#6ff2ff' } }, '✦ Special effect'), h('div', { style: { fontSize: '14px', fontWeight: 700, marginTop: '2px' } }, U.desc)),
       dupe ? h('div', { class: 'gold', style: { fontWeight: 900 } }, dupe.ups ? `Melted into your copy: +${dupe.ups} upgrade${dupe.ups === 1 ? '' : 's'} (now +${it.up})` : '', dupe.fame ? `${dupe.ups ? ' and ' : 'Your copy is maxed: '}+${fmt(dupe.fame)} Fame` : '') : null,
       h('div', { class: 'dim', style: { fontSize: '12px', fontWeight: 800 } }, `Collection ${n} / ${UNIQUES.length}`),

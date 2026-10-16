@@ -23,8 +23,7 @@ export function createMapScreen(root, { goBattle }) {
       h('div', { class: 'row between' }, h('h3', {}, Z.name), h('small', { style: { fontWeight: 900, color: '#fff', opacity: 0.85 } }, open ? `${cleared}/${Z.len}` : 'Locked')),
       h('div', { class: `nodes${Z.len === 5 ? ' five' : ''}` }, nodes),
       h('div', { class: 'zfoot' }, h('span', {}, `☠ ${Z.boss[0]}`), h('span', { class: G.partyPower() >= G.stagePower(Z.start + Z.len - 1) ? 'ok' : 'low' }, `⚔ ${fmt(G.stagePower(Z.start + Z.len - 1))}`)),
-      drops.some((U) => U.starter) ? h('div', { class: 'zdrops' }, `✦ Starter abilities · ${drops.filter((U) => G.state.uniques[U.id]).length}/${drops.length} found`)
-        : drops.length ? h('div', { class: 'zdrops' }, '✦ ', drops.map((U) => (G.state.uniques[U.id] ? U.name : '???')).join(' · ')) : null);
+      drops.length ? h('div', { class: 'zdrops' }, '✦ ', drops.map((U) => (G.state.uniques[U.id] ? U.name : '???')).join(' · ')) : null);
   }
   // two tabs: the Realm's biomes, and the dungeons; it opens on wherever the party is fighting
   let tab = null;

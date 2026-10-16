@@ -249,12 +249,10 @@ function onKillProcs(B, h, e) {
   }
 }
 
-// Starter ability items: effects that go off with every cast (`on: 'cast'`), each with a rune circle under the
-// hero. meteor, fan and lightning hit `n` foes picked from the nearest few; the rest work as their timed kinds.
+// Effects that go off with every cast (`on: 'cast'`: the Beaches' ability items). meteor, fan and lightning hit `n` foes picked from the nearest few; the rest work as their timed kinds.
 function castProcs(B, h, es) {
   const list = h.procs.filter((P) => P.on === 'cast');
   if (!list.length || !es.length) return;
-  B.events.push({ k: 'proc', kind: 'sigil', hero: h.i, c: list[0].c });
   const near = [...es].sort((a, b) => d2(a, h) - d2(b, h)).slice(0, 8);
   const pick = (n) => { const pool = [...near], out = []; while (out.length < n && pool.length) out.push(pool.splice(B.rng.int(0, pool.length - 1), 1)[0]); return out; };
   for (const P of list) {

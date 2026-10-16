@@ -13,11 +13,11 @@
 //   fx:   other effects battle.js applies.
 //   proc: an effect you can see in the fight (orbiting motes, novas, meteors, halos, bubbles, lightning on crits,
 //         spirits on kills…): see runProc in core/battle.js.
-//   starter: a Beach find, one per class: half a normal item's stats, but a flashy effect on every cast.
+//   starter: a Beach find (any enemy there), one per class: half a normal item's stats, an effect on every cast.
 //   exalted: far rarer, far stronger. A gold bag instead of a white one.
 export const UNIQUES = [
-  // ---- starters: one ability item per class, found all over the Beaches. Weak (half a normal item's stats) but
-  // flashy: every cast throws a rune circle and a burst of something you can see (procs with on: 'cast') ----
+  // ---- the Beaches: one ability item per class, a rare drop from any enemy there. Half a normal item's stats,
+  // but every cast adds a burst of something you can see (procs with on: 'cast') ----
   { id: 'stEmber', name: 'Spell of Sea Embers', kind: 'spell', src: 'beach', starter: true, proc: { on: 'cast', kind: 'meteor', n: 3, pow: 0.3, r: 45, c: '#ff8a3a' },
     pal: ['#7a2a1a', '#ff8a3a', '#ffe0a0'], desc: 'Every Fire Burst also calls down three little embers on scattered foes.' },
   { id: 'stTide', name: 'Tome of Tidepools', kind: 'tome', src: 'beach', starter: true, proc: { on: 'cast', kind: 'healwave', pow: 0.03, c: '#7affd8' },

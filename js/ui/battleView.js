@@ -10,6 +10,8 @@ import { itemImage, RARITY_SHADES } from './art/items.js';
 import { arena } from './art/arena.js';
 import { ready } from './art/core.js';
 
+// abilities thrown from the caster's hand to where they land, and their color in flight
+const LOBS = { aoe: '#ff8a3c', dot: '#ffb040', poison: '#7cff4a', drain: '#8fff9f' }, LOB_T = 0.3;
 export const VW = 360, VH = 430;
 const MOD_COLOR = { chain: '#7ae8ff', burn: '#ff8a2a', chill: '#bfe8ff' };
 const EXALT_PAL = ['#a07a20', '#fff3c0', '#ffffff'];
@@ -202,7 +204,7 @@ export class BattleView {
           sound?.('fame');
           continue;
         }
-        if (r.quiet) { // a starter found again: it melts into the copy you have
+        if (r.quiet) { // a Beach item found again: it melts into the copy you have
           this.num(at.x, at.y - 40, r.dupe.ups ? `${r.it.name} +${r.dupe.ups}` : `+${fmt(r.dupe.fame)}`, '#bff6ff', 10);
           for (let i = 0; i < 14; i++) { const a = rand(0, TAU), sp = rand(40, 140); this.parts.push({ x: at.x, y: at.y - 10, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 40, t: 0, life: rand(0.5, 0.9), c: i % 2 ? '#ffffff' : '#6ff2ff', s: 2.4, g: 80, add: true }); }
           sound?.('loot');
@@ -239,10 +241,6 @@ export class BattleView {
         this.fx.push({ k: 'meteor', x0: flask ? h.x : ev.x + 60, y0: flask ? h.y - 40 : ev.y - 260, x1: ev.x, y1: ev.y - 6, t: -(ev.delay || 0), life: 0.32, c, flask, r: ev.r, burst: true });
         break;
       }
-      case 'sigil': // a starter item's rune circle, flaring under the hero as the ability goes off
-        this.fx.push({ k: 'sigil', x: h.x, y: h.y, t: 0, life: 0.9, c, a: rand(0, TAU) });
-        for (let n = 0; n < 14; n++) { const a = (n / 14) * TAU; this.parts.push({ x: h.x + Math.cos(a) * 34, y: h.y + Math.sin(a) * 15, vx: 0, vy: rand(-90, -50), t: 0, life: rand(0.5, 0.8), c, s: 2.4, add: true }); }
-        this.hv[ev.hero].aura = 0.4; this.hv[ev.hero].auraColor = c; break;
       case 'bubble': this.hv[ev.hero].bubbleIn = 0.35; burst(h.x, h.y - 26, 10, 80, 0.5); sound?.('ability'); break;
       case 'halo': case 'frost': {
         for (const id of ev.ids || []) { const e = byId(id); if (e && Math.random() < 0.4) burst(e.x, e.y - 10, 2, 50, 0.35, c, ev.kind === 'frost' ? 30 : -30); }
@@ -267,6 +265,33 @@ export class BattleView {
   orbPos(h, n, k, set = 0) {
     const a = this.t * (2.2 - set * 0.4) + (k / n) * TAU + set;
     return { x: h.x + Math.cos(a) * 26, y: h.y - 24 + Math.sin(a) * 11 };
+  }
+  /** Buffs you can see while they last: Berserk burns red, the Paladin's Seal crowns the party in gold, Armored
+   * shimmers blue, untouchable glows white, a damage buff smolders violet. Drawn behind the hero. */
+  drawBuffs(g, h, B) {
+    if (h.dead) return;
+    const b = h.buff, on = (k) => b[k] > B.t, seal = B.heroes.some((o) => !o.dead && o.buff.partyUntil > B.t);
+    const list = [];
+    if (on('hasteUntil')) list.push(['#ff4a3a', 'flame']);
+    if (seal) list.push(['#ffd34d', 'crown']);
+    if (on('armorUntil')) list.push(['#7ad0ff', 'shell']);
+    if (on('invulnUntil')) list.push(['#ffffff', 'glow']);
+    if (on('dmgUntil')) list.push(['#c46aff', 'flame']);
+    if (!list.length) return;
+    g.save(); g.globalCompositeOperation = 'lighter';
+    for (const [c, look] of list) {
+      const pulse = 0.5 + 0.5 * Math.sin(this.t * 6 + h.i);
+      g.globalAlpha = 0.55 + 0.3 * pulse; g.drawImage(glow(c, 44), h.x - 44, h.y - 70);
+      g.save(); g.translate(h.x, h.y + 3); g.scale(1, 0.42); g.globalAlpha = 0.95; g.strokeStyle = c; g.lineWidth = 3.5;
+      g.setLineDash([12, 7]); g.lineDashOffset = -this.t * 40; g.beginPath(); g.arc(0, 0, 30, 0, TAU); g.stroke(); g.setLineDash([]); g.restore();
+      if (look === 'flame') for (let n = 0; n < 2; n++) this.parts.push({ x: h.x + rand(-16, 16), y: h.y - rand(0, 10), vx: rand(-8, 8), vy: rand(-110, -60), t: 0, life: rand(0.35, 0.6), c, s: rand(2.4, 3.6), add: true });
+      if (look === 'crown') { // a little golden halo over the head
+        g.save(); g.translate(h.x, h.y - 70 - 2 * pulse); g.scale(1, 0.35); g.globalAlpha = 0.9; g.strokeStyle = c; g.lineWidth = 3.5; g.beginPath(); g.arc(0, 0, 11, 0, TAU); g.stroke(); g.restore();
+        if (Math.random() < 0.25) this.parts.push({ x: h.x + rand(-14, 14), y: h.y - rand(10, 50), vx: 0, vy: -30, t: 0, life: 0.6, c, s: 2, add: true });
+      }
+      if (look === 'shell') { g.globalAlpha = 0.5 + 0.2 * pulse; g.strokeStyle = c; g.lineWidth = 2; g.beginPath(); g.ellipse(h.x, h.y - 28, 27, 36, 0, 0, TAU); g.stroke(); }
+    }
+    g.restore();
   }
   /** Effects that stay on a hero while the Unique is worn: orbiting motes, halos, frost, a shield bubble. */
   drawAuras(g, h) {
@@ -294,11 +319,22 @@ export class BattleView {
   }
   ability(B, ev, byId, sound) {
     const h = B.heroes[ev.hero], C = CLASSES[h.cls];
-    this.hv[ev.hero].cast = 0.5;
-    this.fx.push({ k: 'groundring', x: h.x, y: h.y, t: 0, life: 0.45, c: C.shot, r: 34 });
+    this.hv[ev.hero].cast = 0.6;
+    // every cast: a rune circle in the class's color flares under the caster, sparks rising out of it
+    this.fx.push({ k: 'sigil', x: h.x, y: h.y, t: 0, life: 0.9, c: C.shot, a: rand(0, TAU) });
+    for (let n = 0; n < 12; n++) { const a = (n / 12) * TAU; this.parts.push({ x: h.x + Math.cos(a) * 32, y: h.y + Math.sin(a) * 14, vx: 0, vy: rand(-90, -50), t: 0, life: rand(0.5, 0.8), c: C.shot, s: 2.4, add: true }); }
     const ts = (ev.targets || []).map(byId).filter(Boolean);
     sound?.('ability');
-    // Unique ability items look like their ROTMG selves
+    // abilities that land somewhere else are thrown there from the caster's hand first, so you can see who cast
+    // them; what happens on impact waits for the throw to land
+    const lob = LOBS[ev.fx], at = ev.x != null ? { x: ev.x, y: ev.y } : ts[0];
+    const i0 = this.fx.length;
+    if (lob && at) { const m = this.muzzle(h); this.fx.push({ k: 'meteor', x0: m.x, y0: m.y, x1: at.x, y1: at.y - 6, t: 0, life: LOB_T, c: lob, flask: true, trail: true, big: true }); }
+    this.impact(B, ev, h, ts, sound);
+    if (lob && at) for (const f of this.fx.slice(i0 + 1)) f.t -= LOB_T;
+  }
+  /** What an ability does where it lands. Unique ability items look like their ROTMG selves. */
+  impact(B, ev, h, ts, sound) {
     switch (ev.mode) {
       case 'snipe': { const m = this.muzzle(h); this.fx.push({ k: 'beam', x0: m.x, y0: m.y, x1: ev.x, y1: ev.y - 20, t: 0, life: 0.4, c: '#ffe36a', w: 10 }); this.fx.push({ k: 'boom', x: ev.x, y: ev.y - 16, t: 0, life: 0.6, c: '#ffe36a', big: true }); this.shake = Math.max(this.shake, 6); sound?.('blast'); return; }
       case 'armorBreak': this.fx.push({ k: 'groundring', x: h.x, y: h.y, t: 0, life: 0.6, c: '#ffb070', r: 120 }); for (const e of ts) this.num(e.x, e.y - sizeOf(e) - 4, 'Armor Broken', '#ffb070', 9); this.shake = Math.max(this.shake, 5); return;
@@ -311,13 +347,13 @@ export class BattleView {
       case 'aoe': this.fx.push({ k: 'boom', x: ev.x, y: ev.y - 10, t: 0, life: 0.6, c: '#ff8a3c', big: true }); this.fx.push({ k: 'groundring', x: ev.x, y: ev.y, t: 0, life: 0.5, c: '#ffb070', r: BAL.aoeRadius }); this.shake = Math.max(this.shake, 5); this.flash = 0.1; this.flashColor = '#ffb070'; break;
       case 'pierce': this.fx.push({ k: 'beam', x0: h.x, y0: h.y - 30, x1: ev.x, y1: ev.y - 30, t: 0, life: 0.35, c: '#ffe08a', w: 7 }); break;
       case 'execute': for (const e of ts) this.fx.push({ k: 'slash', x: e.x, y: e.y - 16, t: 0, life: 0.4, c: '#e6e6f5' }); this.shake = Math.max(this.shake, 3); break;
-      case 'berserk': this.hv[ev.hero].aura = 4; this.hv[ev.hero].auraColor = '#ff4a3a'; break;
+      case 'berserk': this.hv[ev.hero].aura = 0.5; this.hv[ev.hero].auraColor = '#ff4a3a'; break; // then the Berserk aura (drawBuffs)
       case 'stun': this.fx.push({ k: 'groundring', x: h.x, y: h.y, t: 0, life: 0.6, c: '#9ec2ff', r: 120 }); for (const e of ts) this.fx.push({ k: 'stars', id: e.id, t: 0, life: 1.2 }); this.shake = Math.max(this.shake, 6); break;
       case 'dot': this.fx.push({ k: 'groundring', x: ev.x, y: ev.y, t: 0, life: 0.6, c: '#ffa040', r: BAL.aoeRadius }); for (const e of ts) this.fx.push({ k: 'burn', id: e.id, t: 0, life: 4, c: '#ffa040' }); break;
       case 'poison': for (const e of ts) this.fx.push({ k: 'burn', id: e.id, t: 0, life: 5, c: '#7cff4a' }); break;
       case 'drain': this.fx.push({ k: 'groundring', x: ev.x, y: ev.y, t: 0, life: 0.6, c: '#8fff9f', r: BAL.aoeRadius }); for (const e of ts.slice(0, 8)) for (const hi of ev.heroes || []) { const q = B.heroes[hi]; this.fx.push({ k: 'stream', x0: e.x, y0: e.y - 12, x1: q.x, y1: q.y - 24, t: 0, life: 0.6, c: '#8fff9f' }); } break;
       case 'heal': for (const hi of ev.heroes || []) { this.hv[hi].aura = 0.8; this.hv[hi].auraColor = '#8fff9f'; } break;
-      case 'buff': for (const hi of ev.heroes || []) { this.hv[hi].aura = 5; this.hv[hi].auraColor = '#ffd34d'; } this.flash = 0.1; this.flashColor = '#ffe08a'; break;
+      case 'buff': for (const hi of ev.heroes || []) { this.hv[hi].aura = 0.6; this.hv[hi].auraColor = '#ffd34d'; } this.flash = 0.1; this.flashColor = '#ffe08a'; break;
       case 'chain': { let from = this.muzzle(h); for (const e of ts) { const to = { x: e.x, y: e.y - 14 }; this.fx.push({ k: 'zap', x0: from.x, y0: from.y, x1: to.x, y1: to.y, t: 0, life: 0.35, c: '#5de0ff' }); from = to; } this.flash = 0.08; this.flashColor = '#bff3ff'; break; }
       default: break;
     }
@@ -372,7 +408,7 @@ export class BattleView {
     things.sort((a, b) => a.y - b.y);
     for (const it of things) {
       if (it.e) this.drawEnemy(g, it.e, dt, stunned.has(it.e.id));
-      else if (it.h) { this.drawHero(g, it.h, dt); this.drawAuras(g, it.h); }
+      else if (it.h) { this.drawBuffs(g, it.h, B); this.drawHero(g, it.h, dt); this.drawAuras(g, it.h); }
       else {
         const c = it.c, q = c.t / 0.35;
         if (!ready(c.img)) continue;
@@ -606,7 +642,9 @@ export class BattleView {
         const q = Math.min(1, p * 1.0), x = f.x0 + (f.x1 - f.x0) * q, y = f.y0 + (f.y1 - f.y0) * q - (f.flask ? Math.sin(q * Math.PI) * 60 : 0);
         g.globalCompositeOperation = 'lighter';
         if (!f.flask) { g.globalAlpha = 0.6; g.strokeStyle = f.c; g.lineWidth = 6; g.beginPath(); g.moveTo(x - (f.x1 - f.x0) * 0.25, y - (f.y1 - f.y0) * 0.25); g.lineTo(x, y); g.stroke(); }
-        g.globalAlpha = 1; g.drawImage(glow(f.c, f.flask ? 10 : 16), x - (f.flask ? 10 : 16), y - (f.flask ? 10 : 16));
+        if (f.trail && Math.random() < 0.9) this.parts.push({ x, y, vx: rand(-20, 20), vy: rand(-20, 20), t: 0, life: 0.35, c: f.c, s: 2.6, add: true });
+        const gr = f.big ? 14 : f.flask ? 10 : 16;
+        g.globalAlpha = 1; g.drawImage(glow(f.c, gr), x - gr, y - gr);
         g.fillStyle = '#ffffff'; g.beginPath(); g.arc(x, y, f.flask ? 3 : 5, 0, TAU); g.fill();
         g.globalCompositeOperation = 'source-over';
         if (f.burst && p > 0.95) {
