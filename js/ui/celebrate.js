@@ -40,8 +40,8 @@ export function showWelcome(onStart) {
     return h('div', { class: 'celebrate violet' }, h('div', { class: 'rays' }),
       h('div', { class: 'kicker', style: { color: '#d6c2ff' } }, 'Realm Idle'),
       h('div', { class: 'por' }, cv),
-      h('div', { class: 'big', style: { fontSize: '30px', color: '#fff' } }, 'Oryx has seized the Realm'),
-      h('div', { class: 'muted', style: { fontWeight: 700 } }, 'A lone Wizard steps onto the Beaches. Fight, grow, find allies, and climb toward the Mad God. Your heroes keep fighting even while you’re away.'),
+      h('div', { class: 'big', style: { fontSize: '30px', color: '#fff' } }, 'Vexis has seized the Realm'),
+      h('div', { class: 'muted', style: { fontWeight: 700 } }, 'A lone Wizard steps onto the Sunken Shore. Fight, grow, find allies, and climb toward the Usurper. Your heroes keep fighting even while you’re away.'),
       h('button', { class: 'btn violet block', onclick: () => { play('unlock'); close(); onStart?.(); } }, 'Begin'));
   });
 }
@@ -83,7 +83,7 @@ export function showAscended(P) {
     h('div', { class: 'big', style: { color: '#efe4ff', textShadow: '0 0 24px rgba(155,107,255,.8), 0 3px 0 #3f1f8a' } }, realmName(P.realm)),
     h('div', { class: 'muted', style: { fontWeight: 700 } }, 'The Realm reforms, harder than before. You return stronger, for good.'),
     h('div', { class: 'gainlist' },
-      h('div', { class: 'gain' }, h('small', {}, 'Fame'), h('b', {}, `×${(1 + P.gain).toFixed(2)}`)),
+      h('div', { class: 'gain' }, h('small', {}, 'Glory'), h('b', {}, `×${(1 + P.gain).toFixed(2)}`)),
       h('div', { class: 'gain' }, h('small', {}, 'Damage'), h('b', {}, `×${(1 + P.gain * 0.3).toFixed(2)}`)),
       h('div', { class: 'gain' }, h('small', {}, 'Offline'), h('b', {}, `+${Math.round(P.gain * 15)}%`)),
       h('div', { class: 'gain' }, h('small', {}, 'Gear find'), h('b', {}, `+${Math.round(P.gain * 30)}%`))),
@@ -97,12 +97,12 @@ export function showUnique(it, onSee, dupe = null) {
     const icon = itemTile(it, { upFor: false, size: 96 }); icon.classList.add('hero-item');
     play(ex ? 'exalted' : 'unique');
     return h('div', { class: `celebrate unique${ex ? ' exalted' : ''}` }, h('div', { class: 'rays' }),
-      h('div', { class: 'kicker', style: { color: ex ? '#ffe08a' : '#ffffff' } }, `${ex ? 'Exalted gear' : 'Gear'}${dupe ? ' · found again' : ' found!'}`),
+      h('div', { class: 'kicker', style: { color: ex ? '#ffe08a' : '#ffffff' } }, `${ex ? 'Mythic gear' : 'Gear'}${dupe ? ' · found again' : ' found!'}`),
       h('div', { class: 'por' }, icon),
       h('div', { class: 'big', style: { fontSize: '30px', color: ex ? '#fff3c0' : '#ffffff', textShadow: ex ? '0 0 28px rgba(255,210,90,.9), 0 3px 0 #5a3a0a' : '0 0 24px rgba(111,242,255,.8), 0 3px 0 #2a3050' } }, U.name),
-      h('div', { class: 'muted', style: { fontWeight: 800, fontSize: '13px' } }, U.starter ? 'Dropped on the Beaches' : `Dropped by ${ZONE_BY_ID[U.src]?.boss[0] || 'a boss'}`),
+      h('div', { class: 'muted', style: { fontWeight: 800, fontSize: '13px' } }, U.starter ? 'Dropped on the Sunken Shore' : `Dropped by ${ZONE_BY_ID[U.src]?.boss[0] || 'a boss'}`),
       h('div', { class: 'panel', style: { textAlign: 'left' } }, h('b', { style: { color: '#6ff2ff' } }, '✦ Special effect'), h('div', { style: { fontSize: '14px', fontWeight: 700, marginTop: '2px' } }, U.desc)),
-      dupe ? h('div', { class: 'gold', style: { fontWeight: 900 } }, dupe.ups ? `Melted into your copy: +${dupe.ups} upgrade${dupe.ups === 1 ? '' : 's'} (now +${it.up})` : '', dupe.fame ? `${dupe.ups ? ' and ' : 'Your copy is maxed: '}+${fmt(dupe.fame)} Fame` : '') : null,
+      dupe ? h('div', { class: 'gold', style: { fontWeight: 900 } }, dupe.ups ? `Melted into your copy: +${dupe.ups} upgrade${dupe.ups === 1 ? '' : 's'} (now +${it.up})` : '', dupe.fame ? `${dupe.ups ? ' and ' : 'Your copy is maxed: '}+${fmt(dupe.fame)} Glory` : '') : null,
       h('div', { class: 'dim', style: { fontSize: '12px', fontWeight: 800 } }, `Collection ${n} / ${UNIQUES.length}`),
       h('div', { class: 'row' }, h('button', { class: 'btn alt grow', onclick: () => { close(); onSee?.(it); } }, 'View'), h('button', { class: 'btn grow', onclick: close }, 'Excellent')));
   });

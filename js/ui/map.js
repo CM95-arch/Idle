@@ -44,9 +44,9 @@ export function createMapScreen(root, { goBattle }) {
         if (unlocked) { body.push(h('div', { class: 'tierhead' }, h('b', {}, `Tier ${ROMAN[t - 1]}`)), ...list.map(zoneCard)); continue; }
         // locked tiers fold into one line each: what's there, and what opens it
         body.push(h('div', { class: 'tierlock' }, h('span', { class: 'lk' }, '🔒'), h('div', { class: 'grow' }, h('b', {}, `Tier ${ROMAN[t - 1]}`), h('small', {}, list.map((d) => d.name).join(' · '))),
-          h('small', { class: 'req' }, `Oryx · ${realmName(t - 1)}`)));
+          h('small', { class: 'req' }, `Vexis · ${realmName(t - 1)}`)));
       }
-      if (!tier) body.unshift(h('div', { class: 'panel center muted', style: { fontSize: '13px', fontWeight: 800 } }, 'Defeat Oryx to open the first dungeons.'));
+      if (!tier) body.unshift(h('div', { class: 'panel center muted', style: { fontSize: '13px', fontWeight: 800 } }, 'Defeat Vexis to open the first dungeons.'));
     }
     root.replaceChildren(
       h('div', { class: 'row between' }, h('div', { class: 'h1' }, 'Map'), h('div', { class: 'chip on' }, `⚔ ${fmt(G.partyPower())}`)),

@@ -31,7 +31,7 @@ export const PREFIX = [
   ['Gleaming', 'Runed', 'Azure'],
   ['Arcane', 'Shadow', 'Storm'],
   ['Ancient', 'Radiant', 'Dragon'],
-  ['Mad God’s', 'Void-forged', 'Celestial'],
+  ['Usurper’s', 'Void-forged', 'Celestial'],
 ];
 
 // main stat per slot, per item level 0; rings pick one stat
@@ -44,6 +44,6 @@ export const EXTRA = {
   defPct: { name: 'Defense', min: 5, max: 12 },
   spdPct: { name: 'Attack speed', min: 3, max: 8 },
   crit: { name: 'Crit chance', min: 2, max: 6 },
-  famePct: { name: 'Fame', min: 3, max: 8 },
+  famePct: { name: 'Glory', min: 3, max: 8 },
 };
 export const STAT_NAME = { hp: 'HP', atk: 'Attack', def: 'Defense', spd: 'Speed', pow: 'Ability power' };

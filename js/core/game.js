@@ -12,10 +12,10 @@ import { makeUnique, setUniqueLevel, setAwaken, maxUpOf, slotOf, fits, upgradeCo
 import { createBattle, stepBattle, simulate, enemyStats, advanceStage, refreshHeroes } from './battle.js';
 
 const KEY = 'realm-idle-save-v1';
-export const LAST_STAGE = STAGE_COUNT - 1; // Oryx
+export const LAST_STAGE = STAGE_COUNT - 1; // Vexis
 
 // ---------- dungeons ----------
-// Beating Oryx in Realm N unlocks dungeon tier N for good. Each dungeon remembers how far you've cleared it.
+// Beating Vexis in Realm N unlocks dungeon tier N for good. Each dungeon remembers how far you've cleared it.
 export const dungeonTier = () => state.dtier || 0;
 export const dungeonOpen = (Z) => !!Z?.dungeon && Z.tier <= dungeonTier();
 const dBest = (Z) => state.dbest?.[Z.id] ?? -1;
@@ -41,7 +41,7 @@ function fresh() {
     uniques: {}, // Unique id → how many you've found
     flags: {},
     dtier: 0, dbest: {}, // dungeon tiers unlocked, and how far each dungeon is cleared (kept when you Ascend)
-    peak: 0, // how many Realms' Oryx you've beaten: Realm rewards (see data/rewards.js)
+    peak: 0, // how many Realms' Vexis you've beaten: Realm rewards (see data/rewards.js)
     ach: {}, // achievements earned
     pet: { lv: 0 }, // the Companion (a Realm reward)
   };
@@ -53,9 +53,9 @@ export const onChange = (fn) => listeners.add(fn);
 // a broken listener must never undo or hide an action that already happened
 const changed = (why) => { for (const fn of listeners) { try { fn(why); } catch (e) { setTimeout(() => { throw e; }); } } };
 
-// Regular gear is gone: every item is a Unique now. Anything an older save still holds turns into Fame.
+// Regular gear is gone: every item is a Unique now. Anything an older save still holds turns into Glory.
 function retireOldGear() {
-  // regular gear, and Uniques from the old invented catalog (now the real ROTMG ones)
+  // regular gear, and pieces from an older catalog that no longer exists
   const gone = (it) => it && (!it.u || !UNIQUE[it.u]);
   for (const id of Object.keys(state.uniques)) if (!UNIQUE[id]) delete state.uniques[id];
   const old = [...state.inv.filter(gone), ...Object.values(state.classes).flatMap((C) => Object.values(C.gear).filter(gone))];
@@ -78,8 +78,8 @@ export function load() {
   retireOldGear();
   // Uniques carry their catalog name, which can change (they got their own names): refresh it
   for (const it of [...state.inv, ...Object.values(state.classes).flatMap((C) => Object.values(C.gear))]) if (it?.u && UNIQUE[it.u]) it.name = UNIQUE[it.u].name;
-  // the progression rework: old endgame stages (the Lost Halls and the Shatters were stages 70-89) are now
-  // dungeons; every Oryx you've beaten counts toward the dungeon tiers
+  // the progression rework: old endgame stages (the Halls of the Forsaken and the Fractured Keep were stages 70-89) are now
+  // dungeons; every Vexis you've beaten counts toward the dungeon tiers
   if (!state.flags.prog2) {
     state.flags.prog2 = true;
     if (state.best > LAST_STAGE) state.best = LAST_STAGE;
@@ -120,7 +120,7 @@ const awakenLevel = () => Math.max(0, ...REWARDS.filter((r) => r.awaken && (stat
 export function syncAwaken() { setAwaken(awakenLevel()); }
 /** Every item you own, worn or not. */
 export const allItems = () => [...state.inv, ...Object.values(state.classes).flatMap((C) => Object.values(C.gear || {}))].filter(Boolean);
-/** What achievements (and Realm rewards) add: damage and HP multiply the party; Fame multiplies earnings. */
+/** What achievements (and Realm rewards) add: damage and HP multiply the party; Glory multiplies earnings. */
 export function achBonus() {
   const b = { dmg: 0, hp: 0, fame: 0 };
   for (const A of ACHIEVEMENTS) if (state.ach?.[A.id]) { b.dmg += A.dmg || 0; b.hp += A.hp || 0; b.fame += A.fame || 0; }
@@ -135,8 +135,8 @@ export function checkAch() {
   if (got.length) changed({ ach: got });
   return got;
 }
-// the Companion: shoots the nearest enemy for a share of the party's damage; levels with Fame up to a cap that
-// grows with every Realm beaten past the Shatters
+// the Companion: shoots the nearest enemy for a share of the party's damage; levels with Glory up to a cap that
+// grows with every Realm beaten past the Fractured Keep
 export const petCap = () => (hasReward('companion') ? Math.min(BAL.petMaxLv, BAL.petCapPer * ((state.peak || 0) - 15)) : 0);
 export const petCost = () => levelCostForLevel(BAL.petCostLv + Math.round((state.pet?.lv || 0) * BAL.petCostStep));
 export function petUp(times = 1) {
@@ -150,7 +150,7 @@ const petInfo = (old) => (hasReward('companion') ? { ...(old || { t: 0.5 }), lv:
 export const battleExtra = () => ({ pet: petInfo(), cos: cosmetics() });
 const cosmetics = () => ({ aura: hasReward('aura'), crown: hasReward('crown'), wings: hasReward('wings') });
 export const offlineCapH = () => BAL.offlineCapHours + state.extra.offlineHours;
-/** Realm I pays extra Fame (before any Ascension), so a new player reaches Oryx and the first dungeons quickly. */
+/** Realm I pays extra Glory (before any Ascension), so a new player reaches Vexis and the first dungeons quickly. */
 const firstRealm = () => (state.ascensions ? 1 : BAL.firstRealmFame);
 const fameMult = () => state.mult.fame * (1 + Math.max(0, ...partyStats().map((s) => s.fame), 0)) * BAL.realmFame ** state.realm * firstRealm() * (1 + achBonus().fame);
 // luck (a Unique effect) and the drop bonus from Ascending both make Uniques turn up more often
@@ -184,7 +184,7 @@ function checkUnlocks() {
 }
 
 // ---------- leveling ----------
-// levels cost more in later Realms in step with the Fame those Realms pay, so each Realm is a real climb
+// levels cost more in later Realms in step with the Glory those Realms pay, so each Realm is a real climb
 const realmCost = () => BAL.realmFame ** state.realm;
 export const levelCost = (cls) => BAL.levelCost(state.classes[cls].lv) * realmCost();
 export const levelCostForLevel = (lv) => BAL.levelCost(lv) * realmCost();
@@ -194,7 +194,7 @@ export function levelUp(cls, times = 1) {
   if (n) { checkUnlocks(); checkAch(); changed({ level: cls, n }); }
   return n;
 }
-/** How many levels the current Fame buys (for "Max" buttons). */
+/** How many levels the current Glory buys (for "Max" buttons). */
 export function affordableLevels(cls) {
   let f = state.fame, lv = state.classes[cls].lv, n = 0;
   const cap = levelCap();
@@ -203,7 +203,7 @@ export function affordableLevels(cls) {
 }
 
 // ---------- stat potions ----------
-// Prices scale with the Realm and the Ascension Fame bonus, so every run reaches 8/8 near the Castle.
+// Prices scale with the Realm and the Ascension Glory bonus, so every run is Perfected near the Spire.
 const potScale = () => BAL.realmFame ** state.realm * state.mult.fame * firstRealm();
 const potsOf = (cls) => (state.classes[cls].pots ||= {});
 export const potions = (cls, s) => state.classes[cls]?.pots?.[s] || 0;
@@ -211,7 +211,7 @@ export const potions = (cls, s) => state.classes[cls]?.pots?.[s] || 0;
 export const potCap = (cls, s) => potionsToMax(cls, s, state.ascensions || 0);
 export const statMaxed = (cls, s) => potions(cls, s) >= potCap(cls, s);
 export const maxedCount = (cls) => STATS.filter((s) => statMaxed(cls, s)).length;
-// priced by how far toward the current cap a potion is, so each Realm's new potions cost about Castle money
+// priced by how far toward the current cap a potion is, so each Realm's new potions cost about Spire money
 export const potionCost = (cls, s, k = potions(cls, s)) => Math.round(BAL.potionCost(k, potCap(cls, s), s) * potScale());
 /** Drink up to `times` potions of one stat. Returns how many. */
 export function drink(cls, s, times = 1) {
@@ -220,7 +220,7 @@ export function drink(cls, s, times = 1) {
   if (n) { checkAch(); changed({ potion: cls, stat: s, n, maxed: statMaxed(cls, s), eight: maxedCount(cls) === 8 && statMaxed(cls, s) }); }
   return n;
 }
-/** How many potions of a stat the current Fame buys, and what they cost. */
+/** How many potions of a stat the current Glory buys, and what they cost. */
 export function affordablePotions(cls, s, cap = Infinity) {
   let f = state.fame, k = potions(cls, s), n = 0, cost = 0;
   const K = potCap(cls, s);
@@ -336,7 +336,7 @@ export function bestUpgrades() {
 function gainFame(n, earned = true) { state.fame += n; if (earned) state.stats.fameEarned += n; }
 // Uniques drop only where they do in the real game: a few from Realm bosses, the rest from dungeon bosses (and,
 // very rarely, the rest of a dungeon's enemies)
-// (the Beaches drop starter ability items instead: only ones a class you own can use, and often)
+// (the Sunken Shore drop starter ability items instead: only ones a class you own can use, and often)
 const owns = (u) => Object.keys(state.classes).some((c) => fits(c, { kind: u.kind }));
 // (and some only drop from a given Realm on)
 const poolOf = (Z) => UNIQUES.filter((u) => u.src === Z.id && (!u.starter || owns(u)) && (state.realm || 0) >= (u.minRealm || 0));
@@ -348,7 +348,7 @@ function rollUnique(stage, boss, force = false) {
   if (boss && starterZone(Z) && !pool.some((u) => state.uniques[u.id])) force = true; // a new player's first gear
   if (!pool.length || (!force && rng.next() >= uniqueChance(Z, boss))) return null;
   // ones you haven't found yet, and ones a class you own can wear, come up more often
-  // Exalted ones are far rarer than the rest
+  // Mythic ones are far rarer than the rest
   // (starters favor the classes in the party, so the drop can go straight on)
   const w = pool.map((u) => (u.exalted ? BAL.exaltedWeight : 1) * (state.uniques[u.id] ? 1 : 3) * (owns(u) ? 2 : 1) * (u.starter && state.party.some((c) => fits(c, { kind: u.kind })) ? 4 : 1));
   let r = rng.next() * w.reduce((a, b) => a + b, 0), U = pool[0];
@@ -358,7 +358,7 @@ function rollUnique(stage, boss, force = false) {
   checkAch();
   state.stats.uniques = (state.stats.uniques || 0) + 1;
   state.stats.items++;
-  // one you already own: it melts into your copy as free upgrades (and Fame once that copy is maxed)
+  // one you already own: it melts into your copy as free upgrades (and Glory once that copy is maxed)
   const owned = [...state.inv, ...Object.values(state.classes).flatMap((C) => Object.values(C.gear))].filter((x) => x?.u === U.id).sort((a, b) => b.up - a.up)[0];
   if (owned) {
     const ups = Math.max(0, Math.min(BAL.dupeUpgrades, maxUpOf(owned) - owned.up));
@@ -404,13 +404,13 @@ function settle(events) {
       else {
         first = state.stage > state.best;
         if (first) { state.best = state.stage; syncUniques(); }
-        // the first Oryx in each Realm opens the next tier of dungeons
+        // the first Vexis in each Realm opens the next tier of dungeons
         if (first && state.stage === LAST_STAGE && state.realm + 1 > dungeonTier() && dungeonTier() < TIERS) {
           state.dtier = Math.min(TIERS, state.realm + 1);
           out.push({ k: 'dungeons', tier: state.dtier, names: DUNGEONS.filter((d) => d.tier === state.dtier).map((d) => d.name) });
         }
       }
-      // beating Oryx in a Realm you haven't beaten before: its Realm reward, if it has one
+      // beating Vexis in a Realm you haven't beaten before: its Realm reward, if it has one
       if (!Z.dungeon && state.stage === LAST_STAGE && state.realm + 1 > (state.peak || 0)) {
         state.peak = state.realm + 1;
         const got = REWARDS.filter((r) => r.realm === state.peak);

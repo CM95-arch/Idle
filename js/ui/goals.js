@@ -7,7 +7,7 @@ import { tap } from './common.js';
 
 const pct = (v) => `+${Math.round(v * 100)}%`;
 /** What an achievement pays, in a few words. */
-export const achPays = (A) => [A.dmg && `${pct(A.dmg)} damage`, A.hp && `${pct(A.hp)} HP`, A.fame && `${pct(A.fame)} Fame`].filter(Boolean).join(' · ');
+export const achPays = (A) => [A.dmg && `${pct(A.dmg)} damage`, A.hp && `${pct(A.hp)} HP`, A.fame && `${pct(A.fame)} Glory`].filter(Boolean).join(' · ');
 
 /** The Realm rewards: ones you've earned, the next one, and the rest further off. */
 export function rewardTrack() {
@@ -29,7 +29,7 @@ export function openAchievements() {
     const s = G.state, done = ACHIEVEMENTS.filter((A) => s.ach?.[A.id]).length, b = G.achBonus();
     return [
       h('div', { class: 'pixel center', style: { fontSize: '22px' } }, 'Achievements'),
-      h('div', { class: 'muted center', style: { fontSize: '13px', fontWeight: 700 } }, `${done} of ${ACHIEVEMENTS.length} · ${[b.dmg && `${pct(b.dmg)} damage`, b.hp && `${pct(b.hp)} HP`, b.fame && `${pct(b.fame)} Fame`].filter(Boolean).join(' · ') || 'no bonuses yet'}`),
+      h('div', { class: 'muted center', style: { fontSize: '13px', fontWeight: 700 } }, `${done} of ${ACHIEVEMENTS.length} · ${[b.dmg && `${pct(b.dmg)} damage`, b.hp && `${pct(b.hp)} HP`, b.fame && `${pct(b.fame)} Glory`].filter(Boolean).join(' · ') || 'no bonuses yet'}`),
       ...ACHIEVEMENTS.map((A) => {
         const got = !!s.ach?.[A.id];
         return h('div', { class: `panel row ach${got ? ' got' : ''}` },

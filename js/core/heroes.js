@@ -6,7 +6,7 @@ import { itemStats, uniqueOf } from './items.js';
 import { FX_MAX } from '../data/uniques.js';
 import { STATS, STAT_FX, potionsToMax } from '../data/stats.js';
 
-// How each kind of weapon shoots, ROTMG-style: projectiles per shot, the angle between them (degrees; 0 =
+// How each kind of weapon shoots: projectiles per shot, the angle between them (degrees; 0 =
 // side by side), range and speed in tiles, and the look. A Unique weapon replaces any of these with its own.
 export const BASE_SHOT = {
   staff: { n: 2, arc: 0, wavy: true, range: 8.5, speed: 14, look: 'orb' },

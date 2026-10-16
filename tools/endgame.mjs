@@ -1,5 +1,5 @@
 // Endgame pacing: `node tools/endgame.mjs [maxHoursPerRealm] [activeMinutes] [awayMinutes]`
-// A best-case player who has done everything up to the Shatters: 15 Ascensions behind them, every piece of gear
+// A best-case player who has done everything up to the Fractured Keep: 15 Ascensions behind them, every piece of gear
 // at +10, the strongest party there is. It plays on from Realm XVI and prints how long each Realm takes, so the
 // final Realm can sit just past what such a player can reach. Stops when one Realm takes longer than the limit.
 import * as G from '../js/core/game.js';

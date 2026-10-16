@@ -2,16 +2,16 @@
 export const BAL = {
   // ---- heroes ----
   levelGrowth: { hp: 1.13, atk: 1.13, def: 1.13 },        // per class level, multiplicative (≈1.55 levels per stage)
-  levelCostBase: 8, levelCostGrowth: 1.18,              // Fame to go from lv to lv+1 = base × growth^(lv-1)
+  levelCostBase: 8, levelCostGrowth: 1.18,              // Glory to go from lv to lv+1 = base × growth^(lv-1)
   levelCost: (lv) => Math.round(BAL.levelCostBase * BAL.levelCostGrowth ** (lv - 1)),
   partySize: 3,
   tankGuard: 0.2,         // tanks take this much less damage from every hit
   tankFallback: 0.35,     // below this share of HP a tank stops drawing fire
   stageHeal: 0.3,          // heroes recover this share of max HP each time a stage is cleared
   // stat potions (js/data/stats.js): a potion's price follows how far toward its max the stat is, rising with
-  // the Fame a stage pays, so a stat at x% of its max costs about what stage x% × potStage pays. Drinking as you
-  // go lands a party at 8/8 around potStage, just before Oryx's Castle.
-  // each stat tops out a little apart (Speed first, Life last), so 8/8 builds up across the Castle Approaches
+  // the Glory a stage pays, so a stat at x% of its max costs about what stage x% × potStage pays. Drinking as you
+  // go Perfects a party (all eight maxed) around potStage, just before the Usurper's Spire.
+  // each stat tops out a little apart (Speed first, Life last), so Perfection builds up across the Spire Approach
   potBase: 30, potRef: 25, potStage: { spd: 51, dex: 52, att: 53, wis: 54, vit: 55, def: 56, mp: 57, hp: 58 },
   potionCost: (k, K, s) => Math.round(BAL.potBase * BAL.fameGrowth ** (((k + 0.5) / K) * BAL.potStage[s]) * (BAL.potRef / K)),
   // ---- enemies ----
@@ -47,26 +47,26 @@ export const BAL = {
   // Unique upgrades cost about as much as a few class levels at your stage (item level follows your best stage)
   upgradeCost: (ilvl, up) => Math.round(30 * 1.27 ** ilvl * 1.3 ** up),
   salvage: (ilvl) => Math.round(3 * BAL.fameGrowth ** ilvl), // about half a stage clear: Uniques are for wearing, not selling
-  uniqueRealmBoss: 0.05,   // a Realm boss with real drops (the Grand Sphinx, the Keyper) drops one 1 time in 20
+  uniqueRealmBoss: 0.05,   // a Realm boss with real drops (the Sandsworn Sphinx, the Gatewarden) drops one 1 time in 20
   uniqueDungeonBoss: 0.06, // a dungeon boss drops one of its Uniques about 1 time in 16
-  // the Beaches' ability items (one per class) drop from any Beach enemy, rarely; the first Beach boss always drops one
+  // the Sunken Shore's ability items (one per class) drop from any Shore enemy, rarely; the first Shore boss always drops one
   starterKill: 0.002,      // about 1 kill in 500
   starterBoss: 0.2,
   starterPower: 0.5,       // their stats are half a normal item's; the flashy cast effect is the point
   uniqueKill: 0.00004,     // any other dungeon enemy, very rarely (Realm enemies never)
   utWeapon: 1.2,           // a Unique weapon hits this much harder than the tiered weapon its stats are measured against
   dupeUpgrades: 2,         // a Unique you already own melts into your copy as this many free upgrades
-  exaltedWeight: 0.06,     // an Exalted Unique is this likely next to an ordinary one from the same boss
+  exaltedWeight: 0.06,     // an Mythic Unique is this likely next to an ordinary one from the same boss
   uniqueLag: 6,            // Uniques' item level trails your best stage by this much
   // ---- idle ----
   offlineCapHours: 8,
   offlineEfficiency: 0.8,  // share of your farming rate earned while away (before Ascension bonuses)
   // ---- Ascension ----
-  // each Ascension multiplies Fame by (1 + gain) and damage by (1 + gain × ascendDmg): big at first, smaller
+  // each Ascension multiplies Glory by (1 + gain) and damage by (1 + gain × ascendDmg): big at first, smaller
   // later. At the 0.4 floor the gains just about match a Realm's extra difficulty, so later runs hold steady.
   ascendFirst: 1.5, ascendDecay: 0.8, ascendDmg: 0.3,
   ascendGain: (n) => Math.max(0.4, BAL.ascendFirst * BAL.ascendDecay ** (n - 1)),
-  // Fame (and potion prices) ×this in Realm I until the first Ascension: the first Oryx in hours, not a day
+  // Glory (and potion prices) ×this in Realm I until the first Ascension: the first Vexis in hours, not a day
   firstRealmFame: 4,
   // long-term goals. Levels are capped, and the cap rises with every Ascension, more slowly than the Realms get
   // harder: past a point only better builds help (tools/wall.mjs shows where the best possible party stops)

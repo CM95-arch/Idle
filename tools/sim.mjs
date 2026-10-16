@@ -1,5 +1,5 @@
 // Pacing report: `node tools/sim.mjs [hours] [activeMinutes] [awayMinutes]`
-// A scripted player: plays actively for a while (spending Fame, equipping upgrades, picking a party), then leaves
+// A scripted player: plays actively for a while (spending Glory, equipping upgrades, picking a party), then leaves
 // the game idle, and repeats. Prints when each class unlocks, when each zone boss first falls, and Ascensions.
 import * as G from '../js/core/game.js';
 import { BAL } from '../js/data/balance.js';
@@ -20,7 +20,7 @@ const S = () => G.state;
 let now = Date.now(), simT = 0;
 const fmt = (s) => `${Math.floor(s / 3600)}h${String(Math.floor((s % 3600) / 60)).padStart(2, '0')}m${String(Math.floor(s % 60)).padStart(2, '0')}s`;
 const log = (m) => console.log(`${fmt(simT).padStart(7)}  ${m}`);
-G.onChange((w) => { if (w?.unlock) log(`unlocked ${CLASSES[w.unlock].name}`); if (w?.eight) log(`${CLASSES[w.potion].name} is 8/8 at ${stageLabel(S().best)}`); });
+G.onChange((w) => { if (w?.unlock) log(`unlocked ${CLASSES[w.unlock].name}`); if (w?.eight) log(`${CLASSES[w.potion].name} is Perfected at ${stageLabel(S().best)}`); });
 
 function manage() {
   const st = S();

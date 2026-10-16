@@ -1,4 +1,4 @@
-// Stat potions: the eight ROTMG stats, raised one potion at a time toward each class's max (8/8).
+// Stat potions: the eight stats, raised one potion at a time toward each class's max (all eight: Perfected).
 import { STATS, STAT_INFO, statValue } from '../data/stats.js';
 import * as G from '../core/game.js';
 import { h, toast } from './dom.js';
@@ -33,7 +33,7 @@ export function statPanel(cls, rerender, onChange) {
         const got = G.drink(cls, s, n);
         if (!got) return;
         tap('upgrade');
-        if (G.statMaxed(cls, s)) toast({ title: `${I.name} maxed!`, body: G.maxedCount(cls) === 8 ? `${CLASSES[cls].name} is 8/8!` : `${CLASSES[cls].name} is ${G.maxedCount(cls)}/8.`, kind: 'gold' });
+        if (G.statMaxed(cls, s)) toast({ title: `${I.name} maxed!`, body: G.maxedCount(cls) === 8 ? `${CLASSES[cls].name} is Perfected: all eight stats maxed!` : `${CLASSES[cls].name} is ${G.maxedCount(cls)}/8.`, kind: 'gold' });
         rerender(); onChange?.();
       },
     },

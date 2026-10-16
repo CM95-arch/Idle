@@ -1,23 +1,20 @@
-// Unique items, inspired by Realm of the Mad God's UTs (their shot patterns and stat lines come from the
-// RealmEye wiki). Each drops only where it does in the real game (`src`: the zone or dungeon whose boss guards
-// it, per RealmEye's drop data); Exalted ones are the rarest of all. Names and descriptions are this game's own.
+// Every piece of gear in the game. Each drops only from its own source (`src`: the zone or dungeon whose boss
+// guards it); Mythic ones are the rarest of all.
 //
-//   shot: how a UT weapon fires, ROTMG-style. n projectiles, arc (degrees between them; 0 = side by side),
-//         rate (fire rate, 1 = normal), per (each projectile's damage as a share of a tiered weapon's whole
-//         volley: avg damage ÷ the tiered peer's), range and speed in tiles, pierce, wavy, ignoreDef, vary
-//         (damage spread), look and color. Tiered peers: bow 190 (Bow of Covert Havens, 125-135 + 2×25-35),
-//         staff 160, wand 152 (Wand of Recompense), dagger 135, sword 245.
-//   abil: what a UT ability item changes about its class's ability (see useAbility in core/battle.js).
-//   rot:  ROTMG stat bonuses (ATT, DEX, DEF, HP, MP, VIT, WIS, SPD; armor = the armor's own DEF), turned into
+//   shot: how a weapon fires. n projectiles, arc (degrees between them; 0 = side by side), rate (fire rate,
+//         1 = normal), per (each projectile's damage as a share of a plain weapon's whole volley), range and
+//         speed in tiles, pierce, wavy, ignoreDef, vary (damage spread), onHit (status effects), look and color.
+//   abil: what an ability item changes about its class's ability (see useAbility in core/battle.js).
+//   rot:  stat bonuses (ATT, DEX, DEF, HP, MP, VIT, WIS, SPD; armor = the armor's own DEF), turned into
 //         this game's percentages by core/items.js.
 //   fx:   other effects battle.js applies.
 //   proc: an effect you can see in the fight (orbiting motes, novas, meteors, halos, bubbles, lightning on crits,
 //         spirits on kills…): see runProc in core/battle.js.
-//   starter: a Beach find (any enemy there), one per class: half a normal item's stats, an effect on every cast.
+//   starter: a Shore find (any enemy there), one per class: half a normal item's stats, an effect on every cast.
 //   minRealm: only drops from this Realm on (0-based, so 15 is Realm XVI).
 //   exalted: far rarer, far stronger. A gold bag instead of a white one.
 export const UNIQUES = [
-  // ---- the Beaches: one ability item per class, a rare drop from any enemy there. Half a normal item's stats,
+  // ---- the Sunken Shore: one ability item per class, a rare drop from any enemy there. Half a normal item's stats,
   // but every cast adds a burst of something you can see (procs with on: 'cast') ----
   { id: 'stEmber', name: 'Spell of Sea Embers', kind: 'spell', src: 'beach', starter: true, proc: { on: 'cast', kind: 'meteor', n: 3, pow: 0.3, r: 45, c: '#ff8a3a' },
     pal: ['#7a2a1a', '#ff8a3a', '#ffe0a0'], desc: 'Every Fire Burst also calls down three little embers on scattered foes.' },
@@ -42,7 +39,7 @@ export const UNIQUES = [
   { id: 'stStorm', name: 'Stormglass Rod', kind: 'scepter', src: 'beach', starter: true, proc: { on: 'cast', kind: 'lightning', n: 3, pow: 0.15, r: 36, c: '#9ad8ff' },
     pal: ['#2a3a6a', '#9ad8ff', '#ffffff'], desc: 'Every Chain Lightning also cracks three bolts of sea-storm down on scattered foes.' },
 
-  // ---- first RealmEye pass ----
+  // ---- the dungeons' gear ----
   { id: 'coralBow', name: 'Reefsong Bow', kind: 'bow', src: 'trench', shot: { n: 2, arc: 9, rate: 1.25, per: 0.45, pierce: true, range: 6.4, speed: 18.5, look: 'arrow', color: '#ff7aa8' },
     pal: ['#b8405a', '#ff8a9a', '#ffe0d0'], desc: 'Sings two coral-pink arrows at once, a hair apart, at 125% fire rate. They pass straight through the pack.' },
   { id: 'coralTrap', name: 'Siren\'s Snare', kind: 'trap', src: 'trench', abil: { mode: 'paralyze', pow: 1, dur: 3 }, rot: { spd: 4, dex: 4 },
@@ -92,7 +89,7 @@ export const UNIQUES = [
     pal: ['#2a3a1a', '#6a8a2a', '#7cff4a'], desc: 'Throws two bombs at once: a small, deadly one inside a wide one.' },
   { id: 'demonBlade', name: 'Infernal Edge', kind: 'sword', src: 'abyss', shot: { n: 2, arc: 25, per: 0.66, range: 3.4, speed: 13, look: 'slash', color: '#ff3a3a' },
     pal: ['#3a0a0a', '#8a1a1a', '#ff3a3a'], desc: 'Two blades in a V, 25° apart. Up close both land, and few swords hit harder.' },
-  { id: 'decades', name: 'Ring of Ages', kind: 'ring', ring: 'hp', src: 'crystal', rot: { hp: 190 },
+  { id: 'decades', name: 'Ring of the Long Watch', kind: 'ring', ring: 'hp', src: 'crystal', rot: { hp: 190 },
     pal: ['#8a3a6a', '#ff8ad8', '#ffe0f0'], desc: 'Three crystal shards orbit its wearer, each slicing at whatever comes close. The most life any ring gives.', proc: { kind: 'orbit', n: 3, every: 0.9, pow: 0.2, r: 150, c: '#d8a0ff' } },
 
   { id: 'pyramid', name: 'Sunstone Band', kind: 'ring', ring: 'atk', src: 'tomb', rot: { att: 4, def: 4, hp: 100 },
@@ -108,7 +105,7 @@ export const UNIQUES = [
   { id: 'crystalSerpent', name: 'Quetzal Staff', kind: 'staff', src: 'thicket', shot: { n: 2, arc: 0, rate: 1.1, per: 0.41, wavy: true, range: 9, speed: 16, look: 'orb', color: '#b8a0ff' },
     pal: ['#4a3a8a', '#b8a0ff', '#ffffff'], desc: 'Light, fast bolts (110% fire rate) with a wand\'s long reach: damage from safety.' },
 
-  { id: 'ogmur', name: 'Bastion of the Keyper', kind: 'shield', src: 'approach', abil: { mode: 'armorBreak', pow: 1.15, dur: 4 }, rot: { hp: 60, def: 14 },
+  { id: 'ogmur', name: 'Bastion of the Gatewarden', kind: 'shield', src: 'approach', abil: { mode: 'armorBreak', pow: 1.15, dur: 4 }, rot: { hp: 60, def: 14 },
     pal: ['#3a4a5a', '#8aa0b8', '#ff8a3a'], desc: 'The bash breaks armor instead of stunning: everything hit loses its armor for 4 seconds.' },
   { id: 'blasphemous', name: 'Seal of Heresy', kind: 'seal', src: 'approach', abil: { mode: 'invuln', dur: 1.5 }, rot: { spd: 4 },
     pal: ['#3a1a3a', '#c0a0d0', '#ffd34d'], desc: 'The seal also makes the Paladin Invulnerable for 1.5 seconds.' },
@@ -122,15 +119,15 @@ export const UNIQUES = [
     pal: ['#7a5a0a', '#ffd34d', '#ffffff'], desc: 'Steady, heavy blades that weave left and right. Every kill may fling a golden spirit at the next foe.', proc: { kind: 'spirit', chance: 0.35, pow: 0.6, c: '#ffd34d' } },
   { id: 'divinity', name: 'Dawnbreaker', kind: 'sword', src: 'sanctuary', exalted: true, shot: { n: 1, rate: 0.6, per: 1.22, pierce: true, range: 4, speed: 12, look: 'slash', color: '#fff3b0', size: 1.3, beam: { per: 2.86, every: 1, radius: 2.25, reach: 6.25 } },
     pal: ['#8a7a2a', '#fff3b0', '#ffffff'], desc: 'A holy blade. Piercing swings, and every second a beam of judgment blasts the area at the end of its reach, ignoring armor.' },
-  { id: 'genesis', name: 'Spell of First Light', kind: 'spell', src: 'sanctuary', exalted: true, abil: { mode: 'portals', pow: 1.8, dur: 4 },
+  { id: 'genesis', name: 'Spell of Dawning Gates', kind: 'spell', src: 'sanctuary', exalted: true, abil: { mode: 'portals', pow: 1.8, dur: 4 },
     pal: ['#2a1a5a', '#b6a0ff', '#ffffff'], desc: 'Opens four portals that zap everything in a wide area every 0.4 seconds for 4 seconds.' },
-  // ======== ENDGAME (optional, after Oryx) ========
-  { id: 'colossus', name: 'Marblebrand', kind: 'sword', src: 'halls', exalted: true, shot: { n: 1, per: 1.17, wavy: true, range: 4.5, speed: 10, look: 'slash', color: '#f0e8d8', size: 1.3 },
+  // ======== ENDGAME (optional, after Vexis) ========
+  { id: 'colossus', name: 'Alabaster Brand', kind: 'sword', src: 'halls', exalted: true, shot: { n: 1, per: 1.17, wavy: true, range: 4.5, speed: 10, look: 'slash', color: '#f0e8d8', size: 1.3 },
     pal: ['#8a8a92', '#f0e8d8', '#7affd8'], desc: 'A titan\'s blade: a long, curving swing that hits harder than any ordinary sword.' },
   { id: 'newLife', name: 'Aegis of Renewal', kind: 'heavy', src: 'halls', rot: { armor: 14, hp: 160 },
-    pal: ['#e8e0d0', '#ffffff', '#7affd8'], desc: 'Marble plate that swaps armor for life. Every 7 seconds it sends a wave of healing through the whole party.', proc: { kind: 'healwave', every: 7, pow: 0.07, c: '#7affd8' } },
-  { id: 'marbleSeal', name: 'Marble-Eye Seal', kind: 'seal', src: 'halls', abil: { mode: 'marble', dur: 4.5 }, rot: { def: 5 },
-    pal: ['#b8b2c4', '#f4f0fa', '#7ad0ff'], desc: 'Summons a watching eye of marble: the party is Armored (takes 40% less) and hits harder for 4.5 seconds.' },
+    pal: ['#e8e0d0', '#ffffff', '#7affd8'], desc: 'Alabaster plate that swaps armor for life. Every 7 seconds it sends a wave of healing through the whole party.', proc: { kind: 'healwave', every: 7, pow: 0.07, c: '#7affd8' } },
+  { id: 'marbleSeal', name: 'Alabaster-Eye Seal', kind: 'seal', src: 'halls', abil: { mode: 'marble', dur: 4.5 }, rot: { def: 5 },
+    pal: ['#b8b2c4', '#f4f0fa', '#7ad0ff'], desc: 'Summons a watching eye of alabaster: the party is Armored (takes 40% less) and hits harder for 4.5 seconds.' },
   { id: 'lodestone', name: 'Lodestar Ring', kind: 'ring', ring: 'atk', src: 'halls', rot: { hp: 30, att: 6, def: 6, spd: 6, dex: 6 },
     pal: ['#6a6a7a', '#c8c8e0', '#ff5a5a'], desc: 'A fighter\'s ring. Two magnet stones circle its wearer, smashing into anything that comes close.', proc: { kind: 'orbit', n: 2, every: 0.8, pow: 0.28, r: 150, c: '#ff7a5a' } },
   { id: 'voidBow', name: 'Nullstring', kind: 'bow', src: 'halls', exalted: true, shot: { n: 1, rate: 1.05, per: 1.14, pierce: true, wavy: true, range: 6, speed: 16, look: 'arrow', color: '#9a5aff', size: 1.3 },
@@ -151,8 +148,8 @@ export const UNIQUES = [
     pal: ['#4a0a1a', '#a02030', '#ffd34d'], desc: 'Every 5 seconds the vestment pulses: a ring of crimson force bursts outward, hurting everything nearby.', proc: { kind: 'nova', every: 5, pow: 1.0, r: 80, c: '#ff3a5a' } },
   { id: 'bloodshed', name: 'Sanguine Loop', kind: 'ring', ring: 'hp', src: 'halls', rot: { hp: 110, def: 6, wis: 8 },
     pal: ['#5a0a1a', '#c02030', '#ffb0b0'], desc: 'Kills sometimes spill a blood orb that flies back to its wearer and heals them.', proc: { kind: 'vamp', chance: 0.3, pow: 0.025, c: '#ff2a4a' } },
-  // new for this game, so every class has endgame gear (the real Lost Halls has none for these slots)
-  { id: 'marbleTome', name: 'Hymnal of Marble', kind: 'tome', src: 'halls', abil: { mode: 'marbleTome', heal: 0.55, dur: 3 }, rot: { hp: 60, def: 6, wis: 6 },
+  // the rest of the Halls of the Forsaken's gear, so every class has something there
+  { id: 'marbleTome', name: 'Hymnal of Alabaster', kind: 'tome', src: 'halls', abil: { mode: 'marbleTome', heal: 0.55, dur: 3 }, rot: { hp: 60, def: 6, wis: 6 },
     pal: ['#b8b2c4', '#f4f0fa', '#d8a830'], desc: 'Heals the whole party at once and Armors them for 3 seconds.' },
   { id: 'voidDagger', name: 'Nullfang', kind: 'dagger', src: 'halls', shot: { n: 1, rate: 1.1, per: 1.35, pierce: true, ignoreDef: true, range: 5.5, speed: 16, look: 'blade', color: '#9a5aff' }, rot: { dex: 4 },
     pal: ['#120a20', '#6a3ab0', '#d0a0ff'], desc: 'A void-black blade that passes through enemies and ignores armor, at 110% fire rate.' },
@@ -165,13 +162,13 @@ export const UNIQUES = [
     pal: ['#3a4a6a', '#a0b8e8', '#ff6a3a'], desc: 'Berserk for the whole party, and the Warrior fires a piercing bolt that ignores armor through the horde.' },
   { id: 'duskyCatalyst', name: 'Duskwand', kind: 'wand', src: 'shatters', shot: { n: 1, rate: 1.5, per: 0.94, pierce: true, wavy: true, vary: 0.3, range: 8, speed: 20, look: 'bolt', color: '#8a6aff' }, rot: { wis: -5 },
     pal: ['#2a1a4a', '#8a6aff', '#ffe0ff'], desc: 'Weaving dusk-violet bolts at 150% fire rate that pass through enemies. Wild damage swings.' },
-  { id: 'polarity', name: 'Polarity Vial', kind: 'poison', src: 'shatters', abil: { mode: 'polarity', pow: 1.2, slow: 3 }, rot: { wis: 8 },
+  { id: 'polarity', name: 'Lodestone Vial', kind: 'poison', src: 'shatters', abil: { mode: 'polarity', pow: 1.2, slow: 3 }, rot: { wis: 8 },
     pal: ['#2a1a4a', '#5de0ff', '#ff6ad8'], desc: 'A two-toned grenade that poisons a whole pack and Slows it for 3 seconds.' },
   { id: 'twilightGem', name: 'Gloaming Gem', kind: 'ring', ring: 'def', src: 'shatters', rot: { mp: 110, def: 8, spd: 5, wis: 5 }, fx: { cdr: 0.2 },
     pal: ['#2a1a4a', '#a07ad8', '#ffd34d'], desc: 'Abilities come round 20% sooner, and three twilight motes orbit its wearer, zapping what comes close.', proc: { kind: 'orbit', n: 3, every: 0.8, pow: 0.2, r: 150, c: '#b07aff' } },
   { id: 'warmonger', name: 'Kingsbane Recurve', kind: 'bow', src: 'shatters', shot: { n: 2, arc: 7, rate: 1.2, per: 0.6, pierce: true, range: 8, speed: 17, look: 'arrow', color: '#ff6a3a' }, rot: { vit: 5, dex: -5 },
     pal: ['#5a1a0a', '#c04a2a', '#ffd34d'], desc: 'Two arrows at once, slightly fanned, at 120% fire rate. Both pass through the pack.' },
-  { id: 'forgottenCrown', name: 'Crown of the Nameless King', kind: 'ring', ring: 'atk', src: 'shatters', rot: { hp: 110, att: 6, dex: 6 },
+  { id: 'forgottenCrown', name: 'Crown of the Last Monarch', kind: 'ring', ring: 'atk', src: 'shatters', rot: { hp: 110, att: 6, dex: 6 },
     pal: ['#5a4a1a', '#d8b850', '#b07aff'], desc: 'A damage ring with a king\'s temper: crits call down violet lightning on the target.', proc: { kind: 'lightning', chance: 0.6, pow: 1.0, r: 52, c: '#c08aff' } },
   { id: 'monarchy', name: 'Mantle of the Last Court', kind: 'robe', src: 'shatters', rot: { armor: 12, hp: 60, mp: 60, vit: 20 }, fx: { vitProc: 0.04 },
     pal: ['#3a2a5a', '#8a6ab0', '#ffd34d'], desc: 'When struck, its wearer surges with life now and then, and every 8 seconds a golden wave heals the whole party.', proc: { kind: 'healwave', every: 8, pow: 0.06, c: '#ffd34d' } },
@@ -179,16 +176,16 @@ export const UNIQUES = [
     pal: ['#1a1424', '#4a3a6a', '#a07ad8'], desc: 'Blows are dulled, and kills sometimes tear loose a shadow that hunts down the next foe.', proc: { kind: 'spirit', chance: 0.35, pow: 0.6, c: '#7a5aff' } },
   { id: 'royalCuirass', name: 'Kingsguard Cuirass', kind: 'heavy', src: 'shatters', rot: { armor: 20, hp: 60, vit: 10 }, fx: { guard: 0.14 },
     pal: ['#3a3a4a', '#a0a0b8', '#ffd34d'], desc: 'Royal plate that dulls every blow. Every 6 seconds it rings out a golden shockwave that knocks the pack back on its heels (brief stun).', proc: { kind: 'nova', every: 6, pow: 0.8, r: 78, stun: 0.6, c: '#ffd34d' } },
-  // new for this game, so every class has endgame gear (the real Shatters has none for these slots)
+  // the rest of the Fractured Keep's gear, so every class has something there
   { id: 'starfall', name: 'Starfall Spell', kind: 'spell', src: 'shatters', exalted: true, abil: { mode: 'starfall', pow: 1.6, curse: 3 }, rot: { att: 5, wis: 5 },
     pal: ['#1a1030', '#b07aff', '#ffffff'], desc: 'Three stars fall on the three thickest packs, each a full Fire Burst that Curses what it hits.' },
   { id: 'twilightCloak', name: 'Cloak of Twilight', kind: 'cloak', src: 'shatters', abil: { mode: 'twilight', dur: 4, dmg: 0.6, inv: 1 }, rot: { dex: 5, spd: 5 },
     pal: ['#2a1a4a', '#a07ad8', '#ff6ad8'], desc: 'After a Shadow Strike the Rogue fades into twilight: untouchable for a moment, then +60% damage for 4 seconds.' },
   { id: 'sentinelBulwark', name: 'Sentinel\'s Bulwark', kind: 'shield', src: 'shatters', abil: { mode: 'sentinel', pow: 1.4, stun: 1.6, dur: 4 }, rot: { hp: 80, def: 12 },
     pal: ['#3a4a6a', '#a0b8e8', '#ffd34d'], desc: 'A wider bash that both stuns and Armor Breaks everything nearby.' },
-  { id: 'forgottenScepter', name: 'Scepter of the Nameless King', kind: 'scepter', src: 'shatters', abil: { mode: 'fulminate', targets: 10, pow: 1.1, falloff: 0.95, slow: 2 }, rot: { att: 5, wis: 5 },
+  { id: 'forgottenScepter', name: 'Scepter of the Last Monarch', kind: 'scepter', src: 'shatters', abil: { mode: 'fulminate', targets: 10, pow: 1.1, falloff: 0.95, slow: 2 }, rot: { att: 5, wis: 5 },
     pal: ['#5a4a1a', '#d8b850', '#5de0ff'], desc: 'Lightning that leaps through ten enemies with almost no falloff, Slowing each one.' },
-  // ---- more real UTs (second RealmEye pass) ----
+  // ---- more dungeon gear ----
   { id: 'vileSpirit', name: 'Phantom Snare', kind: 'trap', src: 'approach', abil: { mode: 'vile', pow: 1.6, curse: 2 }, rot: { att: 5, spd: 5 },
     pal: ['#1a3a3a', '#5a9a8a', '#c0ffe0'], desc: 'A huge ghostly blast that Curses everything it hits for 2 seconds.' },
   { id: 'archerang', name: 'Cogwheel Boomerang', kind: 'quiver', src: 'kogbold', abil: { mode: 'archerang', pow: 0.6, dur: 2 },
@@ -207,7 +204,7 @@ export const UNIQUES = [
     pal: ['#4a1a1a', '#c04040', '#ffb0a0'], desc: 'The Priest\'s cruel tome: blasts everything within 6 tiles and heals the party only weakly.' },
   { id: 'scholar', name: 'Archivist\'s Seal', kind: 'seal', src: 'library', abil: { mode: 'scholar', cd: 5, wis: 0.3 }, rot: { spd: 4, dex: 4 },
     pal: ['#3a3a6a', '#a0a0e8', '#ffe08a'], desc: 'No heal, no damage buff: instead the party\'s abilities come round 5 seconds sooner and hit 30% harder for 6 seconds.' },
-  { id: 'thousandShot', name: 'Thousandstring', kind: 'bow', src: 'puppet', shot: { n: 1, rate: 2, per: 0.51, pierce: true, ignoreDef: true, range: 7.6, speed: 16.5, look: 'arrow', color: '#ffe36a' },
+  { id: 'thousandShot', name: 'Hundredfold Bow', kind: 'bow', src: 'puppet', shot: { n: 1, rate: 2, per: 0.51, pierce: true, ignoreDef: true, range: 7.6, speed: 16.5, look: 'arrow', color: '#ffe36a' },
     pal: ['#6a5a1a', '#ffe36a', '#ffffff'], desc: 'The fastest-firing weapon in the game: 200% fire rate, arrows that pass through enemies and ignore armor.' },
 
   // ---- more loot: every dungeon now has at least three pieces ----
@@ -286,19 +283,19 @@ export const UNIQUES = [
   { id: 'gardenSeal', name: 'Seal of the Eternal Garden', kind: 'seal', src: 'garden', rot: { def: 4, hp: 60 }, proc: [{ on: 'cast', kind: 'nova', r: 80, pow: 0.5, c: '#ffb0d0' }, { on: 'cast', kind: 'healwave', pow: 0.06, c: '#ffb0d0' }],
     pal: ['#4a2a3a', '#ffb0d0', '#ffffff'], desc: 'Every Holy Seal blooms in a ring of petals that cuts nearby foes and mends the party.' },
 
-  // ---- Exalted, from Oryx himself, only in Realm XVI and beyond: the chase at the wall ----
+  // ---- Mythic, from Vexis himself, only in Realm XVI and beyond: the chase at the wall ----
   { id: 'madBow', name: 'Wrathstring', kind: 'bow', src: 'castle', minRealm: 15, exalted: true, shot: { n: 3, arc: 6, per: 0.5, pierce: true, range: 8, speed: 18, look: 'arrow', color: '#ff3a5a', onHit: { curse: 2 } },
-    pal: ['#2a0a1a', '#ff3a5a', '#ffd34d'], desc: 'The Mad God\'s own bow. Three piercing arrows that Curse whatever they hit (it takes more damage for 2 seconds).' },
+    pal: ['#2a0a1a', '#ff3a5a', '#ffd34d'], desc: 'The Usurper\'s own bow. Three piercing arrows that Curse whatever they hit (it takes more damage for 2 seconds).' },
   { id: 'madStaff', name: 'Staff of the Shattered Throne', kind: 'staff', src: 'castle', minRealm: 15, exalted: true, shot: { n: 2, arc: 0, per: 0.65, wavy: true, pierce: true, range: 9, speed: 15, look: 'orb', color: '#ff3a5a' }, proc: { kind: 'lightning', chance: 0.6, pow: 1.2, r: 56, c: '#ff3a5a' },
-    pal: ['#2a0a1a', '#ff3a5a', '#ffd34d'], desc: 'Two crimson bolts in wide waves that pierce the horde. Crits call the Mad God\'s lightning down on the target.' },
-  { id: 'madBlade', name: 'Kingsbane', kind: 'sword', src: 'castle', minRealm: 15, exalted: true, shot: { n: 1, per: 1.3, range: 5, speed: 13, look: 'slash', color: '#ff3a5a', onHit: { splash: 0.5, armorBreak: 2 } },
+    pal: ['#2a0a1a', '#ff3a5a', '#ffd34d'], desc: 'Two crimson bolts in wide waves that pierce the horde. Crits call the Usurper\'s lightning down on the target.' },
+  { id: 'madBlade', name: 'Tyrantsbane', kind: 'sword', src: 'castle', minRealm: 15, exalted: true, shot: { n: 1, per: 1.3, range: 5, speed: 13, look: 'slash', color: '#ff3a5a', onHit: { splash: 0.5, armorBreak: 2 } },
     pal: ['#2a0a1a', '#ff3a5a', '#e8e8f0'], desc: 'Forged to kill a god. Huge swings that splash the pack and Break the target\'s armor for 2 seconds.' },
   { id: 'madDagger', name: 'Usurper\'s Kiss', kind: 'dagger', src: 'castle', minRealm: 15, exalted: true, shot: { n: 2, arc: 10, per: 0.65, range: 6, speed: 16, look: 'blade', color: '#ff3a5a', onHit: { bleed: 0.3 } }, proc: { kind: 'spirit', chance: 0.35, pow: 0.7, c: '#ff3a5a' },
     pal: ['#2a0a1a', '#ff3a5a', '#ffd34d'], desc: 'Two red blades that leave bleeding wounds. Kills often loose a crimson wraith on the next foe.' },
   { id: 'madWand', name: 'Wand of the Endless Court', kind: 'wand', src: 'castle', minRealm: 15, exalted: true, shot: { n: 1, rate: 1.2, per: 1.0, ignoreDef: true, range: 9, speed: 15, look: 'bolt', color: '#ff3a5a' }, proc: { kind: 'lightning', chance: 0.5, pow: 1.0, r: 50, c: '#ff3a5a' },
     pal: ['#2a0a1a', '#ff3a5a', '#ffd34d'], desc: 'Fast (120%), far-reaching bolts that ignore armor. Crits split the sky with red lightning.' },
-  { id: 'madRing', name: 'Signet of the Mad God', kind: 'ring', ring: 'atk', src: 'castle', minRealm: 15, exalted: true, rot: { att: 8, dex: 8, hp: 150, def: 6 }, proc: { kind: 'orbit', n: 4, every: 0.6, pow: 0.3, r: 150, c: '#ff3a5a' },
-    pal: ['#2a0a1a', '#ff3a5a', '#ffd34d'], desc: 'Oryx\'s own seal. Every stat a ring can give, and four crimson motes circling its wearer, cutting all that come close.' },
+  { id: 'madRing', name: 'Signet of the Usurper', kind: 'ring', ring: 'atk', src: 'castle', minRealm: 15, exalted: true, rot: { att: 8, dex: 8, hp: 150, def: 6 }, proc: { kind: 'orbit', n: 4, every: 0.6, pow: 0.3, r: 150, c: '#ff3a5a' },
+    pal: ['#2a0a1a', '#ff3a5a', '#ffd34d'], desc: 'Vexis\'s own seal. Every stat a ring can give, and four crimson motes circling its wearer, cutting all that come close.' },
 ];
 export const UNIQUE = Object.fromEntries(UNIQUES.map((u) => [u.id, u]));
 /** One-time effects take the strongest; everything else adds up. */

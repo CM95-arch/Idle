@@ -1,4 +1,4 @@
-// Gear: the bag, item details with comparisons, upgrading, and salvaging into Fame.
+// Gear: the bag, item details with comparisons, upgrading, and salvaging into Glory.
 import { CLASSES } from '../data/classes.js';
 import { SLOT_NAME, EXTRA, STAT_NAME } from '../data/gear.js';
 import { BAL } from '../data/balance.js';
@@ -39,7 +39,7 @@ export function openItemSheet(id, onChange) {
         h('div', { class: `itile r${it.rarity}${uniqueOf(it)?.exalted ? ' ex' : ''}`, style: { '--rc': R.color, width: '72px' } }, itemIcon(it, 56)),
         h('div', { class: 'grow' },
           h('div', { style: { fontWeight: 900, fontSize: '18px', color: uniqueOf(it)?.exalted ? '#ffe08a' : R.color } }, `${it.name}${it.up ? ` +${it.up}` : ''}`),
-          h('div', { class: 'muted', style: { fontWeight: 800, fontSize: '12px' } }, `${uniqueOf(it)?.exalted ? 'Exalted ' : ''}${SLOT_NAME[slot]} · from ${uniqueOf(it)?.starter ? 'the Beaches' : ZONE_BY_ID[uniqueOf(it)?.src]?.boss[0] || 'a boss'}`),
+          h('div', { class: 'muted', style: { fontWeight: 800, fontSize: '12px' } }, `${uniqueOf(it)?.exalted ? 'Mythic ' : ''}${SLOT_NAME[slot]} · from ${uniqueOf(it)?.starter ? 'the Sunken Shore' : ZONE_BY_ID[uniqueOf(it)?.src]?.boss[0] || 'a boss'}`),
           wornBy ? h('div', { class: 'gold', style: { fontWeight: 800, fontSize: '12px' } }, `Worn by ${CLASSES[wornBy].name}`) : null)),
       uniqueOf(it) ? h('div', { class: 'panel ufx' }, h('b', {}, '✦ Special effect'), h('div', { style: { fontSize: '14px', fontWeight: 700, marginTop: '2px' } }, uniqueOf(it).desc), null) : null,
       h('div', { class: 'panel stats', style: { gridTemplateColumns: '1fr' } }, statRows(it)),
@@ -54,7 +54,7 @@ export function openItemSheet(id, onChange) {
       h('div', { class: 'row' },
         h('button', { class: 'btn grow', disabled: !canUpgrade(it) || G.state.fame < upgradeCost(it), onclick: () => { if (G.upgrade(it.id)) { tap('upgrade'); rerender(); onChange?.(); } } },
           canUpgrade(it) ? [h('span', {}, `Upgrade +${it.up + 1}`), coin(upgradeCost(it))] : 'Fully upgraded'),
-        !wornBy ? h('button', { class: 'btn alt', onclick: () => { const v = G.salvage([it.id]); tap('fame'); toast({ title: `+${fmt(v)} Fame`, body: `Salvaged ${it.name}`, kind: 'gold' }); onChange?.(); close(); } }, h('span', {}, 'Salvage'), coin(salvageValue(it))) : null),
+        !wornBy ? h('button', { class: 'btn alt', onclick: () => { const v = G.salvage([it.id]); tap('fame'); toast({ title: `+${fmt(v)} Glory`, body: `Salvaged ${it.name}`, kind: 'gold' }); onChange?.(); close(); } }, h('span', {}, 'Salvage'), coin(salvageValue(it))) : null),
       h('div', { class: 'dim center', style: { fontSize: '11px', fontWeight: 800 } }, `Upgrades ${it.up} / ${maxUpOf(it)} · a duplicate adds ${BAL.dupeUpgrades}`),
     ];
   });
@@ -71,7 +71,7 @@ export function createGearScreen(root, { onChange }) {
     const ids = [...sel].filter((id) => G.state.inv.some((x) => x.id === id));
     if (!ids.length) return;
     const v = G.salvage(ids); tap('fame');
-    toast({ title: `+${fmt(v)} Fame`, body: `Salvaged ${ids.length} item${ids.length === 1 ? '' : 's'}`, kind: 'gold' });
+    toast({ title: `+${fmt(v)} Glory`, body: `Salvaged ${ids.length} item${ids.length === 1 ? '' : 's'}`, kind: 'gold' });
     endSalvage(); onChange?.();
   }
   function tile(it) {
@@ -128,7 +128,7 @@ export function openCollection() {
           return h('div', { class: 'panel row', style: { marginBottom: '6px', padding: '8px 10px', alignItems: 'flex-start' } },
             h('div', { class: `itile r6${U.exalted ? ' ex' : ''}${has ? '' : ' locked'}`, style: { width: '56px', flex: 'none', '--rc': '#fff' } }, icon),
             h('div', { class: 'grow' },
-              h('b', { style: { color: has ? (U.exalted ? '#ffe08a' : '#ffffff') : 'var(--ink-3)' } }, has ? U.name : '???', U.exalted ? h('small', { class: 'exalt' }, ' ✦ Exalted') : null),
+              h('b', { style: { color: has ? (U.exalted ? '#ffe08a' : '#ffffff') : 'var(--ink-3)' } }, has ? U.name : '???', U.exalted ? h('small', { class: 'exalt' }, ' ✦ Mythic') : null),
               h('div', { style: { fontSize: '12px', fontWeight: 700, color: has ? 'var(--ink-2)' : 'var(--ink-3)' } }, has ? U.desc : `Not found yet · ${KIND_LABEL({ kind: U.kind })}${U.minRealm ? ` · ${realmName(U.minRealm)} and beyond` : ''}`),
               has ? h('div', { class: 'dim', style: { fontSize: '11px', fontWeight: 800 } }, `Found ×${has}`) : null));
         }))),

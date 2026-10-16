@@ -96,7 +96,7 @@ export function openSlotSheet(cls, slot, onChange) {
   });
 }
 
-/** The Companion (a Realm reward): its level, what it does, and a button to level it with Fame. */
+/** The Companion (a Realm reward): its level, what it does, and a button to level it with Glory. */
 function companionCard(rerender) {
   if (!G.hasReward('companion')) return null;
   const s = G.state, lv = s.pet.lv, cap = G.petCap(), full = lv >= cap;

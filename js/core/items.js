@@ -27,9 +27,9 @@ export const fits = (cls, it) => kindFor(cls, slotOf(it)) === it.kind;
 
 // Every item is a Unique. Its stats are percentages, so they grow with your heroes forever and a Unique is
 // never outgrown: weapons add Attack, armor HP and Defense, ability items ability power and Attack, rings their
-// stat. Exalted ones give half as much again. Each upgrade adds another share of the base.
+// stat. Mythic ones give half as much again. Each upgrade adds another share of the base.
 const UT_BASE = { weapon: { atkPct: 25 }, armor: { hpPct: 30, defPct: 30 }, ability: { pow: 0.25, atkPct: 15 } };
-// ROTMG stat bonuses (an item's `rot`), turned into this game's percentages: each point of ATT is +3% Attack,
+// Stat bonuses (an item's `rot`), turned into this game's percentages: each point of ATT is +3% Attack,
 // DEX +2% fire rate, DEF (and armor) +3%/+2% Defense, every 10 HP +2% HP, WIS and MP feed ability power.
 const ROT = { att: ['atkPct', 3], dex: ['spdPct', 2], def: ['defPct', 3], armor: ['defPct', 2], hp: ['hpPct', 0.2], mp: ['pow', 0.001], wis: ['pow', 0.02], vit: ['hpPct', 1.5], spd: ['spdPct', 1] };
 export function rotStats(rot) {
@@ -51,7 +51,7 @@ export function itemStats(it) {
   const slot = slotOf(it), U = uniqueOf(it);
   const k = (U?.exalted ? 1.5 : U?.starter ? BAL.starterPower : 1) * (1 + BAL.upgradeStep * it.up);
   const out = {};
-  // weapons and ability items keep a flat Unique bonus; armor and rings carry their real ROTMG stat lines
+  // weapons and ability items keep a flat Unique bonus; armor and rings carry their own stat lines
   const base = U?.rot && (slot === 'armor' || slot === 'ring') ? rotStats(U.rot) : { ...(slot === 'ring' ? RING_BASE[it.ring] || RING_BASE.atk : UT_BASE[slot]) };
   if (U?.rot && slot !== 'armor' && slot !== 'ring') for (const [s, v] of Object.entries(rotStats(U.rot))) base[s] = (base[s] || 0) + v;
   for (const [s, v] of Object.entries(base)) out[s] = v * k;

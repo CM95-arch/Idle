@@ -1,6 +1,6 @@
 // Unique balance report: `node tools/uniques.mjs [level]`
 // For each Unique: how many stages further a party gets when one member wears it, compared with wearing
-// an empty slot. Every Unique should be a clear upgrade; Exalted ones a big one.
+// an empty slot. Every Unique should be a clear upgrade; Mythic ones a big one.
 import { CLASS_IDS } from '../js/data/classes.js';
 import { UNIQUES } from '../js/data/uniques.js';
 import { heroStats } from '../js/core/heroes.js';

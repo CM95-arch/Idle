@@ -211,7 +211,7 @@ const ARCH = {
       <path d="M64 46 Q76 30 88 46 Q82 40 76 44 Q70 40 64 46 Z" fill="#d8b040" ${ol(1.4)}/>${glowDot(g, 76, 40, 5, '#5de0ff', 0.8)}<circle cx="76" cy="40" r="3" fill="#5de0ff" ${ol(1)}/>`;
   },
   oryx(g, P) {
-    // the Mad God: towering black plate, a crown of horns, the burning heart of the realm
+    // the Usurper: towering black plate, a crown of horns, the burning heart of the realm
     return `${ground(76)}${glowDot(g, 100, 110, 80, '#ff2a5a', 0.18)}
       <path d="M42 96 Q100 66 158 96 L178 188 Q140 182 120 190 Q100 180 80 190 Q60 182 22 188 Z" fill="url(#${g}b)" ${ol()}/>
       <path d="M60 104 L44 184 M140 104 L156 184 M82 112 L74 186 M118 112 L126 186" stroke="${shade(P.b, -0.55)}" stroke-width="2.4" fill="none" opacity=".8"/>

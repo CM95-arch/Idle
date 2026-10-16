@@ -40,7 +40,7 @@ function updateTop() {
   const now = performance.now();
   while (recent.length && now - recent[0][0] > 60000) recent.shift();
   const per = recent.reduce((a, [, n]) => a + n, 0) * (60000 / Math.max(10000, now - (recent[0]?.[0] ?? now)));
-  rateEl.textContent = recent.length ? `${fmt(per)} / min` : 'Fame';
+  rateEl.textContent = recent.length ? `${fmt(per)} / min` : 'Glory';
   realmEl.textContent = G.state.realm ? `Realm ${['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'][G.state.realm] || G.state.realm + 1}` : '';
 }
 
@@ -99,18 +99,18 @@ G.onChange((why) => {
 const tab = (k) => () => tabEls[k];
 const TOUR = [
   { title: 'Welcome, hero', text: 'A quick tour of how everything works. It takes about half a minute.', before: () => go('battle') },
-  { target: () => fameBox, title: 'Fame', text: 'Your one currency. You earn it from every enemy, every cleared stage, salvaged gear, and even while you’re away. Spend it to grow stronger.' },
+  { target: () => fameBox, title: 'Glory', text: 'Your one currency. You earn it from every enemy, every cleared stage, salvaged gear, and even while you’re away. Spend it to grow stronger.' },
   { target: () => $('.arena'), title: 'The battle', text: 'The horde never stops coming. Your party holds its ground and fights on its own; slay 50 to clear a stage and push on, and every tenth stage a boss joins the horde. Attacks, abilities and loot all happen automatically.' },
   { target: () => $('.stagebar .power'), title: 'Power', text: 'Your party’s strength against what this stage needs. Green means you should win. Red means level up or gear up first.' },
   { target: () => $('.stagebar .toggle'), title: 'Auto or Farm', text: 'Auto moves on to the next stage after every win. Switch to Farm to stay on one stage and keep earning.' },
   { target: () => $('.htabs'), title: 'Your party', text: 'Tap a hero to choose who to upgrade. Tap the chosen hero again for their stats, ability and gear. A gold dot means they have something you can afford.' },
-  { target: () => $('.hpanel .lvbtn'), title: 'Level up', text: 'Spend Fame to level the chosen hero: more HP, damage and armor. Hold any button to keep buying.' },
-  { target: () => $('.dpots'), title: 'Stat potions', text: 'The eight ROTMG stats, in their potion colors. Each potion raises a stat toward this class’s max. Max all eight (8/8) before Oryx’s Castle.' },
+  { target: () => $('.hpanel .lvbtn'), title: 'Level up', text: 'Spend Glory to level the chosen hero: more HP, damage and armor. Hold any button to keep buying.' },
+  { target: () => $('.dpots'), title: 'Stat potions', text: 'The eight stats, each with its own potion. Each potion raises a stat toward this class’s max. Max all eight (Perfected) before the Usurper’s Spire.' },
   { target: () => $('.lvmode .chip'), title: 'Buy ×1, ×10, Max', text: 'Tap to switch how many levels or potions each press buys.' },
   { target: tab('party'), title: 'Party', text: 'All your classes. Leveling unlocks new ones: Wizard level 5 unlocks the Priest, and so on. Up to three fight at once, and you can swap them any time.' },
   { target: tab('gear'), title: 'Gear', text: 'All gear is named, with special powers. Most of it is guarded by bosses. Their bonuses are percentages, so they never go stale. Each class wears its own kinds (Wizards: staves, robes, spells, rings). A repeat find upgrades the copy you have.' },
-  { target: tab('map'), title: 'Map', text: 'The Realm’s biomes, and the dungeons that open each time you defeat Oryx. Tap any stage you’ve cleared to farm it.' },
-  { target: tab('ascend'), title: 'Ascend', text: 'Defeat Oryx the Mad God to Ascend: start over in a harder Realm with permanent bonuses that keep stacking.' },
+  { target: tab('map'), title: 'Map', text: 'The Realm’s biomes, and the dungeons that open each time you defeat Vexis. Tap any stage you’ve cleared to farm it.' },
+  { target: tab('ascend'), title: 'Ascend', text: 'Defeat Vexis the Usurper to Ascend: start over in a harder Realm with permanent bonuses that keep stacking.' },
   { title: 'While you’re away', text: 'Your party keeps fighting for up to 8 hours when the game is closed. Come back to collect what they earned. Good luck, hero.', done: 'Begin' },
 ];
 function startTour() { if (touring()) return; runTour(TOUR, () => { G.state.flags.tour = true; G.save(); }); }
@@ -126,7 +126,7 @@ function openSettings() {
       h('div', { class: 'stat' }, h('span', {}, 'Enemies defeated'), h('b', {}, fmt(G.state.stats.kills))),
       h('div', { class: 'stat' }, h('span', {}, 'Stages cleared'), h('b', {}, fmt(G.state.stats.clears))),
       h('div', { class: 'stat' }, h('span', {}, 'Bosses slain'), h('b', {}, fmt(G.state.stats.bosses))),
-      h('div', { class: 'stat' }, h('span', {}, 'Fame earned'), h('b', {}, fmt(G.state.stats.fameEarned))),
+      h('div', { class: 'stat' }, h('span', {}, 'Glory earned'), h('b', {}, fmt(G.state.stats.fameEarned))),
       h('div', { class: 'stat' }, h('span', {}, 'Offline limit'), h('b', {}, `${G.offlineCapH()}h`))),
     h('div', { class: 'panel', style: { fontSize: '13px', fontWeight: 700 } },
       h('div', { class: 'stat' }, h('span', {}, 'Gear found'), h('b', {}, `${Object.keys(G.state.uniques).length}`)),
@@ -158,9 +158,9 @@ if (G.state.settings.tapDebug) tapDebug(true);
 function collect() {
   const r = G.collectOffline();
   if (r) { showOffline(r, () => { onFame(r.fame); refresh(); }); for (const u of r.uniques.filter((x) => !x.quiet)) showUnique(u.it, seeItem, u.dupe); }
-  // an older save's regular gear was turned into Fame when it loaded
+  // an older save's regular gear was turned into Glory when it loaded
   const old = G.state.flags.retired;
-  if (old) { delete G.state.flags.retired; G.save(); setTimeout(() => toast({ title: 'Regular gear is gone', body: `Only named gear drops now. Your ${old.n} old items became +${fmt(old.fame)} Fame.`, kind: 'gold' }), 1500); }
+  if (old) { delete G.state.flags.retired; G.save(); setTimeout(() => toast({ title: 'Regular gear is gone', body: `Only named gear drops now. Your ${old.n} old items became +${fmt(old.fame)} Glory.`, kind: 'gold' }), 1500); }
 }
 
 // ---------- loop ----------

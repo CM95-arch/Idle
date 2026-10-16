@@ -199,13 +199,13 @@ export class BattleView {
       if (r.k === 'fame') { for (let i = 0; i < Math.min(4, 1 + Math.floor(Math.log10(r.n + 1) / 2)); i++) this.coins.push({ x: at.x + rand(-6, 6), y: at.y - 10, vx: rand(-80, 80), vy: rand(-130, -60), t: -i * 0.03, life: 0.9 }); }
       if (r.k === 'drop') {
         if (r.salvaged) {
-          // auto-salvaged (or the bag was full): it bursts straight into Fame
+          // auto-salvaged (or the bag was full): it bursts straight into Glory
           for (let i = 0; i < 5; i++) this.coins.push({ x: at.x + rand(-8, 8), y: at.y - 8, vx: rand(-110, 110), vy: rand(-160, -70), t: -i * 0.03, life: 0.95 });
           this.num(at.x, at.y - 40, `+${fmt(r.salvaged)}`, BAL.rarities[r.it.rarity].color, 11);
           sound?.('fame');
           continue;
         }
-        if (r.quiet) { // a Beach item found again: it melts into the copy you have
+        if (r.quiet) { // a Shore item found again: it melts into the copy you have
           this.num(at.x, at.y - 40, r.dupe.ups ? `${r.it.name} +${r.dupe.ups}` : `+${fmt(r.dupe.fame)}`, '#bff6ff', 10);
           for (let i = 0; i < 14; i++) { const a = rand(0, TAU), sp = rand(40, 140); this.parts.push({ x: at.x, y: at.y - 10, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 40, t: 0, life: rand(0.5, 0.9), c: i % 2 ? '#ffffff' : '#6ff2ff', s: 2.4, g: 80, add: true }); }
           sound?.('loot');
@@ -214,7 +214,7 @@ export class BattleView {
         this.bags.push({ x: at.x, y: at.y, t: 0, rarity: r.it.rarity, life: r.unique ? (r.exalted ? 3.4 : 2.6) : 1.5, ex: r.exalted });
         if (r.unique) {
           // the white bag: a pillar of light, a flash, and a chime you learn to love
-          if (r.exalted) { this.banner('EXALTED!', '#ffe08a', 3, true); this.flash = 0.7; this.flashColor = '#fff2b0'; this.shake = 10; this.confetti(); } else { this.banner('LOOT!', '#ffffff', 2.2, true); this.flash = 0.45; this.flashColor = '#ffffff'; this.shake = 6; }
+          if (r.exalted) { this.banner('MYTHIC!', '#ffe08a', 3, true); this.flash = 0.7; this.flashColor = '#fff2b0'; this.shake = 10; this.confetti(); } else { this.banner('LOOT!', '#ffffff', 2.2, true); this.flash = 0.45; this.flashColor = '#ffffff'; this.shake = 6; }
           for (let i = 0; i < 40; i++) { const a = rand(0, TAU), sp = rand(60, 220); this.parts.push({ x: at.x, y: at.y - 10, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 60, t: 0, life: rand(0.8, 1.6), c: i % 3 ? '#ffffff' : '#6ff2ff', s: rand(2, 3.5), g: 80, add: true }); }
           sound?.(r.exalted ? 'exalted' : 'unique');
         } else sound?.(r.it.rarity >= 3 ? 'lootRare' : 'loot');
@@ -386,7 +386,7 @@ export class BattleView {
     this.impact(B, ev, h, ts, sound);
     if (lob && at) for (const f of this.fx.slice(i0 + 1)) f.t -= LOB_T;
   }
-  /** What an ability does where it lands. Unique ability items look like their ROTMG selves. */
+  /** What an ability does where it lands. Ability items each have their own look. */
   impact(B, ev, h, ts, sound) {
     switch (ev.mode) {
       case 'snipe': { const m = this.muzzle(h); this.fx.push({ k: 'beam', x0: m.x, y0: m.y, x1: ev.x, y1: ev.y - 20, t: 0, life: 0.4, c: '#ffe36a', w: 10 }); this.fx.push({ k: 'boom', x: ev.x, y: ev.y - 16, t: 0, life: 0.6, c: '#ffe36a', big: true }); this.shake = Math.max(this.shake, 6); sound?.('blast'); return; }
@@ -415,7 +415,7 @@ export class BattleView {
   banner(text, c, life, big) { this.banners = this.banners.filter((b) => b.big || big); this.banners.push({ text, c, t: 0, life, big }); }
   confetti() { const cs = ['#ffd34d', '#ff6b9d', '#5de0ff', '#8fff9f', '#b05cff']; for (let i = 0; i < 70; i++) this.parts.push({ x: rand(40, 320), y: rand(-20, 40), vx: rand(-40, 40), vy: rand(40, 160), t: 0, life: rand(1, 1.8), c: cs[i % 5], s: rand(2, 3.5), rot: rand(0, TAU), conf: true }); }
 
-  /** Draw a frame. dt in seconds. coinTarget / bagTarget: world points the Fame coins and loot fly to. */
+  /** Draw a frame. dt in seconds. coinTarget / bagTarget: world points the Glory coins and loot fly to. */
   render(B, dt, coinTarget, bagTarget) {
     this.t += dt;
     const g = this.g;

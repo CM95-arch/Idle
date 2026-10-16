@@ -245,7 +245,7 @@ const ZONE = {
       speckle(g, r, 200, '#1a2a20', [1, 3]);
       return [['pine', 24, 140, 1.2, '#2a5a3a'], ['pine', 336, 130, 1.2, '#2a5a3a'], ['pillar', 70, 330, 1.1, '#5a8a6a'], ['pillar', 290, 330, 1.1, '#5a8a6a'], ['brazier', 96, 110, 1, '#ffde3d'], ['brazier', 264, 110, 1, '#ffde3d'], ['banner', 40, 430, 1, '#8a1a1a'], ['banner', 316, 430, 1, '#8a1a1a'], ['rock', 330, 240, 1, '#4a5a4a']];
     } },
-  // ---- the Lost Halls and the Shatters ----
+  // ---- the Halls of the Forsaken and the Fractured Keep ----
   halls: { ground: '#6e6878', lane: '#b8b2c4', dark: 0.46, tint: '#0a0c22',
     paint(g, r) {
       // polished marble: big pale tiles with gold seams

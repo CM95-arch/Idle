@@ -1,6 +1,6 @@
 // Offline support. Network first: online players always get the newest
 // version; the cached copy is only used when there is no connection.
-const CACHE = 'realm-idle-v38';
+const CACHE = 'realm-idle-v39';
 
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));

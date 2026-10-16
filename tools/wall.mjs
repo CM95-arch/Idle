@@ -1,6 +1,6 @@
 // Where the wall is: `node tools/wall.mjs [fromRealm] [toRealm] [step]`
 // For each Realm, the lowest level at which the strongest possible party (every item at +10, every potion its cap
-// allows, all the Ascension bonuses up to then) beats Oryx, next to the level cap for that Realm. The first
+// allows, all the Ascension bonuses up to then) beats Vexis, next to the level cap for that Realm. The first
 // Realm whose need is above its cap is as far as anyone can go.
 import * as G from '../js/core/game.js';
 import { BAL } from '../js/data/balance.js';

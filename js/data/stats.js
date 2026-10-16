@@ -1,39 +1,38 @@
-// The eight ROTMG stats. Each class starts at its level-20 average and is raised, one potion at a time, to its
-// real ROTMG maximum ("8/8" when all eight are maxed). Life and Mana rise 5 per potion, the rest 1.
-// Values and potion colors are from the current game client (via the rotmg-tools data mirror).
+// The eight stats. Each class starts at its base and is raised, one potion at a time, to its max ("Perfected"
+// when all eight are maxed). Life and Mana rise 5 per potion, the rest 1.
 export const STATS = ['hp', 'mp', 'att', 'def', 'spd', 'dex', 'vit', 'wis'];
 export const STAT_INFO = {
-  hp: { name: 'Life', abbr: 'HP', color: '#42dee4', ink: '#04282a', step: 5, does: 'Max HP' },
-  mp: { name: 'Mana', abbr: 'MP', color: '#efd05d', ink: '#2a2000', step: 5, does: 'Ability power' },
-  att: { name: 'Attack', abbr: 'ATT', color: '#dd5af0', ink: '#ffffff', step: 1, does: 'Damage' },
-  def: { name: 'Defense', abbr: 'DEF', color: '#616161', ink: '#ffffff', step: 1, does: 'Armor' },
-  spd: { name: 'Speed', abbr: 'SPD', color: '#41e480', ink: '#03240f', step: 1, does: 'Dodging' },
-  dex: { name: 'Dexterity', abbr: 'DEX', color: '#eb8931', ink: '#1a0e00', step: 1, does: 'Fire rate' },
-  vit: { name: 'Vitality', abbr: 'VIT', color: '#ff072c', ink: '#ffffff', step: 1, does: 'Regeneration' },
-  wis: { name: 'Wisdom', abbr: 'WIS', color: '#4a93fe', ink: '#ffffff', step: 1, does: 'Ability recharge' },
+  hp: { name: 'Life', abbr: 'HP', color: '#ff5d73', ink: '#ffffff', step: 5, does: 'Max HP' },
+  mp: { name: 'Mana', abbr: 'MP', color: '#4f9bff', ink: '#ffffff', step: 5, does: 'Ability power' },
+  att: { name: 'Attack', abbr: 'ATT', color: '#ff8f3d', ink: '#2a1400', step: 1, does: 'Damage' },
+  def: { name: 'Defense', abbr: 'DEF', color: '#a7b1c2', ink: '#141a24', step: 1, does: 'Armor' },
+  spd: { name: 'Speed', abbr: 'SPD', color: '#58e08a', ink: '#04240f', step: 1, does: 'Dodging' },
+  dex: { name: 'Dexterity', abbr: 'DEX', color: '#ffd34d', ink: '#2a2000', step: 1, does: 'Fire rate' },
+  vit: { name: 'Vitality', abbr: 'VIT', color: '#c86bff', ink: '#ffffff', step: 1, does: 'Regeneration' },
+  wis: { name: 'Wisdom', abbr: 'WIS', color: '#40d6e6', ink: '#032a2e', step: 1, does: 'Ability recharge' },
 };
-// start (level-20 average) and max per class
+// base and max per class
 const S = (hp, mp, att, def, spd, dex, vit, wis) => ({ hp, mp, att, def, spd, dex, vit, wis });
 export const CLASS_STATS = {
-  wizard: { base: S(575, 285, 42, 10, 36, 55, 24, 42), max: S(700, 400, 60, 25, 50, 75, 40, 60) },
-  priest: { base: S(575, 285, 45, 10, 41, 42, 24, 55), max: S(700, 400, 65, 25, 55, 60, 40, 75) },
-  archer: { base: S(625, 195, 55, 10, 41, 34, 24, 34), max: S(750, 300, 75, 25, 55, 50, 40, 50) },
-  rogue: { base: S(625, 195, 35, 10, 45, 55, 24, 34), max: S(750, 300, 55, 25, 65, 75, 40, 50) },
-  warrior: { base: S(675, 195, 55, 10, 36, 34, 55, 34), max: S(800, 300, 75, 25, 50, 50, 75, 50) },
-  knight: { base: S(675, 195, 34, 20, 36, 34, 55, 34), max: S(800, 300, 50, 40, 50, 50, 75, 50) },
-  paladin: { base: S(675, 195, 35, 10, 41, 37, 42, 55), max: S(800, 300, 55, 30, 55, 55, 60, 75) },
-  huntress: { base: S(625, 240, 45, 10, 36, 42, 24, 42), max: S(750, 350, 65, 25, 50, 60, 40, 60) },
-  necromancer: { base: S(575, 285, 55, 10, 36, 42, 24, 55), max: S(700, 400, 75, 25, 50, 60, 40, 75) },
-  assassin: { base: S(625, 240, 45, 10, 45, 55, 24, 42), max: S(750, 350, 65, 25, 65, 75, 40, 60) },
-  sorcerer: { base: S(575, 285, 55, 10, 46, 42, 55, 42), max: S(700, 400, 70, 25, 60, 60, 75, 60) },
+  wizard: { base: S(690, 342, 50, 12, 43, 66, 29, 50), max: S(815, 457, 68, 27, 57, 86, 45, 68) },
+  priest: { base: S(690, 342, 54, 12, 49, 50, 29, 66), max: S(815, 457, 74, 27, 63, 68, 45, 86) },
+  archer: { base: S(750, 234, 66, 12, 49, 41, 29, 41), max: S(875, 339, 86, 27, 63, 57, 45, 57) },
+  rogue: { base: S(750, 234, 42, 12, 54, 66, 29, 41), max: S(875, 339, 62, 27, 74, 86, 45, 57) },
+  warrior: { base: S(810, 234, 66, 12, 43, 41, 66, 41), max: S(935, 339, 86, 27, 57, 57, 86, 57) },
+  knight: { base: S(810, 234, 41, 24, 43, 41, 66, 41), max: S(935, 339, 57, 44, 57, 57, 86, 57) },
+  paladin: { base: S(810, 234, 42, 12, 49, 44, 50, 66), max: S(935, 339, 62, 32, 63, 62, 68, 86) },
+  huntress: { base: S(750, 288, 54, 12, 43, 50, 29, 50), max: S(875, 398, 74, 27, 57, 68, 45, 68) },
+  necromancer: { base: S(690, 342, 66, 12, 43, 50, 29, 66), max: S(815, 457, 86, 27, 57, 68, 45, 86) },
+  assassin: { base: S(750, 288, 54, 12, 54, 66, 29, 50), max: S(875, 398, 74, 27, 74, 86, 45, 68) },
+  sorcerer: { base: S(690, 342, 66, 12, 55, 50, 66, 50), max: S(815, 457, 81, 27, 69, 68, 86, 68) },
 };
 /** Each Ascension raises every stat's cap by this many potions (+3 ATT, +15 Life…), so there's always more. */
 export const CAP_PER_ASCENSION = 3;
-/** How many potions a stat takes to reach its cap: the real ROTMG max, raised with every Ascension. */
+/** How many potions a stat takes to reach its cap: the class's max, raised with every Ascension. */
 export const potionsToMax = (cls, s, asc = 0) => Math.round((CLASS_STATS[cls].max[s] - CLASS_STATS[cls].base[s]) / STAT_INFO[s].step) + CAP_PER_ASCENSION * asc;
 /** A stat's value after `n` potions. */
 export const statValue = (cls, s, n = 0) => CLASS_STATS[cls].base[s] + n * STAT_INFO[s].step;
-/** What each stat adds at its original (ROTMG) max, scaled by how far toward it the potions go; potions past it,
+/** What each stat adds at the class's original max, scaled by how far toward it the potions go; potions past it,
  * from raised caps, keep adding at the same rate. The same for every class, so the classes stay balanced. */
 export const STAT_FX = {
   hp: { hpPct: 1.0 },      // max HP ×2 at max Life

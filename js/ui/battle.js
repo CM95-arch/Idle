@@ -21,7 +21,7 @@ export function createBattleScreen(root, { onFame, openClass, onDrop, goParty })
     return m === 'Max' ? G.affordableLevels(cls) : Math.min(m, G.affordableLevels(cls));
   }
   // The dock: a tab for each hero in the party, and for the chosen one a Level button and the eight stat
-  // potions in their ROTMG colors. Every button can be held to keep buying.
+  // potions in their own colors. Every button can be held to keep buying.
   let selC = null;
   const selCls = () => (G.state.party.includes(selC) ? selC : G.state.party.find((c) => G.formSlot(c) === 1) || G.state.party[0]);
   function potionCount(cls, st) {
@@ -38,7 +38,7 @@ export function createBattleScreen(root, { onFame, openClass, onDrop, goParty })
     const cls = selCls(), n = Math.max(1, potionCount(cls, st));
     if (!G.drink(cls, st, n)) return;
     tap('upgrade');
-    if (G.statMaxed(cls, st)) toast({ title: `${STAT_INFO[st].name} maxed!`, body: G.maxedCount(cls) === 8 ? `${CLASSES[cls].name} is 8/8!` : `${CLASSES[cls].name} is ${G.maxedCount(cls)}/8.`, kind: 'gold' });
+    if (G.statMaxed(cls, st)) toast({ title: `${STAT_INFO[st].name} maxed!`, body: G.maxedCount(cls) === 8 ? `${CLASSES[cls].name} is Perfected: all eight stats maxed!` : `${CLASSES[cls].name} is ${G.maxedCount(cls)}/8.`, kind: 'gold' });
     update();
   }
   function buildDock() {
@@ -145,7 +145,7 @@ export function createBattleScreen(root, { onFame, openClass, onDrop, goParty })
         if (visible && view) view.feed(G.battle, events, rewards, play);
         for (const r of rewards) {
           if (r.k === 'fame') onFame(r.n);
-          if (r.k === 'clear') { onFame(r.n); if (r.first && isBoss(r.stage)) toast({ title: `${zoneOf(r.stage).boss[0]} defeated!`, body: r.stage === G.LAST_STAGE ? 'Oryx has fallen. You can Ascend!' : zoneOf(r.stage).dungeon ? 'Its gear can drop on every run.' : `${zoneOf(r.stage + 1).name} is open.`, kind: 'gold' }); }
+          if (r.k === 'clear') { onFame(r.n); if (r.first && isBoss(r.stage)) toast({ title: `${zoneOf(r.stage).boss[0]} defeated!`, body: r.stage === G.LAST_STAGE ? 'Vexis has fallen. You can Ascend!' : zoneOf(r.stage).dungeon ? 'Its gear can drop on every run.' : `${zoneOf(r.stage + 1).name} is open.`, kind: 'gold' }); }
           if (r.k === 'reward') for (const R of r.list) toast({ title: `${R.icon} Realm reward: ${R.name}`, body: R.desc, kind: 'gold' });
           if (r.k === 'dungeons') toast({ title: `Dungeons unlocked: Tier ${r.tier}`, body: `${r.names.join(' and ')}. Find them on the Map.`, kind: 'gold' });
           if (r.k === 'drop' && r.salvaged) onFame(r.salvaged);

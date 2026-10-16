@@ -46,7 +46,7 @@ export function itemTile(it, opts = {}) {
 export function tap(kind = 'tap') { play(kind); try { navigator.vibrate?.(8); } catch { /* not supported */ } }
 
 // Hold a button to repeat its action, faster the longer you hold. (A button that turns disabled mid-hold, out of
-// Fame, never hears the finger lift, so the release is watched on the whole page, and the hold also ends the
+// Glory, never hears the finger lift, so the release is watched on the whole page, and the hold also ends the
 // moment the button is disabled or gone.) Not for buttons inside scrolling sheets: a scroll would press them.
 export function holdable(btn, fn) {
   let t = null, delay = 0;
