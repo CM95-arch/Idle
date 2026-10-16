@@ -30,7 +30,7 @@ export const ACHIEVEMENTS = [
   { id: 'gear10', name: 'Collector', desc: 'Find 10 different pieces of gear.', test: (s) => Object.keys(s.uniques || {}).length >= 10, fame: 0.05 },
   { id: 'gear40', name: 'Curator', desc: 'Find 40 different pieces of gear.', test: (s) => Object.keys(s.uniques || {}).length >= 40, dmg: 0.02 },
   { id: 'gearAll', name: 'The Whole Vault', desc: 'Find every piece of gear.', test: (s) => UNIQUES.every((u) => s.uniques?.[u.id]), dmg: 0.05 },
-  { id: 'exalted', name: 'Touched by Gold', desc: 'Find an Mythic piece of gear.', test: (s) => UNIQUES.some((u) => u.exalted && s.uniques?.[u.id]), hp: 0.03 },
+  { id: 'exalted', name: 'Touched by Gold', desc: 'Find a Mythic piece of gear.', test: (s) => UNIQUES.some((u) => u.exalted && s.uniques?.[u.id]), hp: 0.03 },
   { id: 'maxed', name: 'Fully Upgraded', desc: 'Upgrade a piece of gear to +10.', test: (s, G) => G.allItems().some((it) => it.up >= 10), dmg: 0.02 },
   { id: 'awakened', name: 'Awakened', desc: 'Upgrade a piece of gear to +20.', test: (s, G) => G.allItems().some((it) => it.up >= 20), dmg: 0.03 },
   { id: 'eight', name: 'Perfected', desc: 'Max all eight stats on a class.', test: (s, G) => Object.keys(s.classes).some((c) => G.maxedCount(c) === 8), hp: 0.02 },
