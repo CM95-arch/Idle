@@ -93,6 +93,7 @@ export class BattleView {
     const byId = (id) => B.enemies.find((e) => e.id === id);
     for (const ev of events) {
       switch (ev.k) {
+        case 'pet': { const p = this.petPos(); this.fx.push({ k: 'wisp', x0: p.x, y0: p.y + 16, id: ev.id, t: 0, life: ev.flight, c: B.cos?.aura ? '#ffe08a' : '#bff3ff' }); this.petKick = 0.15; break; }
         case 'shot': {
           // each projectile flies its own straight line (a fan of arrows, twin wavy orbs, a piercing bolt)
           const h = B.heroes[ev.hero], C = CLASSES[h.cls], v = this.hv[ev.hero];
@@ -266,6 +267,58 @@ export class BattleView {
     const a = this.t * (2.2 - set * 0.4) + (k / n) * TAU + set;
     return { x: h.x + Math.cos(a) * 26, y: h.y - 24 + Math.sin(a) * 11 };
   }
+  /** Where the Companion is now: it drifts to and fro above the party. */
+  petPos() { return { x: 180 + Math.sin(this.t * 1.1) * 60, y: 196 + Math.sin(this.t * 2.3) * 7 }; }
+  /** The Companion: a little star-sprite with flapping wings (golden once the Ascendant Aura is yours, crowned
+   * once the Crown of the Realm is). */
+  drawPet(g, B, dt) {
+    const p = this.petPos(), gold = B.cos?.aura, c = gold ? '#ffd34d' : '#7ad8ff', k = (this.petKick = Math.max(0, (this.petKick || 0) - dt));
+    g.save(); g.globalCompositeOperation = 'lighter';
+    g.globalAlpha = 0.55 + k * 2; g.drawImage(glow(c, 26), p.x - 26, p.y - 26);
+    const flap = Math.abs(Math.sin(this.t * 11)) * 0.8 + 0.2;
+    for (const s of [-1, 1]) {
+      g.save(); g.translate(p.x + s * 5, p.y - 1); g.rotate(s * -0.5); g.scale(s, flap);
+      g.globalAlpha = 0.75; g.fillStyle = gold ? '#ffe9a8' : '#c8f2ff';
+      g.beginPath(); g.ellipse(9, -4, 10, 6, -0.3, 0, TAU); g.fill(); g.beginPath(); g.ellipse(7, 4, 7, 4, 0.3, 0, TAU); g.fill();
+      g.restore();
+    }
+    g.globalAlpha = 1; g.fillStyle = '#ffffff'; g.beginPath(); g.arc(p.x, p.y, 5 + k * 6, 0, TAU); g.fill();
+    g.globalCompositeOperation = 'source-over';
+    // two dark eyes, so it reads as a creature
+    g.fillStyle = '#1a2a4a'; g.beginPath(); g.arc(p.x - 1.8, p.y - 0.5, 0.9, 0, TAU); g.arc(p.x + 1.8, p.y - 0.5, 0.9, 0, TAU); g.fill();
+    if (B.cos?.crown) this.crown(g, p.x, p.y - 9, 0.55);
+    g.restore();
+    if (Math.random() < 0.5) this.parts.push({ x: p.x + rand(-4, 4), y: p.y + 4, vx: rand(-10, 10), vy: rand(10, 30), t: 0, life: 0.5, c, s: 1.8, add: true });
+  }
+  /** A little golden crown centered at (x, y). */
+  crown(g, x, y, s = 1) {
+    g.save(); g.translate(x, y); g.scale(s, s);
+    g.fillStyle = '#ffd34d'; g.strokeStyle = '#8a5a10'; g.lineWidth = 1.2;
+    g.beginPath(); g.moveTo(-9, 4); g.lineTo(-9, -3); g.lineTo(-5, 1); g.lineTo(0, -6); g.lineTo(5, 1); g.lineTo(9, -3); g.lineTo(9, 4); g.closePath(); g.fill(); g.stroke();
+    g.fillStyle = '#ff4a6a'; g.beginPath(); g.arc(0, 1, 1.6, 0, TAU); g.fill();
+    g.restore();
+  }
+  /** Cosmetic Realm rewards on the heroes: the Ascendant Aura and spectral wings behind them, the crown in front. */
+  drawCosmetics(g, h, B, front) {
+    const cos = B.cos || {};
+    if (h.dead || !(cos.aura || cos.wings || cos.crown)) return;
+    if (front) { if (cos.crown) this.crown(g, h.x, h.y - 78 + Math.sin(this.t * 2 + h.i) * 1.5, 0.9); return; }
+    g.save(); g.globalCompositeOperation = 'lighter';
+    if (cos.wings) {
+      const flap = 0.85 + 0.15 * Math.sin(this.t * 3 + h.i);
+      for (const s of [-1, 1]) {
+        g.save(); g.translate(h.x + s * 8, h.y - 44); g.scale(s * flap, 1);
+        const gr = g.createLinearGradient(0, 0, 38, 0); gr.addColorStop(0, 'rgba(200,170,255,.55)'); gr.addColorStop(1, 'rgba(200,170,255,0)');
+        g.fillStyle = gr; g.beginPath(); g.moveTo(0, 0); g.quadraticCurveTo(26, -30, 42, -22); g.quadraticCurveTo(30, -8, 36, 2); g.quadraticCurveTo(22, 4, 30, 16); g.quadraticCurveTo(12, 12, 0, 8); g.closePath(); g.fill();
+        g.restore();
+      }
+    }
+    if (cos.aura) {
+      g.globalAlpha = 0.28 + 0.08 * Math.sin(this.t * 2 + h.i); g.drawImage(glow('#ffd34d', 34), h.x - 34, h.y - 62);
+      if (Math.random() < 0.12) this.parts.push({ x: h.x + rand(-14, 14), y: h.y - rand(0, 40), vx: 0, vy: rand(-40, -20), t: 0, life: 0.8, c: '#ffe08a', s: 1.8, add: true });
+    }
+    g.restore();
+  }
   /** Buffs you can see while they last: Berserk burns red, the Paladin's Seal crowns the party in gold, Armored
    * shimmers blue, untouchable glows white, a damage buff smolders violet. Drawn behind the hero. */
   drawBuffs(g, h, B) {
@@ -408,7 +461,7 @@ export class BattleView {
     things.sort((a, b) => a.y - b.y);
     for (const it of things) {
       if (it.e) this.drawEnemy(g, it.e, dt, stunned.has(it.e.id));
-      else if (it.h) { this.drawBuffs(g, it.h, B); this.drawHero(g, it.h, dt); this.drawAuras(g, it.h); }
+      else if (it.h) { this.drawCosmetics(g, it.h, B, false); this.drawBuffs(g, it.h, B); this.drawHero(g, it.h, dt); this.drawAuras(g, it.h); this.drawCosmetics(g, it.h, B, true); }
       else {
         const c = it.c, q = c.t / 0.35;
         if (!ready(c.img)) continue;
@@ -438,6 +491,7 @@ export class BattleView {
     // effects, light on top
     this.fx = this.fx.filter((f) => (f.t += dt) < f.life);
     g.globalCompositeOperation = 'lighter';
+    if (B.pet) this.drawPet(g, B, dt);
     for (const f of this.fx) this.drawFx(g, f, B);
     g.globalCompositeOperation = 'source-over';
     // particles

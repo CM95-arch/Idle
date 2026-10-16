@@ -4,7 +4,7 @@ import { SLOTS, SLOT_NAME } from '../data/gear.js';
 import { BAL } from '../data/balance.js';
 import * as G from '../core/game.js';
 import { heroStats } from '../core/heroes.js';
-import { kindFor, fits, itemScore, slotOf, canUpgrade, upgradeCost } from '../core/items.js';
+import { kindFor, fits, itemScore, slotOf, canUpgrade, upgradeCost, maxUpOf } from '../core/items.js';
 import { h, openSheet, closeSheet, toast } from './dom.js';
 import { portrait, coin, fmt, itemTile, tap } from './common.js';
 import { openItemSheet } from './gear.js';
@@ -24,6 +24,7 @@ export function openClassSheet(cls, onChange) {
     const lvBtn = (n, label) => {
       const k = n === 'max' ? Math.max(1, G.affordableLevels(cls)) : n;
       let cost = 0; for (let i = 0; i < k; i++) cost += G.levelCostForLevel(me.lv + i);
+      if (G.atCap(cls)) return h('button', { class: 'btn grow sm stack', disabled: true }, h('span', {}, 'Max level'), h('small', {}, `cap ${G.levelCap()}`));
       return h('button', { class: 'btn grow sm stack', disabled: s.fame < G.levelCost(cls), onclick: () => { if (G.levelUp(cls, k)) tap('upgrade'); rerender(); onChange?.(); } }, h('span', {}, label), coin(cost));
     };
     const slotTile = (slot) => {
@@ -81,7 +82,7 @@ export function openSlotSheet(cls, slot, onChange) {
         h('div', { class: 'row' },
           h('div', { style: { width: '64px', flex: 'none' } }, itemTile(cur, { upFor: false, who: false, onclick: () => openItemSheet(cur.id, () => { rerender(); onChange?.(); }) })),
           h('div', { class: 'grow' }, h('b', { style: { color: BAL.rarities[cur.rarity].color } }, `${cur.name}${cur.up ? ` +${cur.up}` : ''}`),
-            h('div', { class: 'dim', style: { fontSize: '12px', fontWeight: 800 } }, `Upgrades ${cur.up} / ${BAL.rarities[cur.rarity].maxUp}`))),
+            h('div', { class: 'dim', style: { fontSize: '12px', fontWeight: 800 } }, `Upgrades ${cur.up} / ${maxUpOf(cur)}`))),
         h('div', { class: 'row' },
           h('button', { class: 'btn grow sm', disabled: !canUpgrade(cur) || s.fame < upgradeCost(cur), onclick: () => { if (G.upgrade(cur.id)) { tap('upgrade'); rerender(); onChange?.(); } } },
             canUpgrade(cur) ? [h('span', {}, `Upgrade to +${cur.up + 1}`), coin(upgradeCost(cur))] : 'Fully upgraded'),
@@ -95,6 +96,20 @@ export function openSlotSheet(cls, slot, onChange) {
   });
 }
 
+/** The Companion (a Realm reward): its level, what it does, and a button to level it with Fame. */
+function companionCard(rerender) {
+  if (!G.hasReward('companion')) return null;
+  const s = G.state, lv = s.pet.lv, cap = G.petCap(), full = lv >= cap;
+  const share = Math.round((BAL.petBase + BAL.petPerLv * lv) * 100);
+  const extras = [G.hasReward('aura') && 'shots burst', G.hasReward('crown') && 'three at once'].filter(Boolean).join(' · ');
+  return h('div', { class: 'panel row companion' },
+    h('div', { class: 'petic' }, '✦'),
+    h('div', { class: 'grow' }, h('b', {}, `Companion · Lv ${lv}`, h('small', { class: 'dim' }, ` / ${cap}`)),
+      h('div', { class: 'cdesc' }, `Shoots for ${share}% of the party's damage${extras ? ` · ${extras}` : ''}`)),
+    h('button', { class: 'btn sm stack', disabled: full || s.fame < G.petCost(), onclick: () => { if (G.petUp(1)) tap('upgrade'); rerender(); } },
+      full ? h('span', {}, 'Max') : h('span', {}, 'Level up'), full ? h('small', {}, 'beat more Realms') : coin(G.petCost())));
+}
+
 export function createPartyScreen(root) {
   function render() {
     root.classList.remove('fit');
@@ -102,7 +117,7 @@ export function createPartyScreen(root) {
     const cards = CLASS_IDS.map((cls) => {
       const C = CLASSES[cls], me = s.classes[cls];
       if (me) return h('button', { class: `ccard${s.party.includes(cls) ? ' inparty' : ''}`, onclick: () => openClassSheet(cls, render) }, h('div', { class: 'por' }, portrait(cls, 76)), h('b', {}, C.name), h('small', {}, `Lv ${me.lv} · ${G.maxedCount(cls)}/8`));
-      const needs = Object.entries(C.unlock.needs);
+      const needs = Object.entries(C.unlock?.needs || {});
       const prog = Math.min(...needs.map(([k, lv]) => Math.min(1, (s.classes[k]?.lv || 0) / lv)));
       return h('div', { class: 'ccard locked' }, h('div', { class: 'por' }, portrait(cls, 76, true)), h('b', {}, C.name),
         h('div', { class: 'req' }, needs.map(([k, lv]) => `${CLASSES[k].name} ${lv}`).join(' + ')),
@@ -112,6 +127,7 @@ export function createPartyScreen(root) {
       h('div', { class: 'h1' }, 'Party'),
       h('div', { class: 'h2', style: { marginTop: 0 } }, 'Formation'),
       formationEditor({ onChange: render, openClass: (c) => openClassSheet(c, render) }).el,
+      companionCard(render),
       h('div', { class: 'h2' }, `Classes · ${Object.keys(s.classes).length} / ${CLASS_IDS.length}`),
       h('div', { class: 'grid3' }, cards),
       );

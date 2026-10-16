@@ -421,3 +421,26 @@ img.figure.locked { filter: brightness(0) opacity(.55); }
 .keeps { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
 .keeps .panel { font-size: 12.5px; font-weight: 800; line-height: 1.6; color: var(--ink-2); }
 .keeps .panel b { display: block; font-size: 13px; margin-bottom: 2px; }
+
+/* ---- long-term goals: Realm rewards, achievements, the Companion, the level cap ---- */
+.rtrack { display: flex; flex-direction: column; gap: 6px; }
+.rrow { display: flex; align-items: center; gap: 10px; padding: 9px 11px; border-radius: 14px; background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.06); opacity: .55; }
+.rrow .ric { width: 30px; height: 30px; flex: none; display: grid; place-items: center; border-radius: 10px; background: rgba(255,255,255,.06); font-size: 16px; }
+.rrow b { font-size: 14px; }
+.rrow .rdesc { font-size: 12px; font-weight: 700; color: var(--ink-2); line-height: 1.3; }
+.rrow .rreq { flex: none; font-weight: 900; font-size: 11px; color: var(--ink-3); }
+.rrow.got { opacity: 1; border-color: rgba(255,211,77,.35); background: linear-gradient(90deg, rgba(255,211,77,.12), rgba(255,255,255,.03)); }
+.rrow.got .ric { background: rgba(255,211,77,.2); color: #ffd34d; }
+.rrow.got .rreq { color: #ffd34d; }
+.rrow.next { opacity: 1; border-color: rgba(155,107,255,.5); box-shadow: 0 0 0 1px rgba(155,107,255,.2), 0 0 18px rgba(155,107,255,.18); }
+.rrow.next .rreq { color: #c8b0ff; }
+.ach { gap: 10px; margin-bottom: 6px; padding: 9px 11px; align-items: center; opacity: .6; }
+.ach.got { opacity: 1; border-color: rgba(255,211,77,.3); }
+.ach .aic { width: 26px; flex: none; text-align: center; font-size: 18px; }
+.ach .adesc { font-size: 12px; font-weight: 700; color: var(--ink-2); }
+.ach .apay { flex: none; max-width: 38%; text-align: right; font-size: 11px; font-weight: 900; color: #8fff9f; }
+.companion { gap: 10px; align-items: center; margin-top: 8px; border-color: rgba(125,220,255,.3); background: linear-gradient(90deg, rgba(125,220,255,.1), rgba(255,255,255,.03)); }
+.companion .petic { width: 40px; height: 40px; flex: none; display: grid; place-items: center; border-radius: 50%; font-size: 22px; color: #fff; background: radial-gradient(circle, #bff3ff, #4aa3ff 55%, transparent 72%); text-shadow: 0 0 8px #fff; }
+.companion .cdesc { font-size: 12px; font-weight: 700; color: var(--ink-2); }
+.hpanel .lvbtn.capped { background: linear-gradient(180deg, #4a3f6a, #2e2846); color: #ffd34d; }
+.gainlist .gain:last-child:nth-child(odd) { grid-column: 1 / -1; }

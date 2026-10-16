@@ -51,7 +51,7 @@ export function heroStats(cls, C, mult = {}) {
   const atk = (K.base.atk * g.atk ** L + flat.atk) * (1 + pct.atkPct / 100) * dmg;
   return {
     cls, role: K.role,
-    hp: Math.round((K.base.hp * g.hp ** L + flat.hp) * (1 + pct.hpPct / 100) * (1 + sp.hpPct)),
+    hp: Math.round((K.base.hp * g.hp ** L + flat.hp) * (1 + pct.hpPct / 100) * (1 + sp.hpPct) * (mult.hp || 1)),
     atk, hit: atk / K.base.spd,
     def: (K.base.def * g.def ** L + flat.def) * (1 + pct.defPct / 100) * (1 + sp.defPct),
     spd: K.base.spd * rof * (1 + pct.spdPct / 100) * (1 + (fx.haste || 0)) * (1 + sp.spdPct),

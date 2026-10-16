@@ -3,7 +3,7 @@ import { CLASSES } from '../data/classes.js';
 import { SLOT_NAME, EXTRA, STAT_NAME } from '../data/gear.js';
 import { BAL } from '../data/balance.js';
 import * as G from '../core/game.js';
-import { itemStats, slotOf, fits, itemScore, upgradeCost, canUpgrade, salvageValue, uniqueOf } from '../core/items.js';
+import { itemStats, slotOf, fits, itemScore, upgradeCost, canUpgrade, salvageValue, uniqueOf, maxUpOf } from '../core/items.js';
 import { h, openSheet, toast } from './dom.js';
 import { UNIQUES } from '../data/uniques.js';
 import { ZONES, ZONE_BY_ID } from '../data/zones.js';
@@ -55,7 +55,7 @@ export function openItemSheet(id, onChange) {
         h('button', { class: 'btn grow', disabled: !canUpgrade(it) || G.state.fame < upgradeCost(it), onclick: () => { if (G.upgrade(it.id)) { tap('upgrade'); rerender(); onChange?.(); } } },
           canUpgrade(it) ? [h('span', {}, `Upgrade +${it.up + 1}`), coin(upgradeCost(it))] : 'Fully upgraded'),
         !wornBy ? h('button', { class: 'btn alt', onclick: () => { const v = G.salvage([it.id]); tap('fame'); toast({ title: `+${fmt(v)} Fame`, body: `Salvaged ${it.name}`, kind: 'gold' }); onChange?.(); close(); } }, h('span', {}, 'Salvage'), coin(salvageValue(it))) : null),
-      h('div', { class: 'dim center', style: { fontSize: '11px', fontWeight: 800 } }, `Upgrades ${it.up} / ${R.maxUp} · a duplicate adds ${BAL.dupeUpgrades}`),
+      h('div', { class: 'dim center', style: { fontSize: '11px', fontWeight: 800 } }, `Upgrades ${it.up} / ${maxUpOf(it)} · a duplicate adds ${BAL.dupeUpgrades}`),
     ];
   });
 }

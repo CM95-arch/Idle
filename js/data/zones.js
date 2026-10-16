@@ -103,5 +103,6 @@ export const isBoss = (s) => localStage(s) === zoneOf(s).len - 1;
 /** How hard a stage is, counted in Realm stages: a dungeon's stages start at its `lvl`. */
 export const levelOf = (s) => (isDungeon(s) ? zoneOf(s).lvl + localStage(s) : s);
 export const stageLabel = (s) => { const Z = zoneOf(s); return `${Z.tag || zoneIndex(s) + 1}-${localStage(s) + 1}`; };
-export const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII', 'XIV', 'XV', 'XVI', 'XVII', 'XVIII', 'XIX', 'XX'];
+const roman = (n) => { let out = ''; for (const [v, s] of [[50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']]) while (n >= v) { out += s; n -= v; } return out; };
+export const ROMAN = Array.from({ length: 80 }, (_, i) => roman(i + 1));
 export const realmName = (r) => `Realm ${ROMAN[r] || r + 1}`;

@@ -14,6 +14,8 @@ import { icon } from './ui/icons.js';
 import { runTour, touring } from './ui/tour.js';
 import { CLASSES } from './data/classes.js';
 import { chibiImage } from './ui/art/chibi.js';
+import { openAchievements, achPays } from './ui/goals.js';
+import { ACHIEVEMENTS } from './data/rewards.js';
 
 // show any error as a toast, so problems on a phone can be reported
 window.addEventListener('error', (e) => toast({ title: 'Something went wrong', body: String(e.message || e.error || 'unknown error').slice(0, 140) }));
@@ -85,6 +87,10 @@ function setBadge(k, text, gold) {
 
 // ---------- events from the game ----------
 G.onChange((why) => {
+  if (why?.ach) {
+    if (why.ach.length > 2) toast({ title: `🏆 ${why.ach.length} achievements`, body: why.ach.map((A) => A.name).join(' · '), kind: 'gold' });
+    else for (const A of why.ach) toast({ title: `🏆 ${A.name}`, body: `${A.desc} ${achPays(A)}.`, kind: 'gold' });
+  }
   if (why?.unlock) showUnlock(why.unlock, why.joined, (c) => openClassSheet(c, refresh));
   if (why === 'gear' || why === 'party' || why?.unlock || why === 'ascend') { screens.battle.update(true); updateTabs(); }
 });
@@ -125,6 +131,7 @@ function openSettings() {
     h('div', { class: 'panel', style: { fontSize: '13px', fontWeight: 700 } },
       h('div', { class: 'stat' }, h('span', {}, 'Gear found'), h('b', {}, `${Object.keys(G.state.uniques).length}`)),
       h('div', { class: 'stat' }, h('span', {}, 'Ascensions'), h('b', {}, `${G.state.ascensions}`))),
+    h('button', { class: 'btn alt block', onclick: () => { close(); openAchievements(); } }, `🏆 Achievements · ${Object.keys(G.state.ach || {}).length}/${ACHIEVEMENTS.length}`),
     h('button', { class: 'btn red block', onclick: async () => { if (await confirmDialog({ title: 'Erase all progress?', body: 'This deletes your save on this device. It cannot be undone.', ok: 'Erase', danger: true })) { G.resetAll(); close(); location.reload(); } } }, 'Erase progress'),
     h('div', { class: 'dim center', style: { fontSize: '11px', fontWeight: 800 } }, `Realm Idle · build ${BUILD} · `,
       h('button', { class: 'linkbtn', onclick: () => { G.state.settings.tapDebug = !G.state.settings.tapDebug; G.save(); tapDebug(G.state.settings.tapDebug); rerender(); } }, `tap debugger ${G.state.settings.tapDebug ? 'on' : 'off'}`)),

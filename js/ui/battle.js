@@ -99,7 +99,7 @@ export function createBattleScreen(root, { onFame, openClass, onDrop, goParty })
     // the chosen one again for its details
     for (const c of s.party) G.formSlot(c);
     const party = s.form.filter(Boolean), cur = selCls();
-    const canAny = (c) => s.fame >= G.levelCost(c) || STATS.some((x) => !G.statMaxed(c, x) && s.fame >= G.potionCost(c, x));
+    const canAny = (c) => (!G.atCap(c) && s.fame >= G.levelCost(c)) || STATS.some((x) => !G.statMaxed(c, x) && s.fame >= G.potionCost(c, x));
     const tabSig = party.map((c) => `${c}:${s.classes[c].lv}:${G.maxedCount(c)}:${STATS.map((x) => G.potions(c, x)).join('.')}:${c === cur}:${canAny(c)}`).join('|');
     patch(refs.tabs, tabSig, () => [0, 1, 2].map((i) => {
       const c = party[i];
@@ -113,9 +113,12 @@ export function createBattleScreen(root, { onFame, openClass, onDrop, goParty })
     const cls = selCls();
     const lv = s.classes[cls].lv, n = MODES[mode] === 'Max' ? Math.max(1, G.affordableLevels(cls)) : MODES[mode];
     let cost = 0; for (let i = 0; i < n; i++) cost += G.levelCostForLevel(lv + i);
-    const can = s.fame >= G.levelCost(cls);
+    const capped = G.atCap(cls), can = !capped && s.fame >= G.levelCost(cls);
     if (refs.lv.disabled !== !can) refs.lv.disabled = !can;
-    patch(refs.lv, `${cls}|${lv}|${n}|${fmt(cost)}`, () => [h('small', {}, `${CLASSES[cls].name}`), h('span', {}, `Level ${lv + 1}${n > 1 ? `+` : ''}`), h('small', {}, n > 1 ? `×${n} ` : '', coin(cost))]);
+    refs.lv.classList.toggle('capped', capped);
+    patch(refs.lv, `${cls}|${lv}|${n}|${fmt(cost)}|${capped}`, () => capped
+      ? [h('small', {}, `${CLASSES[cls].name}`), h('span', {}, `Level ${lv}`), h('small', {}, 'MAX · Ascend to raise')]
+      : [h('small', {}, `${CLASSES[cls].name}`), h('span', {}, `Level ${lv + 1}${n > 1 ? `+` : ''}`), h('small', {}, n > 1 ? `×${n} ` : '', coin(cost))]);
     for (const st of STATS) {
       const b = refs.pots[st], k = G.potions(cls, st), K = G.potCap(cls, st), maxed = k >= K;
       const pc = potionCount(cls, st), m = Math.max(1, pc);
@@ -143,6 +146,7 @@ export function createBattleScreen(root, { onFame, openClass, onDrop, goParty })
         for (const r of rewards) {
           if (r.k === 'fame') onFame(r.n);
           if (r.k === 'clear') { onFame(r.n); if (r.first && isBoss(r.stage)) toast({ title: `${zoneOf(r.stage).boss[0]} defeated!`, body: r.stage === G.LAST_STAGE ? 'Oryx has fallen. You can Ascend!' : zoneOf(r.stage).dungeon ? 'Its gear can drop on every run.' : `${zoneOf(r.stage + 1).name} is open.`, kind: 'gold' }); }
+          if (r.k === 'reward') for (const R of r.list) toast({ title: `${R.icon} Realm reward: ${R.name}`, body: R.desc, kind: 'gold' });
           if (r.k === 'dungeons') toast({ title: `Dungeons unlocked: Tier ${r.tier}`, body: `${r.names.join(' and ')}. Find them on the Map.`, kind: 'gold' });
           if (r.k === 'drop' && r.salvaged) onFame(r.salvaged);
           if (r.k === 'drop' && !r.salvaged && !r.quiet) onDrop?.(r.it, r);

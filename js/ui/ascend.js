@@ -9,6 +9,8 @@ import { ZONES, MAIN_ZONES, TIERS } from '../data/zones.js';
 import { fmt, tap } from './common.js';
 import { play } from './sound.js';
 import { CAP_PER_ASCENSION } from '../data/stats.js';
+import { ACHIEVEMENTS } from '../data/rewards.js';
+import { rewardTrack, openAchievements } from './goals.js';
 
 export function createAscendScreen(root, { onAscend }) {
   function oryx(size) {
@@ -38,6 +40,7 @@ export function createAscendScreen(root, { onAscend }) {
     const next = [
       ['Fame', `×${(1 + gain).toFixed(2)}`, 'more Fame from everything'], ['Damage', `×${(1 + gain * BAL.ascendDmg).toFixed(2)}`, 'more damage for every class'],
       ['Offline', `+${Math.round(gain * 15)}%`, 'better earnings while away'], ['Gear find', `+${Math.round(gain * 30)}%`, 'gear drops more often'],
+      ['Level cap', `${G.levelCap()} → ${G.levelCapFor(s.ascensions + 1)}`, 'the highest level a hero can reach'],
     ];
     root.replaceChildren(
       h('div', { class: 'h1' }, 'Ascend'),
@@ -51,7 +54,11 @@ export function createAscendScreen(root, { onAscend }) {
         h('div', { class: 'gainlist' }, next.map(([k, v]) => h('div', { class: 'gain' }, h('small', {}, k), h('b', {}, v))))),
       h('div', { class: 'h2' }, 'Your permanent bonuses'),
       h('div', { class: 'panel stats' }, now.map(([k, v]) => h('div', { class: 'stat' }, h('span', {}, k), h('b', {}, v))),
+        h('div', { class: 'stat' }, h('span', {}, 'Level cap'), h('b', {}, `${G.levelCap()}`)),
         h('div', { class: 'stat' }, h('span', {}, 'Ascensions'), h('b', {}, `${s.ascensions}`)), h('div', { class: 'stat' }, h('span', {}, 'Realm'), h('b', {}, realmName(s.realm)))),
+      h('button', { class: 'btn alt block', style: { marginTop: '8px' }, onclick: openAchievements }, `🏆 Achievements · ${ACHIEVEMENTS.filter((A) => s.ach?.[A.id]).length}/${ACHIEVEMENTS.length}`),
+      h('div', { class: 'h2' }, 'Realm rewards'),
+      rewardTrack(),
       h('div', { class: 'keeps' },
         h('div', { class: 'panel' }, h('b', { class: 'gold' }, '✓ Kept'), ...['Classes and bonuses', 'Gear (upgrades reset)', `Dungeons · tier ${G.dungeonTier()}/${TIERS}`, `${Math.round(BAL.keepPotions * 100)}% of potions · caps +${CAP_PER_ASCENSION}`].map((t) => h('div', {}, t))),
         h('div', { class: 'panel' }, h('b', { class: 'dim' }, '↺ Reset'), ...['Stages and Fame', 'Levels, back to 1', 'Most potions'].map((t) => h('div', {}, t)))),

@@ -68,6 +68,12 @@ export const BAL = {
   ascendGain: (n) => Math.max(0.4, BAL.ascendFirst * BAL.ascendDecay ** (n - 1)),
   // Fame (and potion prices) ×this in Realm I until the first Ascension: the first Oryx in hours, not a day
   firstRealmFame: 4,
+  // long-term goals. Levels are capped, and the cap rises with every Ascension, more slowly than the Realms get
+  // harder: past a point only better builds help (tools/wall.mjs shows where the best possible party stops)
+  levelCapBase: 106, levelCapPerAsc: 2,
+  awakenStep: 5,           // each Gear Awakening: five more upgrades on every piece
+  // the Companion: a share of the party's average damage per second, growing with its level
+  petBase: 0.15, petPerLv: 0.012, petEvery: 0.5, petMaxLv: 100, petCapPer: 10, petCostLv: 100, petCostStep: 0.6,
   keepPotions: 0.2,        // Ascending puts every class back to level 1 with a fifth of its potions; every cap also
                            // rises (CAP_PER_ASCENSION, data/stats.js), so what's kept grows each time
 };

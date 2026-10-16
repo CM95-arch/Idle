@@ -11,6 +11,11 @@ export const uniqueOf = (it) => (it?.u ? UNIQUE[it.u] : null);
 // Uniques keep pace with you: their item level (for upgrade costs and salvage) follows your best stage.
 let uniqueLevel = 0;
 export const setUniqueLevel = (n) => { uniqueLevel = Math.max(0, n); };
+// Gear Awakening (a Realm reward) lets gear go past +10, five upgrades at a time
+let awaken = 0;
+export const setAwaken = (n) => { awaken = Math.max(0, n); };
+/** How far an item can be upgraded. */
+export const maxUpOf = (it) => RARITY[it.rarity].maxUp + (it.u ? BAL.awakenStep * awaken : 0);
 export const ilvlOf = () => uniqueLevel; // costs and salvage keep pace with your progress
 
 /** Which kind a class wears in a slot. */
@@ -59,6 +64,6 @@ export function itemScore(it) {
   return ((s.atkPct || 0) + (s.hpPct || 0) * 0.6 + (s.defPct || 0) * 0.5 + (s.pow || 0) * 100 + (s.spdPct || 0) + (s.crit || 0) + (s.famePct || 0) * 0.3 + 20) * (uniqueOf(it)?.exalted ? 1.3 : 1);
 }
 export const upgradeCost = (it) => BAL.upgradeCost(ilvlOf(it), it.up, it.rarity);
-export const canUpgrade = (it) => it.up < RARITY[it.rarity].maxUp;
+export const canUpgrade = (it) => it.up < maxUpOf(it);
 export const salvageValue = (it) => BAL.salvage(ilvlOf(it)) + Math.round(upgradeSpent(it) * 0.5);
 export function upgradeSpent(it) { let t = 0; for (let u = 0; u < it.up; u++) t += BAL.upgradeCost(ilvlOf(it), u, it.rarity); return t; }

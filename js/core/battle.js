@@ -52,13 +52,17 @@ function makeHero(s, i, pos, keep) {
   return h;
 }
 
-export function createBattle(stage, realm, heroStats, seed = (Math.random() * 2 ** 32) >>> 0) {
+/** Where the Companion hovers: above and behind the party. */
+export const PET_AT = { x: 180, y: 196 };
+/** extra: { pet: the Companion ({ lv, burst, triple }) or null, cos: cosmetic Realm rewards (for the view) } */
+export function createBattle(stage, realm, heroStats, seed = (Math.random() * 2 ** 32) >>> 0, extra = {}) {
   const pos = placeHeroes(heroStats);
   const B = {
     stage, realm, rng: makeRng(seed), t: 0, state: 'fight', uid: 1, cleared: false,
     heroes: heroStats.map((s, i) => makeHero(s, i, pos[i])),
     enemies: [], pending: [], events: [], kills: 0, stageKills: 0, stageT: 0, spawnT: 0.4, surgeT: 0,
     bossSpawned: false, bossKilled: false, rez: null, rezUsed: false, zones: [],
+    pet: extra.pet ? { t: 0.5, ...extra.pet } : null, cos: extra.cos || {},
   };
   startStage(B);
   return B;
@@ -576,6 +580,18 @@ export function stepBattle(B) {
     if (alive(B.heroes).length) { h.dead = false; h.hp = h.maxHp * B.rez.v; B.events.push({ k: 'revive', hero: h.i, by: B.rez.by }); }
     B.rez = null;
   }
+  // the Companion: a star-sprite above the party, shooting the nearest enemies for a share of its damage
+  if (B.pet && alive(B.heroes).length && (B.pet.t -= TICK) <= 0) {
+    B.pet.t += BAL.petEvery;
+    const hs = alive(B.heroes), es = alive(B.enemies).filter((e) => e.y > -e.r);
+    const avg = hs.reduce((a, h) => a + h.atk * dmgMult(B, h), 0) / hs.length;
+    const dmg = avg * (BAL.petBase + BAL.petPerLv * B.pet.lv) * BAL.petEvery, at = PET_AT;
+    for (const t of [...es].sort((a, b) => d2(a, at) - d2(b, at)).slice(0, B.pet.triple ? 3 : 1)) {
+      const flight = 0.15 + Math.sqrt(d2(t, at)) / 600;
+      B.pending.push({ side: 'hero', to: t.id, dmg: hit(dmg, t.def), hero: 0, spirit: true, ab: true, at: B.t + flight, mods: B.pet.burst ? { splash: 0.5 } : undefined });
+      B.events.push({ k: 'pet', id: t.id, flight });
+    }
+  }
   // lingering ability zones (Spell of First Light's portals)
   B.zones = B.zones.filter((z) => z.until > B.t);
   for (const z of B.zones) if (B.t >= z.next) {
@@ -659,8 +675,8 @@ export function stepBattle(B) {
 }
 
 /** Run one stage headless from a standing start. Returns { won, t, kills }. */
-export function simulate(stage, realm, heroStats, seed) {
-  const B = createBattle(stage, realm, heroStats, seed);
+export function simulate(stage, realm, heroStats, seed, extra) {
+  const B = createBattle(stage, realm, heroStats, seed, extra);
   while (B.state === 'fight' && !B.cleared) { stepBattle(B); B.events.length = 0; }
   return { won: B.cleared, t: B.t, kills: B.kills };
 }

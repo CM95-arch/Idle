@@ -20,6 +20,7 @@ Plain HTML/CSS/JavaScript, no build step. Save it to the iPhone home screen from
 | **Stages** | 7 zones × 10 stages; every tenth is a boss. Auto-push moves you forward and falls back to farm when you hit a wall, retrying once you're 8% stronger. |
 | **Offline** | Up to 8 hours of farming your best stage, with drops, shown on the Welcome Back screen. |
 | **Ascension** | Beat Oryx to Ascend: stages, Fame and gear upgrades reset, classes go back to level 1 (keeping their gear and a fifth of their potions), and you gain permanent Fame, damage, offline and drop-quality bonuses (big at first, smaller later) in a harder Realm that pays more. The first Realm pays 4× Fame, so a new player reaches Oryx and the first dungeons in a few hours. |
+| **Long-term goals** | Levels are capped (106, +2 with every Ascension), and the cap rises more slowly than the Realms get harder, so past a point only a better build helps: the right party and formation, the right gear on the right hero, Exalted finds, Awakened upgrades. The strongest possible party just scrapes Realm XXIV and falls a level short from Realm XXV on (`tools/wall.mjs`). Beating Oryx in Realms XVI, XVIII, XX… earns **Realm rewards**: the Companion (a star-sprite that fights above the party, levelled with Fame), Gear Awakening (upgrades past +10), the Ascendant Aura, the Crown of the Realm, Wings of the Mad God. 24 **achievements** each add a little damage, HP or Fame for good. |
 
 ## Code map
 
@@ -42,6 +43,7 @@ npm start                                   # local server on :8080
 node tools/sim.mjs 48 30 90                 # pacing: 48h of a scripted player, 30 min active / 90 min away
 node tools/sim.mjs 24 30 90 levelCostGrowth=1.18   # try a balance change without editing the file
 node tools/classes.mjs 30                   # class balance: every class at level 30 across every party
+node tools/wall.mjs 0 40 2                  # per Realm: the level the best possible party needs to beat Oryx, against the cap
 node tools/endgame.mjs 1500                # a maxed post-Shatters player: how long each Realm past XV takes
 node tools/uniques.mjs 30                   # what each Unique is worth, in stages, against an empty slot
 ```
