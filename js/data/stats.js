@@ -27,12 +27,14 @@ export const CLASS_STATS = {
   assassin: { base: S(625, 240, 45, 10, 45, 55, 24, 42), max: S(750, 350, 65, 25, 65, 75, 40, 60) },
   sorcerer: { base: S(575, 285, 55, 10, 46, 42, 55, 42), max: S(700, 400, 70, 25, 60, 60, 75, 60) },
 };
-/** How many potions a stat takes to max. */
-export const potionsToMax = (cls, s) => Math.round((CLASS_STATS[cls].max[s] - CLASS_STATS[cls].base[s]) / STAT_INFO[s].step);
+/** Each Ascension raises every stat's cap by this many potions (+3 ATT, +15 Life…), so there's always more. */
+export const CAP_PER_ASCENSION = 3;
+/** How many potions a stat takes to reach its cap: the real ROTMG max, raised with every Ascension. */
+export const potionsToMax = (cls, s, asc = 0) => Math.round((CLASS_STATS[cls].max[s] - CLASS_STATS[cls].base[s]) / STAT_INFO[s].step) + CAP_PER_ASCENSION * asc;
 /** A stat's value after `n` potions. */
-export const statValue = (cls, s, n = 0) => Math.min(CLASS_STATS[cls].max[s], CLASS_STATS[cls].base[s] + n * STAT_INFO[s].step);
-/** What each stat adds at its max, scaled by how far toward max it is (the same for every class, so the classes
- * stay balanced; the numbers shown are the real ROTMG ones). */
+export const statValue = (cls, s, n = 0) => CLASS_STATS[cls].base[s] + n * STAT_INFO[s].step;
+/** What each stat adds at its original (ROTMG) max, scaled by how far toward it the potions go; potions past it,
+ * from raised caps, keep adding at the same rate. The same for every class, so the classes stay balanced. */
 export const STAT_FX = {
   hp: { hpPct: 1.0 },      // max HP ×2 at max Life
   mp: { pow: 0.4 },        // ability power +40%

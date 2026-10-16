@@ -8,6 +8,7 @@ import { artImg } from './art/core.js';
 import { ZONES, MAIN_ZONES, TIERS } from '../data/zones.js';
 import { fmt, tap } from './common.js';
 import { play } from './sound.js';
+import { CAP_PER_ASCENSION } from '../data/stats.js';
 
 export function createAscendScreen(root, { onAscend }) {
   function oryx(size) {
@@ -52,8 +53,8 @@ export function createAscendScreen(root, { onAscend }) {
       h('div', { class: 'panel stats' }, now.map(([k, v]) => h('div', { class: 'stat' }, h('span', {}, k), h('b', {}, v))),
         h('div', { class: 'stat' }, h('span', {}, 'Ascensions'), h('b', {}, `${s.ascensions}`)), h('div', { class: 'stat' }, h('span', {}, 'Realm'), h('b', {}, realmName(s.realm)))),
       h('div', { class: 'keeps' },
-        h('div', { class: 'panel' }, h('b', { class: 'gold' }, '✓ Kept'), ...['Classes and bonuses', 'Uniques (upgrades reset)', `Dungeons · tier ${G.dungeonTier()}/${TIERS}`, `${Math.round(BAL.keepPotions * 100)}% of potions`].map((t) => h('div', {}, t))),
-        h('div', { class: 'panel' }, h('b', { class: 'dim' }, '↺ Reset'), ...['Stages and Fame', 'Levels, back to 1', 'Most potions'].map((t) => h('div', {}, t)))),
+        h('div', { class: 'panel' }, h('b', { class: 'gold' }, '✓ Kept'), ...['Classes and bonuses', 'Uniques (upgrades reset)', `Dungeons · tier ${G.dungeonTier()}/${TIERS}`, `Every potion · caps +${CAP_PER_ASCENSION}`].map((t) => h('div', {}, t))),
+        h('div', { class: 'panel' }, h('b', { class: 'dim' }, '↺ Reset'), ...['Stages and Fame', 'Levels, back to 1'].map((t) => h('div', {}, t)))),
       h('div', { style: { marginTop: '14px' } }, ready ? holdButton(`Hold to Ascend to ${realmName(P.realm)}`, () => { play('ascend'); G.ascend(); onAscend?.(P); render(); }) : h('button', { class: 'btn violet block', disabled: true }, '🔒 Defeat Oryx first')));
     void tap;
   }

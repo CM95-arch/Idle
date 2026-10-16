@@ -24,7 +24,7 @@ export const BAL = {
   powerScale: 13,          // stage power requirement = this × √(enemy HP × ATK), calibrated with the fight sim
   bossHp: 60, bossAtk: 4, // boss multipliers over a normal enemy of its stage
   realmRamp: 30,          // a new Realm's extra strength phases in over its first 30 stages (dungeons: in full)
-  realmGrowth: 2,          // each Realm (after an Ascension) multiplies enemy HP/ATK
+  realmGrowth: 2.6,          // each Realm (after an Ascension) multiplies enemy HP/ATK
   realmIlvl: 3,            // and adds this many item levels to drops
   // ---- rewards ----
   fameGrowth: 1.165,
@@ -62,5 +62,5 @@ export const BAL = {
   // later. At the 0.4 floor the gains just about match a Realm's extra difficulty, so later runs hold steady.
   ascendFirst: 1.5, ascendDecay: 0.8, ascendDmg: 0.3,
   ascendGain: (n) => Math.max(0.4, BAL.ascendFirst * BAL.ascendDecay ** (n - 1)),
-  keepPotions: 0.2,        // Ascending puts every class back to level 1; they keep a fifth of their potions
+  // Ascending puts every class back to level 1; potions are kept and every cap rises (CAP_PER_ASCENSION, data/stats.js)
 };

@@ -7,7 +7,7 @@ import { CLASSES } from '../js/data/classes.js';
 import { SLOTS } from '../js/data/gear.js';
 import { zoneOf, isBoss, stageLabel } from '../js/data/zones.js';
 import { TICK } from '../js/core/battle.js';
-import { STATS, potionsToMax } from '../js/data/stats.js';
+import { STATS } from '../js/data/stats.js';
 import { itemScore, slotOf, upgradeCost, canUpgrade, fits } from '../js/core/items.js';
 
 // extra args like levelCostGrowth=1.13 override numbers in js/data/balance.js for this run
@@ -42,7 +42,7 @@ function manage() {
     for (const c of st.party) for (const s of SLOTS) { const it = st.classes[c].gear[s]; if (it && canUpgrade(it) && (!best || upgradeCost(it) < upgradeCost(best))) best = it; }
     // the cheapest stat potion (per share of its max) in the party
     let pot = null;
-    for (const c of st.party) for (const s of STATS) if (!G.statMaxed(c, s)) { const e = (G.potionCost(c, s) * potionsToMax(c, s)) / BAL.potRef; if (!pot || e < pot.e) pot = { c, s, e }; }
+    for (const c of st.party) for (const s of STATS) if (!G.statMaxed(c, s)) { const e = (G.potionCost(c, s) * G.potCap(c, s)) / BAL.potRef; if (!pot || e < pot.e) pot = { c, s, e }; }
     if (pot && pot.e < lc * POT && st.fame >= G.potionCost(pot.c, pot.s)) G.drink(pot.c, pot.s);
     else if (best && upgradeCost(best) < lc * 0.6 && st.fame >= upgradeCost(best)) G.upgrade(best.id);
     else if (st.fame >= lc) G.levelUp(lowest);

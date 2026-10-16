@@ -155,9 +155,12 @@ export function affordableLevels(cls) {
 const potScale = () => BAL.realmFame ** state.realm * state.mult.fame;
 const potsOf = (cls) => (state.classes[cls].pots ||= {});
 export const potions = (cls, s) => state.classes[cls]?.pots?.[s] || 0;
-export const statMaxed = (cls, s) => potions(cls, s) >= potionsToMax(cls, s);
+/** A stat's cap, raised with every Ascension. */
+export const potCap = (cls, s) => potionsToMax(cls, s, state.ascensions || 0);
+export const statMaxed = (cls, s) => potions(cls, s) >= potCap(cls, s);
 export const maxedCount = (cls) => STATS.filter((s) => statMaxed(cls, s)).length;
-export const potionCost = (cls, s, k = potions(cls, s)) => Math.round(BAL.potionCost(k, potionsToMax(cls, s), s) * potScale());
+// priced by how far toward the current cap a potion is, so each Realm's new potions cost about Castle money
+export const potionCost = (cls, s, k = potions(cls, s)) => Math.round(BAL.potionCost(k, potCap(cls, s), s) * potScale());
 /** Drink up to `times` potions of one stat. Returns how many. */
 export function drink(cls, s, times = 1) {
   let n = 0;
@@ -168,7 +171,7 @@ export function drink(cls, s, times = 1) {
 /** How many potions of a stat the current Fame buys, and what they cost. */
 export function affordablePotions(cls, s, cap = Infinity) {
   let f = state.fame, k = potions(cls, s), n = 0, cost = 0;
-  const K = potionsToMax(cls, s);
+  const K = potCap(cls, s);
   while (n < cap && k < K && f >= potionCost(cls, s, k)) { const c = potionCost(cls, s, k); f -= c; cost += c; k++; n++; }
   return { n, cost };
 }
@@ -436,9 +439,8 @@ export function collectOffline(now = Date.now()) {
 // ---------- Ascension ----------
 export function ascendPreview() {
   const n = state.ascensions + 1, g = BAL.ascendGain(n);
-  // every class starts again at level 1, keeping a share of the potions it drank
-  const keep = (C) => Object.fromEntries(Object.entries(C.pots || {}).map(([k, v]) => [k, Math.floor(v * BAL.keepPotions)]));
-  return { n, gain: g, realm: state.realm + 1, pots: Object.fromEntries(Object.entries(state.classes).map(([c, C]) => [c, keep(C)])) };
+  // every class starts again at level 1, keeping every potion it drank; the caps rise
+  return { n, gain: g, realm: state.realm + 1 };
 }
 export function ascend() {
   if (!canAscend()) return false;
@@ -447,7 +449,7 @@ export function ascend() {
   state.mult.offline += P.gain * 0.15; state.mult.drops += P.gain * 0.3;
   state.ascensions = P.n; state.realm = P.realm;
   // Uniques are kept (worn ones stay on) but lose their upgrades; everything else is gone
-  for (const [c, C] of Object.entries(state.classes)) { C.lv = 1; C.pots = P.pots[c]; C.gear = Object.fromEntries(Object.entries(C.gear).filter(([, it]) => it?.u)); }
+  for (const C of Object.values(state.classes)) { C.lv = 1; C.gear = Object.fromEntries(Object.entries(C.gear).filter(([, it]) => it?.u)); }
   state.inv = state.inv.filter((it) => it.u); state.fame = 0;
   for (const it of [...state.inv, ...Object.values(state.classes).flatMap((C) => Object.values(C.gear))]) if (it) it.up = 0; state.stage = 0; state.best = -1; state.flags.wallAt = null;
   syncUniques();

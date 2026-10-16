@@ -41,7 +41,7 @@ export function heroStats(cls, C, mult = {}) {
   // stat potions: each stat's bonus grows with how close it is to the class's max
   const sp = { atkPct: 0, hpPct: 0, defPct: 0, spdPct: 0, pow: 0 };
   for (const st of STATS) {
-    const p = Math.min(1, (C.pots?.[st] || 0) / potionsToMax(cls, st));
+    const p = (C.pots?.[st] || 0) / potionsToMax(cls, st); // can pass 1 once Ascensions raise the caps
     if (!p) continue;
     for (const [k, v] of Object.entries(STAT_FX[st])) { if (k in sp) sp[k] += v * p; else fx[k] = (fx[k] || 0) + v * p; }
   }

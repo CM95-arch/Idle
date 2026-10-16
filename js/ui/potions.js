@@ -1,5 +1,5 @@
 // Stat potions: the eight ROTMG stats, raised one potion at a time toward each class's max (8/8).
-import { STATS, STAT_INFO, statValue, potionsToMax } from '../data/stats.js';
+import { STATS, STAT_INFO, statValue } from '../data/stats.js';
 import * as G from '../core/game.js';
 import { h, toast } from './dom.js';
 import { coin, tap } from './common.js';
@@ -12,7 +12,7 @@ let mode = 0;
 export function statPips(cls) {
   const el = h('div', { class: 'pips' });
   for (const s of STATS) {
-    const p = G.potions(cls, s) / potionsToMax(cls, s);
+    const p = G.potions(cls, s) / G.potCap(cls, s);
     el.append(h('i', { class: p >= 1 ? 'max' : '', style: { '--c': STAT_INFO[s].color, '--p': `${Math.round(p * 100)}%` } }));
   }
   return el;
@@ -22,7 +22,7 @@ export function statPips(cls) {
 export function statPanel(cls, rerender, onChange) {
   const n8 = G.maxedCount(cls);
   const cell = (s) => {
-    const I = STAT_INFO[s], k = G.potions(cls, s), K = potionsToMax(cls, s), maxed = k >= K;
+    const I = STAT_INFO[s], k = G.potions(cls, s), K = G.potCap(cls, s), maxed = k >= K;
     const m = MODES[mode], want = m === 'Max' ? Infinity : m;
     const buy = G.affordablePotions(cls, s, want), n = Math.max(1, buy.n);
     const cost = buy.n ? buy.cost : G.potionCost(cls, s);

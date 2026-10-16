@@ -8,7 +8,7 @@ import { h, toast } from './dom.js';
 import { portrait, coin, fmt, tap, holdable } from './common.js';
 import { statPips } from './potions.js';
 import { openFormationSheet } from './formation.js';
-import { STATS, STAT_INFO, potionsToMax, statValue } from '../data/stats.js';
+import { STATS, STAT_INFO, statValue } from '../data/stats.js';
 import { play } from './sound.js';
 
 const MODES = [1, 10, 'Max'];
@@ -117,7 +117,7 @@ export function createBattleScreen(root, { onFame, openClass, onDrop, goParty })
     if (refs.lv.disabled !== !can) refs.lv.disabled = !can;
     patch(refs.lv, `${cls}|${lv}|${n}|${fmt(cost)}`, () => [h('small', {}, `${CLASSES[cls].name}`), h('span', {}, `Level ${lv + 1}${n > 1 ? `+` : ''}`), h('small', {}, n > 1 ? `×${n} ` : '', coin(cost))]);
     for (const st of STATS) {
-      const b = refs.pots[st], k = G.potions(cls, st), K = potionsToMax(cls, st), maxed = k >= K;
+      const b = refs.pots[st], k = G.potions(cls, st), K = G.potCap(cls, st), maxed = k >= K;
       const pc = potionCount(cls, st), m = Math.max(1, pc);
       let pcost = 0; if (!maxed) { if (pc) pcost = G.affordablePotions(cls, st, MODES[mode] === 'Max' ? Infinity : MODES[mode]).cost; else pcost = G.potionCost(cls, st); }
       const off = maxed || s.fame < G.potionCost(cls, st);
