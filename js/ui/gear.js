@@ -39,7 +39,7 @@ export function openItemSheet(id, onChange) {
         h('div', { class: `itile r${it.rarity}${uniqueOf(it)?.exalted ? ' ex' : ''}`, style: { '--rc': R.color, width: '72px' } }, itemIcon(it, 56)),
         h('div', { class: 'grow' },
           h('div', { style: { fontWeight: 900, fontSize: '18px', color: uniqueOf(it)?.exalted ? '#ffe08a' : R.color } }, `${it.name}${it.up ? ` +${it.up}` : ''}`),
-          h('div', { class: 'muted', style: { fontWeight: 800, fontSize: '12px' } }, `${uniqueOf(it)?.exalted ? 'Exalted ' : ''}${SLOT_NAME[slot]} · from ${ZONE_BY_ID[uniqueOf(it)?.src]?.boss[0] || 'a boss'}`),
+          h('div', { class: 'muted', style: { fontWeight: 800, fontSize: '12px' } }, `${uniqueOf(it)?.exalted ? 'Exalted ' : ''}${uniqueOf(it)?.starter ? 'Starter ' : ''}${SLOT_NAME[slot]} · from ${uniqueOf(it)?.starter ? 'the Beaches' : ZONE_BY_ID[uniqueOf(it)?.src]?.boss[0] || 'a boss'}`),
           wornBy ? h('div', { class: 'gold', style: { fontWeight: 800, fontSize: '12px' } }, `Worn by ${CLASSES[wornBy].name}`) : null)),
       uniqueOf(it) ? h('div', { class: 'panel ufx' }, h('b', {}, '✦ Special effect'), h('div', { style: { fontSize: '14px', fontWeight: 700, marginTop: '2px' } }, uniqueOf(it).desc), null) : null,
       h('div', { class: 'panel stats', style: { gridTemplateColumns: '1fr' } }, statRows(it)),
@@ -121,7 +121,7 @@ export function openCollection() {
       h('div', { class: 'pixel center', style: { fontSize: '22px' } }, 'Collection'),
       h('div', { class: 'muted center', style: { fontSize: '13px', fontWeight: 700 } }, `${Object.keys(found).length} of ${UNIQUES.length} found`),
       ...ZONES.filter((Z) => UNIQUES.some((U) => U.src === Z.id)).map((Z) => h('div', {},
-        h('div', { class: 'h2' }, `${Z.dungeon ? `Tier ${Z.tier} · ` : ''}${Z.name} · ${Z.boss[0]}`),
+        h('div', { class: 'h2' }, UNIQUES.some((U) => U.src === Z.id && U.starter) ? `${Z.name} · starters, from any enemy` : `${Z.dungeon ? `Tier ${Z.tier} · ` : ''}${Z.name} · ${Z.boss[0]}`),
         ...UNIQUES.filter((U) => U.src === Z.id).map((U) => {
           const has = found[U.id];
           const icon = artImg(itemImage(U.kind, 6, U.pal)); icon.style.width = '44px';

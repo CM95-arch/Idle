@@ -249,6 +249,32 @@ function onKillProcs(B, h, e) {
   }
 }
 
+// Starter ability items: effects that go off with every cast (`on: 'cast'`), each with a rune circle under the
+// hero. meteor, fan and lightning hit `n` foes picked from the nearest few; the rest work as their timed kinds.
+function castProcs(B, h, es) {
+  const list = h.procs.filter((P) => P.on === 'cast');
+  if (!list.length || !es.length) return;
+  B.events.push({ k: 'proc', kind: 'sigil', hero: h.i, c: list[0].c });
+  const near = [...es].sort((a, b) => d2(a, h) - d2(b, h)).slice(0, 8);
+  const pick = (n) => { const pool = [...near], out = []; while (out.length < n && pool.length) out.push(pool.splice(B.rng.int(0, pool.length - 1), 1)[0]); return out; };
+  for (const P of list) {
+    const k = h.procs.indexOf(P);
+    if (P.kind === 'meteor' || P.kind === 'lightning') {
+      pick(P.n || 1).forEach((t, j) => {
+        for (const o of within(es, t, P.r)) { damageEnemy(B, o, hit(procDmg(B, h, P), o.def), { hero: h.i, ab: true }); if (P.slow) o.slowUntil = Math.max(o.slowUntil, B.t + P.slow); }
+        B.events.push({ k: 'proc', kind: P.kind, hero: h.i, c: P.c, r: P.r, look: P.look, x: t.x, y: t.y, delay: j * 0.12 });
+      });
+    } else if (P.kind === 'fan') {
+      for (const t of pick(P.n || 1)) {
+        const flight = 0.2 + Math.sqrt(d2(t, h)) / 520;
+        if (P.slow) t.slowUntil = Math.max(t.slowUntil, B.t + P.slow + flight);
+        B.pending.push({ side: 'hero', to: t.id, dmg: hit(procDmg(B, h, P), t.def), hero: h.i, spirit: true, ab: true, at: B.t + flight });
+        B.events.push({ k: 'proc', kind: 'spirit', hero: h.i, x: h.x, y: h.y - 10, id: t.id, flight, c: P.c });
+      }
+    } else runProc(B, h, P, k, es);
+  }
+}
+
 // ---------- abilities ----------
 const ECHOES = new Set(['aoe', 'heal', 'pierce', 'execute', 'stun', 'dot', 'drain', 'poison', 'chain']);
 function useAbility(B, h, scale = 1) {
@@ -573,7 +599,7 @@ export function stepBattle(B) {
     }
     const A = CLASSES[h.cls].ability;
     const needHeal = A.fx === 'heal' ? alive(B.heroes).some((o) => o.hp < o.maxHp * 0.8) : true;
-    if (h.cd <= 0 && es.length && needHeal) { h.cd = abilityCd(h); useAbility(B, h); }
+    if (h.cd <= 0 && es.length && needHeal) { h.cd = abilityCd(h); useAbility(B, h); castProcs(B, h, alive(B.enemies)); }
     // Dawnbreaker's beam: every second, a blast at the end of the sword's reach that ignores armor
     if (h.shot.beam && (h.beamT = (h.beamT ?? 0.5) - dt) <= 0) {
       const Bm = h.shot.beam, t = nearest(es, h);

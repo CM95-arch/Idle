@@ -13,8 +13,34 @@
 //   fx:   other effects battle.js applies.
 //   proc: an effect you can see in the fight (orbiting motes, novas, meteors, halos, bubbles, lightning on crits,
 //         spirits on kills…): see runProc in core/battle.js.
+//   starter: a Beach find, one per class: half a normal item's stats, but a flashy effect on every cast.
 //   exalted: far rarer, far stronger. A gold bag instead of a white one.
 export const UNIQUES = [
+  // ---- starters: one ability item per class, found all over the Beaches. Weak (half a normal item's stats) but
+  // flashy: every cast throws a rune circle and a burst of something you can see (procs with on: 'cast') ----
+  { id: 'stEmber', name: 'Spell of Sea Embers', kind: 'spell', src: 'beach', starter: true, proc: { on: 'cast', kind: 'meteor', n: 3, pow: 0.3, r: 45, c: '#ff8a3a' },
+    pal: ['#7a2a1a', '#ff8a3a', '#ffe0a0'], desc: 'Every Fire Burst also calls down three little embers on scattered foes.' },
+  { id: 'stTide', name: 'Tome of Tidepools', kind: 'tome', src: 'beach', starter: true, proc: { on: 'cast', kind: 'healwave', pow: 0.03, c: '#7affd8' },
+    pal: ['#1a5a5a', '#7affd8', '#e0fff8'], desc: 'Every heal sends a ripple of seawater through the whole party, mending everyone a little.' },
+  { id: 'stGull', name: 'Gullfeather Quiver', kind: 'quiver', src: 'beach', starter: true, proc: { on: 'cast', kind: 'fan', n: 5, pow: 0.22, c: '#e8f4ff' },
+    pal: ['#6a7a8a', '#e8f4ff', '#ffd34d'], desc: 'Every Piercing Arrow shakes loose five glowing feathers that dart into nearby foes.' },
+  { id: 'stSand', name: 'Cloak of Drifting Sand', kind: 'cloak', src: 'beach', starter: true, proc: { on: 'cast', kind: 'nova', r: 80, pow: 0.3, slow: 2, c: '#f0d890' },
+    pal: ['#8a6a3a', '#f0d890', '#fff6d8'], desc: 'Every Backstab bursts into a swirl of sand that stings and Slows everything around the Rogue.' },
+  { id: 'stCrab', name: 'Crabshell Helm', kind: 'helm', src: 'beach', starter: true, proc: { on: 'cast', kind: 'nova', r: 75, pow: 0.3, c: '#ff7a5a' },
+    pal: ['#8a2a1a', '#ff7a5a', '#ffd0b0'], desc: 'Going Berserk cracks the shell open in a ring of coral shards that cuts everything close.' },
+  { id: 'stDrift', name: 'Driftwood Buckler', kind: 'shield', src: 'beach', starter: true, proc: { on: 'cast', kind: 'bubble', pow: 0.035, c: '#9ad8ff' },
+    pal: ['#6a4a2a', '#c09060', '#9ad8ff'], desc: 'Every Shield Bash wraps the Knight in a bubble of seawater that soaks up a little damage.' },
+  { id: 'stKelp', name: 'Kelpwrap Snare', kind: 'trap', src: 'beach', starter: true, proc: { on: 'cast', kind: 'fan', n: 4, pow: 0.28, slow: 1.5, c: '#5aff9a' },
+    pal: ['#1a4a2a', '#5aff9a', '#e0ffd0'], desc: 'Every trap flings four lashes of glowing kelp that sting and Slow whatever they catch.' },
+  { id: 'stWrack', name: 'Skull of the Tidewrack', kind: 'skull', src: 'beach', starter: true, proc: { on: 'cast', kind: 'fan', n: 3, pow: 0.15, c: '#b8a0ff' },
+    pal: ['#3a2a5a', '#d8c8b0', '#b8a0ff'], desc: 'Every Soul Drain lets three drowned spirits out of the skull to haunt the nearest foes.' },
+  { id: 'stJelly', name: 'Jellyfish Vial', kind: 'poison', src: 'beach', starter: true, proc: { on: 'cast', kind: 'meteor', look: 'flask', n: 2, pow: 0.1, r: 45, slow: 0.8, c: '#ff6ae0' },
+    pal: ['#5a1a5a', '#ff6ae0', '#ffe0ff'], desc: 'Every Poison Vial is chased by two stinging jellyfish flasks that burst and briefly Slow the pack.' },
+  { id: 'stShore', name: 'Seal of the Shoreline', kind: 'seal', src: 'beach', starter: true, proc: [{ on: 'cast', kind: 'nova', r: 70, pow: 0.2, c: '#ffe08a' }, { on: 'cast', kind: 'healwave', pow: 0.03, c: '#ffe08a' }],
+    pal: ['#8a6a1a', '#ffe08a', '#ffffff'], desc: 'Every Holy Seal flares in a ring of sunlight that singes nearby foes and warms the party.' },
+  { id: 'stStorm', name: 'Stormglass Rod', kind: 'scepter', src: 'beach', starter: true, proc: { on: 'cast', kind: 'lightning', n: 3, pow: 0.15, r: 36, c: '#9ad8ff' },
+    pal: ['#2a3a6a', '#9ad8ff', '#ffffff'], desc: 'Every Chain Lightning also cracks three bolts of sea-storm down on scattered foes.' },
+
   // ---- first RealmEye pass ----
   { id: 'coralBow', name: 'Reefsong Bow', kind: 'bow', src: 'trench', shot: { n: 2, arc: 9, rate: 1.25, per: 0.45, pierce: true, range: 6.4, speed: 18.5, look: 'arrow', color: '#ff7aa8' },
     pal: ['#b8405a', '#ff8a9a', '#ffe0d0'], desc: 'Sings two coral-pink arrows at once, a hair apart, at 125% fire rate. They pass straight through the pack.' },

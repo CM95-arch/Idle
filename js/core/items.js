@@ -44,7 +44,7 @@ export function makeUnique(id, uid) {
 /** What an item gives: percent bonuses (and ability power), its fixed extra stat included. */
 export function itemStats(it) {
   const slot = slotOf(it), U = uniqueOf(it);
-  const k = (U?.exalted ? 1.5 : 1) * (1 + BAL.upgradeStep * it.up);
+  const k = (U?.exalted ? 1.5 : U?.starter ? BAL.starterPower : 1) * (1 + BAL.upgradeStep * it.up);
   const out = {};
   // weapons and ability items keep a flat Unique bonus; armor and rings carry their real ROTMG stat lines
   const base = U?.rot && (slot === 'armor' || slot === 'ring') ? rotStats(U.rot) : { ...(slot === 'ring' ? RING_BASE[it.ring] || RING_BASE.atk : UT_BASE[slot]) };

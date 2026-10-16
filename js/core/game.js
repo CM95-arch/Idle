@@ -286,15 +286,20 @@ export function bestUpgrades() {
 function gainFame(n, earned = true) { state.fame += n; if (earned) state.stats.fameEarned += n; }
 // Uniques drop only where they do in the real game: a few from Realm bosses, the rest from dungeon bosses (and,
 // very rarely, the rest of a dungeon's enemies)
-const poolOf = (Z) => UNIQUES.filter((u) => u.src === Z.id);
-const uniqueChance = (Z, boss) => (!poolOf(Z).length ? 0 : boss ? (Z.dungeon ? BAL.uniqueDungeonBoss : BAL.uniqueRealmBoss) : Z.dungeon ? BAL.uniqueKill : 0) * (1 + luck());
+// (the Beaches drop starter ability items instead: only ones a class you own can use, and often)
+const owns = (u) => Object.keys(state.classes).some((c) => fits(c, { kind: u.kind }));
+const poolOf = (Z) => UNIQUES.filter((u) => u.src === Z.id && (!u.starter || owns(u)));
+const starterZone = (Z) => Z.id === 'beach';
+const uniqueChance = (Z, boss) => (!poolOf(Z).length ? 0 : starterZone(Z) ? (boss ? BAL.starterBoss : BAL.starterKill) : boss ? (Z.dungeon ? BAL.uniqueDungeonBoss : BAL.uniqueRealmBoss) : Z.dungeon ? BAL.uniqueKill : 0) * (1 + luck());
 /** Maybe a Unique from this stage's zone. */
 function rollUnique(stage, boss, force = false) {
   const Z = zoneOf(stage), pool = poolOf(Z);
+  if (boss && starterZone(Z) && !pool.some((u) => state.uniques[u.id])) force = true; // a new player's first gear
   if (!pool.length || (!force && rng.next() >= uniqueChance(Z, boss))) return null;
   // ones you haven't found yet, and ones a class you own can wear, come up more often
   // Exalted ones are far rarer than the rest
-  const w = pool.map((u) => (u.exalted ? BAL.exaltedWeight : 1) * (state.uniques[u.id] ? 1 : 3) * (Object.keys(state.classes).some((c) => fits(c, { kind: u.kind })) ? 2 : 1));
+  // (starters favor the classes in the party, so the drop can go straight on)
+  const w = pool.map((u) => (u.exalted ? BAL.exaltedWeight : 1) * (state.uniques[u.id] ? 1 : 3) * (owns(u) ? 2 : 1) * (u.starter && state.party.some((c) => fits(c, { kind: u.kind })) ? 4 : 1));
   let r = rng.next() * w.reduce((a, b) => a + b, 0), U = pool[0];
   for (let i = 0; i < pool.length; i++) { r -= w[i]; if (r < 0) { U = pool[i]; break; } }
   const first = !state.uniques[U.id];
@@ -309,7 +314,8 @@ function rollUnique(stage, boss, force = false) {
     const fame = ups < BAL.dupeUpgrades ? salvageValue(makeUnique(0, U.id)) : 0;
     if (fame) gainFame(fame, false);
     changed('gear');
-    return { it: owned, salvaged: 0, unique: true, first: false, dupe: { ups, fame }, exalted: !!U.exalted };
+    // a starter's repeat is a small thing: no fanfare, just the upgrade
+    return { it: owned, salvaged: 0, unique: true, first: false, dupe: { ups, fame }, exalted: !!U.exalted, quiet: !!U.starter };
   }
   const it = makeUnique(state.nextId++, U.id);
   state.inv.push(it);

@@ -145,7 +145,7 @@ export function createBattleScreen(root, { onFame, openClass, onDrop, goParty })
           if (r.k === 'clear') { onFame(r.n); if (r.first && isBoss(r.stage)) toast({ title: `${zoneOf(r.stage).boss[0]} defeated!`, body: r.stage === G.LAST_STAGE ? 'Oryx has fallen. You can Ascend!' : zoneOf(r.stage).dungeon ? 'Its gear can drop on every run.' : `${zoneOf(r.stage + 1).name} is open.`, kind: 'gold' }); }
           if (r.k === 'dungeons') toast({ title: `Dungeons unlocked: Tier ${r.tier}`, body: `${r.names.join(' and ')}. Find them on the Map.`, kind: 'gold' });
           if (r.k === 'drop' && r.salvaged) onFame(r.salvaged);
-          if (r.k === 'drop' && !r.salvaged) onDrop?.(r.it, r);
+          if (r.k === 'drop' && !r.salvaged && !r.quiet) onDrop?.(r.it, r);
         }
         endT = 0;
       } else if ((endT += TICK) > 1.4) { G.nextBattle(); endT = 0; update(true); }

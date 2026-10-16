@@ -202,6 +202,12 @@ export class BattleView {
           sound?.('fame');
           continue;
         }
+        if (r.quiet) { // a starter found again: it melts into the copy you have
+          this.num(at.x, at.y - 40, r.dupe.ups ? `${r.it.name} +${r.dupe.ups}` : `+${fmt(r.dupe.fame)}`, '#bff6ff', 10);
+          for (let i = 0; i < 14; i++) { const a = rand(0, TAU), sp = rand(40, 140); this.parts.push({ x: at.x, y: at.y - 10, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 40, t: 0, life: rand(0.5, 0.9), c: i % 2 ? '#ffffff' : '#6ff2ff', s: 2.4, g: 80, add: true }); }
+          sound?.('loot');
+          continue;
+        }
         this.bags.push({ x: at.x, y: at.y, t: 0, rarity: r.it.rarity, life: r.unique ? (r.exalted ? 3.4 : 2.6) : 1.5, ex: r.exalted });
         if (r.unique) {
           // the white bag: a pillar of light, a flash, and a chime you learn to love
@@ -230,9 +236,13 @@ export class BattleView {
       case 'meteor': {
         // falls from the sky onto the pack, then bursts (a flask arcs in from the hero instead)
         const flask = ev.look === 'flask';
-        this.fx.push({ k: 'meteor', x0: flask ? h.x : ev.x + 60, y0: flask ? h.y - 40 : ev.y - 260, x1: ev.x, y1: ev.y - 6, t: 0, life: 0.32, c, flask, r: ev.r, burst: true });
+        this.fx.push({ k: 'meteor', x0: flask ? h.x : ev.x + 60, y0: flask ? h.y - 40 : ev.y - 260, x1: ev.x, y1: ev.y - 6, t: -(ev.delay || 0), life: 0.32, c, flask, r: ev.r, burst: true });
         break;
       }
+      case 'sigil': // a starter item's rune circle, flaring under the hero as the ability goes off
+        this.fx.push({ k: 'sigil', x: h.x, y: h.y, t: 0, life: 0.9, c, a: rand(0, TAU) });
+        for (let n = 0; n < 14; n++) { const a = (n / 14) * TAU; this.parts.push({ x: h.x + Math.cos(a) * 34, y: h.y + Math.sin(a) * 15, vx: 0, vy: rand(-90, -50), t: 0, life: rand(0.5, 0.8), c, s: 2.4, add: true }); }
+        this.hv[ev.hero].aura = 0.4; this.hv[ev.hero].auraColor = c; break;
       case 'bubble': this.hv[ev.hero].bubbleIn = 0.35; burst(h.x, h.y - 26, 10, 80, 0.5); sound?.('ability'); break;
       case 'halo': case 'frost': {
         for (const id of ev.ids || []) { const e = byId(id); if (e && Math.random() < 0.4) burst(e.x, e.y - 10, 2, 50, 0.35, c, ev.kind === 'frost' ? 30 : -30); }
@@ -535,6 +545,7 @@ export class BattleView {
 
   drawFx(g, f, B) {
     const p = f.t / f.life;
+    if (p < 0) return; // not started yet (staggered)
     switch (f.k) {
       case 'bolt': {
         const cs = Math.cos(f.ang), sn = Math.sin(f.ang), d = f.len * p;
@@ -625,6 +636,21 @@ export class BattleView {
         g.drawImage(glow(f.c, 11), x - 11, y - 11); g.fillStyle = '#ffffff'; g.beginPath(); g.arc(x, y, 2.4, 0, TAU); g.fill();
         if (Math.random() < 0.6) this.parts.push({ x, y, vx: rand(-15, 15), vy: rand(-15, 15), t: 0, life: 0.3, c: f.c, s: 2, add: true });
         g.globalCompositeOperation = 'source-over';
+        break;
+      }
+      case 'sigil': { // two rune rings turning opposite ways, with a glow rising out of them
+        const r = 30 + 12 * Math.min(1, p * 3), fade = p < 0.15 ? p / 0.15 : 1 - (p - 0.15) / 0.85;
+        g.save(); g.translate(f.x, f.y); g.globalCompositeOperation = 'lighter';
+        g.globalAlpha = fade * 0.5; g.drawImage(glow(f.c, r * 1.3), -r * 1.3, -r * 1.3 - 18);
+        g.scale(1, 0.45); g.globalAlpha = fade; g.strokeStyle = f.c; g.lineWidth = 2.5;
+        g.beginPath(); g.arc(0, 0, r, 0, TAU); g.stroke();
+        g.lineWidth = 1.5; g.beginPath(); g.arc(0, 0, r * 0.72, 0, TAU); g.stroke();
+        for (let i = 0; i < 6; i++) { // a hexagram of runes
+          const a = f.a + p * 2.4 + (i / 6) * TAU, b = f.a + p * 2.4 + ((i + 2) / 6) * TAU;
+          g.beginPath(); g.moveTo(Math.cos(a) * r * 0.72, Math.sin(a) * r * 0.72); g.lineTo(Math.cos(b) * r * 0.72, Math.sin(b) * r * 0.72); g.stroke();
+          const c = f.a - p * 3 + (i / 6) * TAU; g.fillStyle = '#ffffff'; g.beginPath(); g.arc(Math.cos(c) * r, Math.sin(c) * r, 3, 0, TAU); g.fill();
+        }
+        g.restore(); g.globalAlpha = 1;
         break;
       }
       case 'groundring': {

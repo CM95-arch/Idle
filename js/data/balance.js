@@ -49,6 +49,10 @@ export const BAL = {
   salvage: (ilvl) => Math.round(3 * BAL.fameGrowth ** ilvl), // about half a stage clear: Uniques are for wearing, not selling
   uniqueRealmBoss: 0.05,   // a Realm boss with real drops (the Grand Sphinx, the Keyper) drops one 1 time in 20
   uniqueDungeonBoss: 0.06, // a dungeon boss drops one of its Uniques about 1 time in 16
+  // starter ability items (one per class) drop all over the Beaches; the first Beach boss always drops one
+  starterKill: 0.006,      // any Beach enemy: about one a stage early on
+  starterBoss: 0.5,
+  starterPower: 0.5,       // their stats are half a normal item's; the flashy cast effect is the point
   uniqueKill: 0.00004,     // any other dungeon enemy, very rarely (Realm enemies never)
   utWeapon: 1.2,           // a Unique weapon hits this much harder than the tiered weapon its stats are measured against
   dupeUpgrades: 2,         // a Unique you already own melts into your copy as this many free upgrades

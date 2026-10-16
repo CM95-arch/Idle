@@ -102,7 +102,7 @@ const TOUR = [
   { target: () => $('.dpots'), title: 'Stat potions', text: 'The eight ROTMG stats, in their potion colors. Each potion raises a stat toward this class’s max. Max all eight (8/8) before Oryx’s Castle.' },
   { target: () => $('.lvmode .chip'), title: 'Buy ×1, ×10, Max', text: 'Tap to switch how many levels or potions each press buys.' },
   { target: tab('party'), title: 'Party', text: 'All your classes. Leveling unlocks new ones: Wizard level 5 unlocks the Priest, and so on. Up to three fight at once, and you can swap them any time.' },
-  { target: tab('gear'), title: 'Gear', text: 'All gear is named and rare, with special powers, guarded by each zone’s boss. Their bonuses are percentages, so they never go stale. Each class wears its own kinds (Wizards: staves, robes, spells, rings). A repeat find upgrades the copy you have.' },
+  { target: tab('gear'), title: 'Gear', text: 'All gear is named, with special powers. The Beaches drop flashy starter abilities; the rest is guarded by bosses. Their bonuses are percentages, so they never go stale. Each class wears its own kinds (Wizards: staves, robes, spells, rings). A repeat find upgrades the copy you have.' },
   { target: tab('map'), title: 'Map', text: 'The Realm’s biomes, and the dungeons that open each time you defeat Oryx. Tap any stage you’ve cleared to farm it.' },
   { target: tab('ascend'), title: 'Ascend', text: 'Defeat Oryx the Mad God to Ascend: start over in a harder Realm with permanent bonuses that keep stacking.' },
   { title: 'While you’re away', text: 'Your party keeps fighting for up to 8 hours when the game is closed. Come back to collect what they earned. Good luck, hero.', done: 'Begin' },
@@ -150,7 +150,7 @@ if (G.state.settings.tapDebug) tapDebug(true);
 // ---------- offline earnings ----------
 function collect() {
   const r = G.collectOffline();
-  if (r) { showOffline(r, () => { onFame(r.fame); refresh(); }); for (const u of r.uniques) showUnique(u.it, seeItem, u.dupe); }
+  if (r) { showOffline(r, () => { onFame(r.fame); refresh(); }); for (const u of r.uniques.filter((x) => !x.quiet)) showUnique(u.it, seeItem, u.dupe); }
   // an older save's regular gear was turned into Fame when it loaded
   const old = G.state.flags.retired;
   if (old) { delete G.state.flags.retired; G.save(); setTimeout(() => toast({ title: 'Regular gear is gone', body: `Only named gear drops now. Your ${old.n} old items became +${fmt(old.fame)} Fame.`, kind: 'gold' }), 1500); }
