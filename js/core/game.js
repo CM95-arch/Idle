@@ -338,7 +338,8 @@ function gainFame(n, earned = true) { state.fame += n; if (earned) state.stats.f
 // very rarely, the rest of a dungeon's enemies)
 // (the Beaches drop starter ability items instead: only ones a class you own can use, and often)
 const owns = (u) => Object.keys(state.classes).some((c) => fits(c, { kind: u.kind }));
-const poolOf = (Z) => UNIQUES.filter((u) => u.src === Z.id && (!u.starter || owns(u)));
+// (and some only drop from a given Realm on)
+const poolOf = (Z) => UNIQUES.filter((u) => u.src === Z.id && (!u.starter || owns(u)) && (state.realm || 0) >= (u.minRealm || 0));
 const starterZone = (Z) => Z.id === 'beach';
 const uniqueChance = (Z, boss) => (!poolOf(Z).length ? 0 : starterZone(Z) ? (boss ? BAL.starterBoss : BAL.starterKill) : boss ? (Z.dungeon ? BAL.uniqueDungeonBoss : BAL.uniqueRealmBoss) : Z.dungeon ? BAL.uniqueKill : 0) * (1 + luck());
 /** Maybe a Unique from this stage's zone. */

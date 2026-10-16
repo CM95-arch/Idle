@@ -18,7 +18,7 @@ export function createMapScreen(root, { goBattle }) {
       return h('button', { class: `node${done ? ' done' : ''}${now ? ' now' : ''}${next && !now ? ' next' : ''}${isBoss(st) ? ' boss' : ''}`, disabled: !can,
         'aria-label': `${Z.name} stage ${k + 1}`, onclick: () => { G.goToStage(st); tap(); goBattle(); } }, isBoss(st) ? '☠' : `${k + 1}`);
     });
-    const drops = UNIQUES.filter((U) => U.src === Z.id);
+    const drops = UNIQUES.filter((U) => U.src === Z.id && s.realm >= (U.minRealm || 0));
     return h('div', { class: `zone${open ? '' : ' locked'}${Z.dungeon ? ' dungeon' : ''}`, style: { backgroundImage: `url(${thumb(Z)})`, backgroundSize: 'cover', backgroundPosition: 'center 35%' } },
       h('div', { class: 'row between' }, h('h3', {}, Z.name), h('small', { style: { fontWeight: 900, color: '#fff', opacity: 0.85 } }, open ? `${cleared}/${Z.len}` : 'Locked')),
       h('div', { class: `nodes${Z.len === 5 ? ' five' : ''}` }, nodes),

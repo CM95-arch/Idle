@@ -6,7 +6,7 @@ import * as G from '../core/game.js';
 import { itemStats, slotOf, fits, itemScore, upgradeCost, canUpgrade, salvageValue, uniqueOf, maxUpOf } from '../core/items.js';
 import { h, openSheet, toast } from './dom.js';
 import { UNIQUES } from '../data/uniques.js';
-import { ZONES, ZONE_BY_ID } from '../data/zones.js';
+import { ZONES, ZONE_BY_ID, realmName } from '../data/zones.js';
 import { itemImage } from './art/items.js';
 import { artImg } from './art/core.js';
 import { coin, fmt, itemTile, itemIcon, portrait, tap } from './common.js';
@@ -129,7 +129,7 @@ export function openCollection() {
             h('div', { class: `itile r6${U.exalted ? ' ex' : ''}${has ? '' : ' locked'}`, style: { width: '56px', flex: 'none', '--rc': '#fff' } }, icon),
             h('div', { class: 'grow' },
               h('b', { style: { color: has ? (U.exalted ? '#ffe08a' : '#ffffff') : 'var(--ink-3)' } }, has ? U.name : '???', U.exalted ? h('small', { class: 'exalt' }, ' ✦ Exalted') : null),
-              h('div', { style: { fontSize: '12px', fontWeight: 700, color: has ? 'var(--ink-2)' : 'var(--ink-3)' } }, has ? U.desc : `Not found yet · ${KIND_LABEL({ kind: U.kind })}`),
+              h('div', { style: { fontSize: '12px', fontWeight: 700, color: has ? 'var(--ink-2)' : 'var(--ink-3)' } }, has ? U.desc : `Not found yet · ${KIND_LABEL({ kind: U.kind })}${U.minRealm ? ` · ${realmName(U.minRealm)} and beyond` : ''}`),
               has ? h('div', { class: 'dim', style: { fontSize: '11px', fontWeight: 800 } }, `Found ×${has}`) : null));
         }))),
     ];

@@ -70,7 +70,7 @@ export const BAL = {
   firstRealmFame: 4,
   // long-term goals. Levels are capped, and the cap rises with every Ascension, more slowly than the Realms get
   // harder: past a point only better builds help (tools/wall.mjs shows where the best possible party stops)
-  levelCapBase: 106, levelCapPerAsc: 2,
+  levelCapBase: 103, levelCapPerAsc: 2,
   awakenStep: 5,           // each Gear Awakening: five more upgrades on every piece
   // the Companion: a share of the party's average damage per second, growing with its level
   petBase: 0.15, petPerLv: 0.012, petEvery: 0.5, petMaxLv: 100, petCapPer: 10, petCostLv: 100, petCostStep: 0.6,
