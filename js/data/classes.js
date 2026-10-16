@@ -30,9 +30,9 @@ export const CLASSES = {
     name: 'Rogue', role: 'dps', look: 'hood', weapon: 'dagger', armor: 'leather', abilityItem: 'cloak',
     colors: { a: '#3a3442', b: '#6b6078', c: '#b03a3a' }, shot: '#e6e6f5',
     base: { hp: 114, atk: 18.4, def: 3, spd: 7 },
-    ability: { name: 'Backstab', cd: 6, fx: 'execute', pow: 5.5, desc: 'Vanishes and strikes the three weakest enemies for {p}% damage each.' },
+    ability: { name: 'Shadow Strike', cd: 6, fx: 'execute', pow: 3, desc: 'Vanishes for a moment, then strikes the three toughest enemies (bosses and elites first) for {p}% damage each, always critical.' },
     unlock: { needs: { archer: 5 } },
-    blurb: 'Fast blades. Finishes off whatever is left.',
+    blurb: 'Fast blades. Cuts down the biggest threats.',
   },
   warrior: {
     name: 'Warrior', role: 'tank', look: 'helm', weapon: 'sword', armor: 'heavy', abilityItem: 'helm',

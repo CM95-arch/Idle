@@ -346,7 +346,7 @@ export class BattleView {
     switch (ev.fx) {
       case 'aoe': this.fx.push({ k: 'boom', x: ev.x, y: ev.y - 10, t: 0, life: 0.6, c: '#ff8a3c', big: true }); this.fx.push({ k: 'groundring', x: ev.x, y: ev.y, t: 0, life: 0.5, c: '#ffb070', r: BAL.aoeRadius }); this.shake = Math.max(this.shake, 5); this.flash = 0.1; this.flashColor = '#ffb070'; break;
       case 'pierce': this.fx.push({ k: 'beam', x0: h.x, y0: h.y - 30, x1: ev.x, y1: ev.y - 30, t: 0, life: 0.35, c: '#ffe08a', w: 7 }); break;
-      case 'execute': for (const e of ts) this.fx.push({ k: 'slash', x: e.x, y: e.y - 16, t: 0, life: 0.4, c: '#e6e6f5' }); this.shake = Math.max(this.shake, 3); break;
+      case 'execute': for (const e of ts) { this.fx.push({ k: 'zap', x0: h.x, y0: h.y - 24, x1: e.x, y1: e.y - 16, t: 0, life: 0.25, c: '#b8a8ff' }); this.fx.push({ k: 'slash', x: e.x, y: e.y - 16, t: 0, life: 0.4, c: '#e6e6f5' }); } this.shake = Math.max(this.shake, 3); break;
       case 'berserk': this.hv[ev.hero].aura = 0.5; this.hv[ev.hero].auraColor = '#ff4a3a'; break; // then the Berserk aura (drawBuffs)
       case 'stun': this.fx.push({ k: 'groundring', x: h.x, y: h.y, t: 0, life: 0.6, c: '#9ec2ff', r: 120 }); for (const e of ts) this.fx.push({ k: 'stars', id: e.id, t: 0, life: 1.2 }); this.shake = Math.max(this.shake, 6); break;
       case 'dot': this.fx.push({ k: 'groundring', x: ev.x, y: ev.y, t: 0, life: 0.6, c: '#ffa040', r: BAL.aoeRadius }); for (const e of ts) this.fx.push({ k: 'burn', id: e.id, t: 0, life: 4, c: '#ffa040' }); break;

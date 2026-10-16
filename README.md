@@ -42,5 +42,6 @@ npm start                                   # local server on :8080
 node tools/sim.mjs 48 30 90                 # pacing: 48h of a scripted player, 30 min active / 90 min away
 node tools/sim.mjs 24 30 90 levelCostGrowth=1.18   # try a balance change without editing the file
 node tools/classes.mjs 30                   # class balance: every class at level 30 across every party
+node tools/endgame.mjs 1500                # a maxed post-Shatters player: how long each Realm past XV takes
 node tools/uniques.mjs 30                   # what each Unique is worth, in stages, against an empty slot
 ```

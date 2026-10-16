@@ -414,7 +414,14 @@ function useAbility(B, h, scale = 1) {
       strike(es.filter((e) => { const along = (e.x - h.x) * ux + (e.y - h.y) * uy, off = Math.abs((e.x - h.x) * uy - (e.y - h.y) * ux); return along > 0 && off < 22 + e.r; }));
       break;
     }
-    case 'execute': strike([...es].sort((a, b) => a.hp - b.hp).slice(0, 3), 1, { ...src, crit: true }); if (M.mode === 'planewalk') h.buff.invulnUntil = B.t + M.dur; if (M.mode === 'bloody' || M.mode === 'twilight') { h.buff.dmgUntil = B.t + M.dur; h.buff.dmg = M.dmg; } if (M.mode === 'twilight') h.buff.invulnUntil = B.t + M.inv; break;
+    case 'execute': { // Shadow Strike: vanish, then crit the three toughest foes (bosses and elites first)
+      const rank = (e) => (e.boss ? 2 : e.elite ? 1 : 0);
+      const ts = [...es].sort((a, b) => rank(b) - rank(a) || b.hp - a.hp).slice(0, 3);
+      strike(ts, 1, { ...src, crit: true });
+      h.buff.invulnUntil = Math.max(h.buff.invulnUntil || 0, B.t + (M.mode === 'planewalk' ? M.dur : 0.6));
+      if (M.mode === 'bloody' || M.mode === 'twilight') { h.buff.dmgUntil = B.t + M.dur; h.buff.dmg = M.dmg; } if (M.mode === 'twilight') h.buff.invulnUntil = Math.max(h.buff.invulnUntil, B.t + M.inv);
+      break;
+    }
     case 'berserk': h.buff.taunt = B.t + 4; h.buff.hasteUntil = B.t + 4; h.buff.haste = p;
       if (M.mode === 'juggernaut') { h.buff.armorUntil = B.t + 4.5; for (const o of hs) { o.buff.hasteUntil = B.t + 4.5; o.buff.haste = Math.max(o.buff.haste || 0, p * 0.6); } ev.heroes = hs.map((o) => o.i); } for (const e of es) if (!e.ranged && B.rng.next() < 0.6) e.target = h.i; break;
     case 'stun': { const list = within(es, h, 120); for (const e of list) e.stunUntil = B.t + 1.2 * (e.boss ? 0.5 : 1); ev.x = h.x; ev.y = h.y; strike(list); break; }
