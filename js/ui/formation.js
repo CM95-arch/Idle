@@ -29,10 +29,9 @@ export function formationEditor({ onChange, openClass, compact = false } = {}) {
         : h('small', { class: 'dim' }, picked ? 'Move here' : 'Empty'));
     };
     const tank = s.party.find((c) => CLASSES[c].role === 'tank');
-    const tip = picked ? `Now tap a spot for the ${CLASSES[picked].name}${openClass ? ' (or tap them again for details)' : ''}.`
-      : tank && form[1] !== tank ? `Tip: your ${CLASSES[tank].name} is a tank. Tanks hold the line best from the Front.`
-        : 'Tap a hero, then a spot, to move them. The Front spot meets the horde first.';
-    root.replaceChildren(h('div', { class: 'ffield' }, spot(1), spot(0), spot(2)), h('div', { class: `ftip${tank && form[1] !== tank && !picked ? ' warn' : ''}` }, tip));
+    // only say something when it helps: where to tap next, or a tank standing out of place
+    const tip = picked ? `Tap a spot for the ${CLASSES[picked].name}` : tank && form[1] !== tank ? `${CLASSES[tank].name}s hold the line best from the Front` : '';
+    root.replaceChildren(h('div', { class: 'ffield' }, spot(1), spot(0), spot(2)), ...(tip ? [h('div', { class: `ftip${picked ? '' : ' warn'}` }, tip)] : []));
   }
   render();
   return { el: root, render };

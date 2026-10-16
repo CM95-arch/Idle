@@ -48,7 +48,7 @@ const TABS = [
 ];
 let current = 'battle';
 const screens = {
-  battle: createBattleScreen($('#scr-battle'), { onFame, openClass: (c) => openClassSheet(c, refresh), onDrop: (it, r) => setTimeout(() => showUnique(it, seeItem, r?.dupe), 1700) }),
+  battle: createBattleScreen($('#scr-battle'), { goParty: () => go('party'), onFame, openClass: (c) => openClassSheet(c, refresh), onDrop: (it, r) => setTimeout(() => showUnique(it, seeItem, r?.dupe), 1700) }),
   party: createPartyScreen($('#scr-party')),
   gear: createGearScreen($('#scr-gear'), { onChange: refresh }),
   map: createMapScreen($('#scr-map'), { goBattle: () => go('battle') }),
@@ -103,7 +103,7 @@ const TOUR = [
   { target: () => $('.lvmode .chip'), title: 'Buy ×1, ×10, Max', text: 'Tap to switch how many levels or potions each press buys.' },
   { target: tab('party'), title: 'Party', text: 'All your classes. Leveling unlocks new ones: Wizard level 5 unlocks the Priest, and so on. Up to three fight at once, and you can swap them any time.' },
   { target: tab('gear'), title: 'Gear', text: 'The only loot is Uniques: named items with special powers, guarded by each zone’s boss. Their bonuses are percentages, so they never go stale. Each class wears its own kinds (Wizards: staves, robes, spells, rings). A repeat find upgrades the copy you have.' },
-  { target: tab('map'), title: 'Map', text: 'The whole Realm, from the Beaches to Oryx’s Castle, and after Oryx the optional Lost Halls and Shatters. Tap any stage you’ve cleared to farm it.' },
+  { target: tab('map'), title: 'Map', text: 'The Realm’s biomes, and the dungeons that open each time you defeat Oryx. Tap any stage you’ve cleared to farm it.' },
   { target: tab('ascend'), title: 'Ascend', text: 'Defeat Oryx the Mad God to Ascend: start over in a harder Realm with permanent bonuses that keep stacking.' },
   { title: 'While you’re away', text: 'Your party keeps fighting for up to 8 hours when the game is closed. Come back to collect what they earned. Good luck, hero.', done: 'Begin' },
 ];

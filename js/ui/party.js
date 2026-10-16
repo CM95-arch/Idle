@@ -31,7 +31,7 @@ export function openClassSheet(cls, onChange) {
       const better = s.inv.some((x) => fits(cls, x) && slotOf(x) === slot && (!it || itemScore(x) > itemScore(it)));
       return h('div', {},
         itemTile(it, { upFor: false, who: false, label: '+', onclick: () => openSlotSheet(cls, slot, () => { rerender(); onChange?.(); }) }),
-        h('div', { class: 'lab' }, SLOT_NAME[slot], better ? h('span', { class: 'delta-up' }, ' ▲') : null));
+        h('div', { class: 'lab' }, it ? SLOT_NAME[slot] : KIND_NAME[kindFor(cls, slot)] || SLOT_NAME[slot], better ? h('span', { class: 'delta-up' }, ' ▲') : null));
     };
     const partyAction = inParty
         ? h('button', { class: 'btn alt block', disabled: s.party.length <= 1, onclick: () => { G.removeFromParty(cls); tap(); onChange?.(); close(); } }, s.party.length <= 1 ? 'Your only hero' : 'Remove from party')
@@ -51,7 +51,6 @@ export function openClassSheet(cls, onChange) {
       h('div', { class: 'row between' }, h('div', { class: 'h2', style: { margin: 0 } }, 'Gear'),
         h('button', { class: 'btn sm', disabled: !s.inv.some((x) => G.isUpgradeFor(cls, x)), onclick: () => { const n = G.equipBest(cls); tap('equip'); toast({ title: n ? `Equipped ${n} upgrade${n === 1 ? '' : 's'}` : 'Nothing better in your bag', kind: n ? 'gold' : '' }); rerender(); onChange?.(); } }, 'Equip best')),
       h('div', { class: 'gslots' }, SLOTS.map(slotTile)),
-      h('div', { class: 'dim center', style: { fontSize: '11px', fontWeight: 800 } }, `${C.name}s wear ${{ staff: 'staves', wand: 'wands', bow: 'bows', dagger: 'daggers', sword: 'swords' }[C.weapon]}, ${{ robe: 'robes', leather: 'leather armor', heavy: 'heavy armor' }[C.armor]}, ${{ spell: 'spells', tome: 'tomes', quiver: 'quivers', cloak: 'cloaks', helm: 'helms', shield: 'shields', trap: 'traps', skull: 'skulls', poison: 'poisons', seal: 'seals', scepter: 'scepters' }[C.abilityItem]} and rings. Tap a slot to choose.`),
       statPanel(cls, rerender, onChange),
       h('div', { class: 'panel stats' },
         stat('HP', fmt(st.hp)), stat('Attack', fmt(st.atk)), stat('Defense', fmt(st.def)), stat('Fire rate', `${st.spd.toFixed(1)} shots/s`),
@@ -61,12 +60,14 @@ export function openClassSheet(cls, onChange) {
       h('div', { class: 'panel' },
         h('div', { class: 'row between' }, h('b', {}, `✦ ${C.ability.name}`), h('small', { class: 'dim', style: { fontWeight: 800 } }, `every ${C.ability.cd}s`)),
         h('div', { class: 'muted', style: { fontSize: '13px', marginTop: '4px' } }, abilityText(cls, st.pow)),
-        C.role === 'tank' ? h('div', { class: 'dim', style: { fontSize: '12px', marginTop: '6px', fontWeight: 700 } }, `Tank: takes ${Math.round(BAL.tankGuard * 100)}% less damage and draws enemy fire while above ${Math.round(BAL.tankFallback * 100)}% HP.`) : null),
+        C.role === 'tank' ? h('div', { class: 'dim', style: { fontSize: '12px', marginTop: '6px', fontWeight: 700 } }, `Tank · draws the horde and takes ${Math.round(BAL.tankGuard * 100)}% less damage`) : null),
       inParty ? partyAction : null,
     ];
   });
   return sheet;
 }
+// what goes in an empty slot, by the class's gear kinds
+const KIND_NAME = { staff: 'Staff', wand: 'Wand', bow: 'Bow', dagger: 'Dagger', sword: 'Sword', robe: 'Robe', leather: 'Leather', heavy: 'Plate', ring: 'Ring', spell: 'Spell', tome: 'Tome', quiver: 'Quiver', cloak: 'Cloak', helm: 'Helm', shield: 'Shield', trap: 'Trap', skull: 'Skull', poison: 'Poison', seal: 'Seal', scepter: 'Scepter' };
 const stat = (k, v) => h('div', { class: 'stat' }, h('span', {}, k), h('b', { class: 'tnum' }, v));
 
 /** Pick gear for one class's slot: what's on now, and everything in the bag that fits. */
@@ -80,13 +81,13 @@ export function openSlotSheet(cls, slot, onChange) {
         h('div', { class: 'row' },
           h('div', { style: { width: '64px', flex: 'none' } }, itemTile(cur, { upFor: false, who: false, onclick: () => openItemSheet(cur.id, () => { rerender(); onChange?.(); }) })),
           h('div', { class: 'grow' }, h('b', { style: { color: BAL.rarities[cur.rarity].color } }, `${cur.name}${cur.up ? ` +${cur.up}` : ''}`),
-            h('div', { class: 'dim', style: { fontSize: '12px', fontWeight: 800 } }, `Equipped · upgrades ${cur.up} / ${BAL.rarities[cur.rarity].maxUp} · tap the icon for stats`))),
+            h('div', { class: 'dim', style: { fontSize: '12px', fontWeight: 800 } }, `Upgrades ${cur.up} / ${BAL.rarities[cur.rarity].maxUp}`))),
         h('div', { class: 'row' },
           h('button', { class: 'btn grow sm', disabled: !canUpgrade(cur) || s.fame < upgradeCost(cur), onclick: () => { if (G.upgrade(cur.id)) { tap('upgrade'); rerender(); onChange?.(); } } },
             canUpgrade(cur) ? [h('span', {}, `Upgrade to +${cur.up + 1}`), coin(upgradeCost(cur))] : 'Fully upgraded'),
           h('button', { class: 'btn alt sm', onclick: () => { if (G.unequip(cls, slot)) { tap(); rerender(); onChange?.(); } else toast({ title: 'Your bag is full', body: 'Salvage something first.' }); } }, 'Remove')))
         : h('div', { class: 'panel center dim' }, 'Nothing equipped'),
-      h('div', { class: 'h2' }, options.length ? `In your bag (${options.length})` : 'No fitting gear in your bag yet'),
+      h('div', { class: 'h2' }, options.length ? `Vault · ${options.length}` : 'Nothing in the vault fits'),
       h('div', { class: 'igrid' }, options.map((it) => h('div', {},
         itemTile(it, { upFor: false, who: false, onclick: () => { close(); const ok = G.equip(cls, it.id); tap('equip'); if (ok) toast({ title: `Equipped on ${CLASSES[cls].name}`, body: it.name, kind: 'gold' }); onChange?.(); } }),
         h('div', { class: 'center', style: { fontSize: '10px', fontWeight: 900, marginTop: '2px' } }, !cur ? h('span', { class: 'delta-up' }, 'NEW') : itemScore(it) > itemScore(cur) ? h('span', { class: 'delta-up' }, '▲ better') : h('span', { class: 'dim' }, 'weaker'))))),
@@ -113,7 +114,7 @@ export function createPartyScreen(root) {
       formationEditor({ onChange: render, openClass: (c) => openClassSheet(c, render) }).el,
       h('div', { class: 'h2' }, `Classes · ${Object.keys(s.classes).length} / ${CLASS_IDS.length}`),
       h('div', { class: 'grid3' }, cards),
-      h('p', { class: 'dim center', style: { fontSize: '12px', fontWeight: 700 } }, 'Tap a class for its stats, potions and gear, and to swap it into the party. Classes keep their levels when you swap them.'));
+      );
   }
   return { render, frame() {} , close: closeSheet };
 }

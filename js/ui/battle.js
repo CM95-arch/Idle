@@ -1,6 +1,6 @@
 // The main screen: the live battle, where you are, and the party's upgrades: levels and stat potions.
 import { CLASSES } from '../data/classes.js';
-import { zoneOf, stageLabel, isBoss, realmName } from '../data/zones.js';
+import { zoneOf, stageLabel, isBoss } from '../data/zones.js';
 import * as G from '../core/game.js';
 import { TICK } from '../core/battle.js';
 import { BattleView, VW, VH } from './battleView.js';
@@ -13,7 +13,7 @@ import { play } from './sound.js';
 
 const MODES = [1, 10, 'Max'];
 
-export function createBattleScreen(root, { onFame, openClass, onDrop }) {
+export function createBattleScreen(root, { onFame, openClass, onDrop, goParty }) {
   let view = null, cv = null, acc = 0, endT = 0, mode = 0, refs = {}, slow = 0, visible = true;
 
   function levelCount(cls) {
@@ -69,7 +69,7 @@ export function createBattleScreen(root, { onFame, openClass, onDrop }) {
       refs.dock = h('div', { class: 'dock' },
         h('div', { class: 'lvmode' },
           h('button', { class: 'chip', onclick: () => { tap(); openFormationSheet(() => update(true), openClass); } }, '⇄ Formation'),
-          h('small', { class: 'dim grow center', style: { fontWeight: 800, fontSize: '11px' } }, 'Hold any button to keep buying'),
+
           refs.mode = h('button', { class: 'chip on', onclick: () => { mode = (mode + 1) % MODES.length; tap(); update(true); } }, ''))));
     buildDock();
     view = new BattleView(cv);
@@ -86,9 +86,10 @@ export function createBattleScreen(root, { onFame, openClass, onDrop }) {
     if (force) for (const el of [refs.where, refs.power, refs.auto, refs.mode, refs.tabs]) el._sig = null;
     const s = G.state, Z = zoneOf(s.stage), boss = isBoss(s.stage);
     const walled = s.flags.wallAt != null && s.stage === s.best && s.best < G.LAST_STAGE && s.autoPush && !zoneOf(s.stage).dungeon;
-    const where = `${Z.name} ${stageLabel(s.stage)}${boss ? ' ☠' : ''}`;
-    const sub = walled ? `Farming · ${stageLabel(s.flags.wallAt)} needs more power` : Z.dungeon ? `Dungeon tier ${Z.tier} · ${boss ? `${Z.boss[0]}` : `cleared ${G.dungeonProgress(Z)}/${Z.len}`}` : `${s.realm ? `${realmName(s.realm)} · ` : ''}${boss ? 'Boss stage' : `Best ${s.best >= 0 ? stageLabel(s.best) : '—'}`}`;
-    patch(refs.where, where + sub, () => [h('b', {}, where), h('small', { class: walled ? 'walled' : '' }, sub)]);
+    // the zone's name on its own line (it can be long), then the stage and where you stand
+    const sub = walled ? `needs more power` : boss ? Z.boss[0] : Z.dungeon ? `Tier ${Z.tier} · cleared ${G.dungeonProgress(Z)}/${Z.len}` : `Best ${s.best >= 0 ? stageLabel(s.best) : '—'}`;
+    patch(refs.where, Z.name + stageLabel(s.stage) + sub + walled, () => [h('small', { class: 'zn' }, Z.name),
+      h('div', { class: 'st' }, h('b', {}, stageLabel(s.stage), boss ? ' ☠' : ''), h('small', { class: walled ? 'walled' : boss ? 'bossn' : '' }, walled ? `${stageLabel(s.flags.wallAt)} ${sub}` : sub))]);
     const pw = fmt(G.partyPower()), need = G.stagePower(s.stage), ok = G.partyPower() >= need;
     patch(refs.power, `${pw}|${need}|${ok}`, () => ['⚔ ', h('span', { class: ok ? 'ok' : 'low' }, pw), h('span', { class: 'dim' }, ` / ${fmt(need)}`)]);
     refs.auto.classList.toggle('on', s.autoPush);
@@ -102,7 +103,7 @@ export function createBattleScreen(root, { onFame, openClass, onDrop }) {
     const tabSig = party.map((c) => `${c}:${s.classes[c].lv}:${G.maxedCount(c)}:${STATS.map((x) => G.potions(c, x)).join('.')}:${c === cur}:${canAny(c)}`).join('|');
     patch(refs.tabs, tabSig, () => [0, 1, 2].map((i) => {
       const c = party[i];
-      if (!c) return h('div', { class: 'htab empty' }, h('small', {}, 'Empty'), h('small', { class: 'dim' }, 'Unlock classes'));
+      if (!c) return h('button', { class: 'htab empty', 'aria-label': 'Add a hero', onclick: () => { tap(); goParty?.(); } }, '+');
       const n8 = G.maxedCount(c);
       return h('button', { class: `htab${c === cur ? ' on' : ''}${canAny(c) ? ' ready' : ''}`, onclick: () => { if (c === cur) openClass(c); else { selC = c; tap(); update(); } } },
         h('div', { class: 'tp' }, portrait(c, 40)),

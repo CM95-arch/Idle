@@ -44,21 +44,16 @@ export function createAscendScreen(root, { onAscend }) {
         oryx(170),
         h('h2', {}, ready ? 'Oryx has fallen' : 'Defeat Oryx'),
         h('div', { class: 'muted', style: { fontWeight: 700, fontSize: '13px' } }, ready
-          ? `Ascend to ${realmName(P.realm)}: a harder Realm that pays ${BAL.realmFame}× the Fame, with permanent bonuses that stack forever. Your dungeons (tier ${G.dungeonTier()}) stay open: farm them first if you like.`
-          : `Reach and defeat Oryx the Mad God at the end of the Realm (stage ${stageLabel(STAGE_COUNT - 1)}) to Ascend. Best so far: ${s.best >= 0 ? stageLabel(s.best) : '—'}.`),
+          ? `${realmName(P.realm)} awaits: stronger foes, ${BAL.realmFame}× the Fame.`
+          : `Best ${s.best >= 0 ? stageLabel(s.best) : '—'} · Oryx waits at ${stageLabel(STAGE_COUNT - 1)}`),
         h('div', { class: 'pbar', style: { marginTop: '12px', height: '8px' } }, h('i', { style: { width: `${((s.best + 1) / STAGE_COUNT) * 100}%`, background: 'linear-gradient(90deg,#9b6bff,#ffd34d)' } })),
-        h('div', { class: 'gainlist' }, next.map(([k, v, d]) => h('div', { class: 'gain' }, h('small', {}, `Ascension ${P.n}: ${k}`), h('b', {}, v), h('small', {}, d))))),
+        h('div', { class: 'gainlist' }, next.map(([k, v]) => h('div', { class: 'gain' }, h('small', {}, k), h('b', {}, v))))),
       h('div', { class: 'h2' }, 'Your permanent bonuses'),
       h('div', { class: 'panel stats' }, now.map(([k, v]) => h('div', { class: 'stat' }, h('span', {}, k), h('b', {}, v))),
         h('div', { class: 'stat' }, h('span', {}, 'Ascensions'), h('b', {}, `${s.ascensions}`)), h('div', { class: 'stat' }, h('span', {}, 'Realm'), h('b', {}, realmName(s.realm)))),
-      h('div', { class: 'h2' }, 'What Ascending resets'),
-      h('div', { class: 'panel', style: { fontSize: '13px', fontWeight: 700, lineHeight: 1.5 } },
-        h('div', {}, '↺ Stage progress and Fame'),
-        h('div', {}, `↺ Stat potions: every class keeps ${Math.round(BAL.keepPotions * 100)}% of the potions it drank`),
-        h('div', {}, '↺ Every class goes back to level 1'),
-        h('div', { class: 'gold' }, `✓ Dungeons you’ve unlocked (tier ${G.dungeonTier()} of ${TIERS}) and your progress in each`),
-        h('div', { class: 'gold' }, '✓ Every class you’ve unlocked, and all bonuses above'),
-        h('div', { style: { color: '#ffffff' } }, '✦ Your Uniques, worn ones staying on (their upgrades reset)')),
+      h('div', { class: 'keeps' },
+        h('div', { class: 'panel' }, h('b', { class: 'gold' }, '✓ Kept'), ...['Classes and bonuses', 'Uniques (upgrades reset)', `Dungeons · tier ${G.dungeonTier()}/${TIERS}`, `${Math.round(BAL.keepPotions * 100)}% of potions`].map((t) => h('div', {}, t))),
+        h('div', { class: 'panel' }, h('b', { class: 'dim' }, '↺ Reset'), ...['Stages and Fame', 'Levels, back to 1', 'Most potions'].map((t) => h('div', {}, t)))),
       h('div', { style: { marginTop: '14px' } }, ready ? holdButton(`Hold to Ascend to ${realmName(P.realm)}`, () => { play('ascend'); G.ascend(); onAscend?.(P); render(); }) : h('button', { class: 'btn violet block', disabled: true }, '🔒 Defeat Oryx first')));
     void tap;
   }

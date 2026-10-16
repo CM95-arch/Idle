@@ -48,5 +48,5 @@ export function statPanel(cls, rerender, onChange) {
       h('b', {}, 'Stats ', h('span', { class: `eight${n8 === 8 ? ' full' : ''}` }, `${n8}/8`)),
       h('button', { class: 'chip on', onclick: () => { mode = (mode + 1) % MODES.length; tap(); rerender(); } }, `Drink ×${MODES[mode]}`)),
     h('div', { class: 'pots' }, STATS.map(cell)),
-    h('div', { class: 'dim', style: { fontSize: '11px', fontWeight: 800, marginTop: '6px' } }, 'Each potion raises a stat toward this class’s max. Max all eight (8/8) before Oryx’s Castle. Stats reset when you Ascend.'));
+    );
 }

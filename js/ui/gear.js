@@ -41,7 +41,7 @@ export function openItemSheet(id, onChange) {
           h('div', { style: { fontWeight: 900, fontSize: '18px', color: uniqueOf(it)?.exalted ? '#ffe08a' : R.color } }, `${it.name}${it.up ? ` +${it.up}` : ''}`),
           h('div', { class: 'muted', style: { fontWeight: 800, fontSize: '12px' } }, `${uniqueOf(it)?.exalted ? 'Exalted Unique' : 'Unique'} ${SLOT_NAME[slot]} · from ${ZONE_BY_ID[uniqueOf(it)?.src]?.boss[0] || 'a boss'}`),
           wornBy ? h('div', { class: 'gold', style: { fontWeight: 800, fontSize: '12px' } }, `Worn by ${CLASSES[wornBy].name}`) : null)),
-      uniqueOf(it) ? h('div', { class: 'panel ufx' }, h('b', {}, '✦ Unique effect'), h('div', { style: { fontSize: '14px', fontWeight: 700, marginTop: '2px' } }, uniqueOf(it).desc), h('div', { class: 'dim', style: { fontSize: '11px', fontWeight: 800, marginTop: '4px' } }, 'Its bonuses are percentages, so it grows with your heroes and never goes stale. Kept when you Ascend (upgrades reset).')) : null,
+      uniqueOf(it) ? h('div', { class: 'panel ufx' }, h('b', {}, '✦ Unique effect'), h('div', { style: { fontSize: '14px', fontWeight: 700, marginTop: '2px' } }, uniqueOf(it).desc), null) : null,
       h('div', { class: 'panel stats', style: { gridTemplateColumns: '1fr' } }, statRows(it)),
       !wornBy && owners.length ? h('div', {}, h('div', { class: 'h2', style: { marginTop: 0 } }, 'Equip on'),
         ...owners.map((c) => {
@@ -50,13 +50,12 @@ export function openItemSheet(id, onChange) {
             h('div', { class: 'grow' }, h('b', {}, CLASSES[c].name), h('div', { style: { fontSize: '12px', fontWeight: 800 } }, cur ? h('span', { class: better ? 'delta-up' : 'delta-down' }, better ? '▲ Better than current' : '▼ Weaker than current') : h('span', { class: 'delta-up' }, 'Empty slot'))),
             h('button', { class: `btn sm${better ? '' : ' alt'}`, onclick: () => { close(); const ok = G.equip(c, it.id); tap('equip'); toast(ok ? { title: `Equipped on ${CLASSES[c].name}`, body: cur ? `${it.name} on, ${cur.name} back in your bag.` : it.name, kind: 'gold' } : { title: 'Couldn’t equip that', body: 'It may have already been equipped.' }); onChange?.(); } }, 'Equip'));
         })) : null,
-      !wornBy && !owners.length ? h('div', { class: 'panel center', style: { fontSize: '13px', fontWeight: 700 } }, h('div', { class: 'muted' }, `Worn by ${listNames(G.wearers(it))}. You haven’t unlocked ${G.wearers(it).length > 1 ? 'any of them' : 'them'} yet.`), h('div', { class: 'dim', style: { marginTop: '4px' } }, 'Keep it for later, or salvage it for Fame.')) : null,
-      !wornBy && owners.length ? h('div', { class: 'dim center', style: { fontSize: '11px', fontWeight: 800 } }, `${KIND_LABEL(it)} are worn by ${listNames(G.wearers(it))}.`) : null,
+      !wornBy && !owners.length ? h('div', { class: 'panel center', style: { fontSize: '13px', fontWeight: 700 } }, h('div', { class: 'muted' }, `For ${listNames(G.wearers(it))}: not unlocked yet`)) : null,
       h('div', { class: 'row' },
         h('button', { class: 'btn grow', disabled: !canUpgrade(it) || G.state.fame < upgradeCost(it), onclick: () => { if (G.upgrade(it.id)) { tap('upgrade'); rerender(); onChange?.(); } } },
           canUpgrade(it) ? [h('span', {}, `Upgrade +${it.up + 1}`), coin(upgradeCost(it))] : 'Fully upgraded'),
         !wornBy ? h('button', { class: 'btn alt', onclick: () => { const v = G.salvage([it.id]); tap('fame'); toast({ title: `+${fmt(v)} Fame`, body: `Salvaged ${it.name}`, kind: 'gold' }); onChange?.(); close(); } }, h('span', {}, 'Salvage'), coin(salvageValue(it))) : null),
-      h('div', { class: 'dim center', style: { fontSize: '11px', fontWeight: 800 } }, `Upgrades ${it.up} / ${R.maxUp} · each adds ${Math.round(BAL.upgradeStep * 100)}% to its bonus · duplicates add ${BAL.dupeUpgrades}`),
+      h('div', { class: 'dim center', style: { fontSize: '11px', fontWeight: 800 } }, `Upgrades ${it.up} / ${R.maxUp} · a duplicate adds ${BAL.dupeUpgrades}`),
     ];
   });
 }
@@ -102,18 +101,13 @@ export function createGearScreen(root, { onChange }) {
       h('div', { class: 'row between' }, h('div', { class: 'h1' }, 'Uniques'),
         h('button', { class: 'chip', onclick: openCollection }, `✦ ${found} / ${UNIQUES.length} found`)),
       h('div', { class: 'row', style: { overflowX: 'auto', paddingBottom: '4px' } }, FILTERS.map(([k, l]) => h('button', { class: `chip${k === filter ? ' on' : ''}`, onclick: () => { filter = k; tap(); render(); } }, l))),
-      h('div', { class: 'row between', style: { margin: '14px 2px 8px' } }, h('div', { class: 'h2', style: { margin: 0 } }, sel ? 'Tap Uniques to salvage them' : `Vault · ${items.length}`),
+      h('div', { class: 'row between', style: { margin: '14px 2px 8px' } }, h('div', { class: 'h2', style: { margin: 0 } }, sel ? 'Choose what to salvage' : `Vault · ${items.length}`),
         !sel && items.length ? h('small', { class: 'dim', style: { fontWeight: 800, fontSize: '11px' } }, h('span', { class: 'delta-up' }, '▲'), ' better for your party') : null),
       items.length ? h('div', { class: 'igrid' }, items.map(tile))
-        : h('div', { class: 'panel center muted' }, s.inv.length ? 'Nothing in this category.' : 'No spare Uniques. A few Realm bosses and every dungeon boss guard them. Worn ones live on your heroes.'),
-      sel ? salvageBar(items) : h('div', {},
-        h('div', { class: 'row', style: { marginTop: '14px' } },
+        : h('div', { class: 'panel center muted' }, s.inv.length ? 'Nothing in this category.' : 'No spare Uniques yet. Bosses guard them.'),
+      sel ? salvageBar(items) : h('div', { class: 'row', style: { marginTop: '14px' } },
           h('button', { class: 'btn grow sm', disabled: !G.bestUpgrades(), onclick: () => { let n = 0; for (const c of s.party) n += G.equipBest(c); tap('equip'); toast({ title: n ? `Equipped ${n} Unique${n === 1 ? '' : 's'}` : 'Nothing better to equip', kind: n ? 'gold' : '' }); render(); onChange?.(); } }, 'Equip best for party'),
-          h('button', { class: 'btn alt sm', disabled: !s.inv.length, onclick: startSalvage }, 'Salvage')),
-        h('button', { class: 'btn alt block sm', style: { marginTop: '8px' }, onclick: openCollection }, 'Collection: every Unique and where it drops'),
-        h('p', { class: 'dim center', style: { fontSize: '12px', fontWeight: 700, lineHeight: 1.45 } },
-          'Uniques are the only loot. Their bonuses are percentages, so they grow with your heroes and never go stale. ',
-          `Find one you already own and it melts into your copy as +${BAL.dupeUpgrades} upgrades. They stay with you when you Ascend.`)));
+          h('button', { class: 'btn alt sm', disabled: !s.inv.length, onclick: startSalvage }, 'Salvage')));
   }
   return { render, frame() {} };
 }
@@ -125,7 +119,7 @@ export function openCollection() {
     const found = G.state.uniques;
     return [
       h('div', { class: 'pixel center', style: { fontSize: '22px' } }, 'Uniques'),
-      h('div', { class: 'muted center', style: { fontSize: '13px', fontWeight: 700 } }, `${Object.keys(found).length} of ${UNIQUES.length} found. Each drops only where it does in the real game: a few from Realm bosses, the rest from dungeon bosses. Exalted Uniques are rarer still.`),
+      h('div', { class: 'muted center', style: { fontSize: '13px', fontWeight: 700 } }, `${Object.keys(found).length} of ${UNIQUES.length} found`),
       ...ZONES.filter((Z) => UNIQUES.some((U) => U.src === Z.id)).map((Z) => h('div', {},
         h('div', { class: 'h2' }, `${Z.dungeon ? `Tier ${Z.tier} · ` : ''}${Z.name} · ${Z.boss[0]}`),
         ...UNIQUES.filter((U) => U.src === Z.id).map((U) => {

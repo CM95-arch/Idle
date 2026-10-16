@@ -103,7 +103,7 @@ export function showUnique(it, onSee, dupe = null) {
       h('div', { class: 'muted', style: { fontWeight: 800, fontSize: '13px' } }, `Dropped by ${ZONE_BY_ID[U.src]?.boss[0] || 'a boss'}`),
       h('div', { class: 'panel', style: { textAlign: 'left' } }, h('b', { style: { color: '#6ff2ff' } }, '✦ Unique effect'), h('div', { style: { fontSize: '14px', fontWeight: 700, marginTop: '2px' } }, U.desc)),
       dupe ? h('div', { class: 'gold', style: { fontWeight: 900 } }, dupe.ups ? `Melted into your copy: +${dupe.ups} upgrade${dupe.ups === 1 ? '' : 's'} (now +${it.up})` : '', dupe.fame ? `${dupe.ups ? ' and ' : 'Your copy is maxed: '}+${fmt(dupe.fame)} Fame` : '') : null,
-      h('div', { class: 'dim', style: { fontSize: '12px', fontWeight: 800 } }, `Collection ${n} / ${UNIQUES.length} · Bonuses are percentages, so Uniques grow with your heroes. Kept when you Ascend.`),
+      h('div', { class: 'dim', style: { fontSize: '12px', fontWeight: 800 } }, `Collection ${n} / ${UNIQUES.length}`),
       h('div', { class: 'row' }, h('button', { class: 'btn alt grow', onclick: () => { close(); onSee?.(it); } }, 'View'), h('button', { class: 'btn grow', onclick: close }, 'Excellent')));
   });
 }
