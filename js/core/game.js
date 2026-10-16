@@ -439,8 +439,9 @@ export function collectOffline(now = Date.now()) {
 // ---------- Ascension ----------
 export function ascendPreview() {
   const n = state.ascensions + 1, g = BAL.ascendGain(n);
-  // every class starts again at level 1, keeping every potion it drank; the caps rise
-  return { n, gain: g, realm: state.realm + 1 };
+  // every class starts again at level 1 with a fifth of the potions it drank; every cap rises too
+  const keep = (C) => Object.fromEntries(Object.entries(C.pots || {}).map(([k, v]) => [k, Math.floor(v * BAL.keepPotions)]));
+  return { n, gain: g, realm: state.realm + 1, pots: Object.fromEntries(Object.entries(state.classes).map(([c, C]) => [c, keep(C)])) };
 }
 export function ascend() {
   if (!canAscend()) return false;
@@ -449,7 +450,7 @@ export function ascend() {
   state.mult.offline += P.gain * 0.15; state.mult.drops += P.gain * 0.3;
   state.ascensions = P.n; state.realm = P.realm;
   // Uniques are kept (worn ones stay on) but lose their upgrades; everything else is gone
-  for (const C of Object.values(state.classes)) { C.lv = 1; C.gear = Object.fromEntries(Object.entries(C.gear).filter(([, it]) => it?.u)); }
+  for (const [c, C] of Object.entries(state.classes)) { C.lv = 1; C.pots = P.pots[c]; C.gear = Object.fromEntries(Object.entries(C.gear).filter(([, it]) => it?.u)); }
   state.inv = state.inv.filter((it) => it.u); state.fame = 0;
   for (const it of [...state.inv, ...Object.values(state.classes).flatMap((C) => Object.values(C.gear))]) if (it) it.up = 0; state.stage = 0; state.best = -1; state.flags.wallAt = null;
   syncUniques();
