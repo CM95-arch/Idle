@@ -382,3 +382,12 @@ img.figure.locked { filter: brightness(0) opacity(.55); }
 .vname { font-size: 9.5px; font-weight: 800; line-height: 1.15; text-align: center; color: var(--ink-2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .vname.ex { color: #ffe08a; }
 .igrid { grid-template-columns: repeat(auto-fill, minmax(68px, 1fr)); row-gap: 10px; }
+/* dungeons on the map */
+.zone.dungeon { border-color: #4a3a6a; }
+.nodes.five { grid-template-columns: repeat(5, 1fr); }
+.zfoot { margin-top: 8px; font-size: 12px; font-weight: 800; color: #fff; opacity: .85; }
+.zdrops { margin-top: 4px; font-size: 11px; font-weight: 800; color: #e8dcff; opacity: .9; line-height: 1.35; }
+.tierhead { display: flex; flex-direction: column; gap: 1px; margin: 14px 2px 8px; }
+.tierhead b { font-family: var(--pixel); font-size: 16px; color: var(--gold-2); }
+.tierhead small { font-size: 11px; font-weight: 800; color: var(--ink-3); }
+.tierhead.locked b { color: var(--ink-3); }

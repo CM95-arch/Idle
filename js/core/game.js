@@ -2,7 +2,7 @@
 import { BAL } from '../data/balance.js';
 import { CLASSES, CLASS_IDS } from '../data/classes.js';
 import { SLOTS } from '../data/gear.js';
-import { STAGE_COUNT, STAGES_PER_ZONE, ZONES, MAIN_ZONES, END_STAGE, isBoss, isEndgame } from '../data/zones.js';
+import { STAGE_COUNT, TIERS, DUNGEONS, isBoss, zoneOf, localStage, levelOf } from '../data/zones.js';
 import { UNIQUES, UNIQUE } from '../data/uniques.js';
 import { makeRng } from './rng.js';
 import { STATS, potionsToMax } from '../data/stats.js';
@@ -12,10 +12,19 @@ import { createBattle, stepBattle, simulate, enemyStats, advanceStage, refreshHe
 
 const KEY = 'realm-idle-save-v1';
 export const LAST_STAGE = STAGE_COUNT - 1; // Oryx
-export { END_STAGE };
-/** The endgame dungeons open once Oryx falls; auto-push only goes into them after you've chosen to enter. */
-export const endgameOpen = () => state.best >= LAST_STAGE;
-const pushCap = () => (state.flags.endgame && endgameOpen() ? END_STAGE : LAST_STAGE);
+
+// ---------- dungeons ----------
+// Beating Oryx in Realm N unlocks dungeon tier N for good. Each dungeon remembers how far you've cleared it.
+export const dungeonTier = () => state.dtier || 0;
+export const dungeonOpen = (Z) => !!Z?.dungeon && Z.tier <= dungeonTier();
+const dBest = (Z) => state.dbest?.[Z.id] ?? -1;
+export const dungeonProgress = (Z) => dBest(Z) + 1;
+/** Can the party go to this stage? Realm stages up to the next one; dungeon stages in order once it's open. */
+export function canEnter(s) {
+  const Z = zoneOf(s);
+  if (!Z.dungeon) return s >= 0 && s <= Math.min(state.best + 1, LAST_STAGE);
+  return dungeonOpen(Z) && localStage(s) <= dBest(Z) + 1;
+}
 
 function fresh() {
   return {
@@ -30,6 +39,7 @@ function fresh() {
     settings: { sound: true },
     uniques: {}, // Unique id → how many you've found
     flags: {},
+    dtier: 0, dbest: {}, // dungeon tiers unlocked, and how far each dungeon is cleared (kept when you Ascend)
   };
 }
 export let state = fresh();
@@ -62,6 +72,16 @@ export function load() {
   rng = makeRng(state.seed);
   syncUniques();
   retireOldGear();
+  // the progression rework: old endgame stages (the Lost Halls and the Shatters were stages 70-89) are now
+  // dungeons; every Oryx you've beaten counts toward the dungeon tiers
+  if (!state.flags.prog2) {
+    state.flags.prog2 = true;
+    if (state.best > LAST_STAGE) state.best = LAST_STAGE;
+    if (state.stage > LAST_STAGE) state.stage = Math.max(0, state.best);
+    state.dtier = Math.min(TIERS, (state.ascensions || 0) + (state.best >= LAST_STAGE ? 1 : 0));
+    state.dbest = state.dbest || {};
+    delete state.flags.endgame;
+  }
   return state;
 }
 export function save() {
@@ -111,8 +131,10 @@ function checkUnlocks() {
 }
 
 // ---------- leveling ----------
-export const levelCost = (cls) => BAL.levelCost(state.classes[cls].lv);
-export const levelCostForLevel = (lv) => BAL.levelCost(lv);
+// levels cost more in later Realms in step with the Fame those Realms pay, so each Realm is a real climb
+const realmCost = () => BAL.realmFame ** state.realm;
+export const levelCost = (cls) => BAL.levelCost(state.classes[cls].lv) * realmCost();
+export const levelCostForLevel = (lv) => BAL.levelCost(lv) * realmCost();
 export function levelUp(cls, times = 1) {
   let n = 0;
   while (n < times && state.fame >= levelCost(cls)) { state.fame -= levelCost(cls); state.classes[cls].lv++; n++; }
@@ -122,7 +144,7 @@ export function levelUp(cls, times = 1) {
 /** How many levels the current Fame buys (for "Max" buttons). */
 export function affordableLevels(cls) {
   let f = state.fame, lv = state.classes[cls].lv, n = 0;
-  while (f >= BAL.levelCost(lv)) { f -= BAL.levelCost(lv); lv++; n++; if (n > 500) break; }
+  while (f >= levelCostForLevel(lv)) { f -= levelCostForLevel(lv); lv++; n++; if (n > 500) break; }
   return n;
 }
 
@@ -255,14 +277,15 @@ export function bestUpgrades() {
 
 // ---------- rewards ----------
 function gainFame(n, earned = true) { state.fame += n; if (earned) state.stats.fameEarned += n; }
-// Oryx and the endgame bosses drop twice as often, and everything in the endgame drops a bit more
-const uniqueChance = (zone, boss) => (boss ? BAL.uniqueBoss * (zone >= MAIN_ZONES - 1 ? 2 : 1) : BAL.uniqueKill * (zone >= MAIN_ZONES ? BAL.endgameKillLuck : 1)) * (1 + luck());
-/** Maybe a Unique: the zone boss drops one now and then; its other enemies very rarely. */
+// Uniques drop only where they do in the real game: a few from Realm bosses, the rest from dungeon bosses (and,
+// very rarely, the rest of a dungeon's enemies)
+const poolOf = (Z) => UNIQUES.filter((u) => u.src === Z.id);
+const uniqueChance = (Z, boss) => (!poolOf(Z).length ? 0 : boss ? (Z.dungeon ? BAL.uniqueDungeonBoss : BAL.uniqueRealmBoss) : Z.dungeon ? BAL.uniqueKill : 0) * (1 + luck());
+/** Maybe a Unique from this stage's zone. */
 function rollUnique(stage, boss, force = false) {
-  const zone = Math.min(ZONES.length - 1, Math.floor(stage / STAGES_PER_ZONE));
-  if (!force && rng.next() >= uniqueChance(zone, boss)) return null;
+  const Z = zoneOf(stage), pool = poolOf(Z);
+  if (!pool.length || (!force && rng.next() >= uniqueChance(Z, boss))) return null;
   // ones you haven't found yet, and ones a class you own can wear, come up more often
-  const pool = UNIQUES.filter((u) => u.zone === zone);
   // Exalted ones are far rarer than the rest
   const w = pool.map((u) => (u.exalted ? BAL.exaltedWeight : 1) * (state.uniques[u.id] ? 1 : 3) * (Object.keys(state.classes).some((c) => fits(c, { kind: u.kind })) ? 2 : 1));
   let r = rng.next() * w.reduce((a, b) => a + b, 0), U = pool[0];
@@ -285,8 +308,8 @@ function rollUnique(stage, boss, force = false) {
   state.inv.push(it);
   return { it, salvaged: 0, unique: true, first, exalted: !!U.exalted };
 }
-const killFame = (stage) => BAL.fameKill(stage) * fameMult();
-const clearFame = (stage) => BAL.fameClear(stage) * fameMult() * (isBoss(stage) ? BAL.bossFame : 1);
+const killFame = (stage) => BAL.fameKill(levelOf(stage)) * fameMult();
+const clearFame = (stage) => BAL.fameClear(levelOf(stage)) * fameMult() * (isBoss(stage) ? BAL.bossFame : 1);
 
 // ---------- the live battle ----------
 export let battle = null;
@@ -303,15 +326,25 @@ function settle(events) {
       const f = killFame(state.stage) * (ev.boss ? 20 : ev.elite ? 4 : 1); gainFame(f); state.stats.kills++;
       const at = { x: ev.x, y: ev.y };
       out.push({ k: 'fame', n: f, id: ev.id, at });
-      // the only loot: Uniques, from bosses now and then, and very rarely from anything else (elites a bit more)
+      // the only loot: Uniques, from bosses now and then (and in dungeons, very rarely from anything else)
       const u = rollUnique(state.stage, ev.boss) || (ev.elite ? rollUnique(state.stage, false) : null);
       if (u) out.push({ k: 'drop', at, ...u });
     }
     if (ev.k === 'won') {
       const f = clearFame(state.stage); gainFame(f); state.stats.clears++;
       if (isBoss(state.stage)) state.stats.bosses++;
-      const first = state.stage > state.best;
-      if (first) { state.best = state.stage; syncUniques(); }
+      const Z = zoneOf(state.stage);
+      let first;
+      if (Z.dungeon) { first = localStage(state.stage) > dBest(Z); if (first) state.dbest[Z.id] = localStage(state.stage); }
+      else {
+        first = state.stage > state.best;
+        if (first) { state.best = state.stage; syncUniques(); }
+        // the first Oryx in each Realm opens the next tier of dungeons
+        if (first && state.stage === LAST_STAGE && state.realm + 1 > dungeonTier() && dungeonTier() < TIERS) {
+          state.dtier = Math.min(TIERS, state.realm + 1);
+          out.push({ k: 'dungeons', tier: state.dtier, names: DUNGEONS.filter((d) => d.tier === state.dtier).map((d) => d.name) });
+        }
+      }
       if (state.flags.wallAt != null && state.stage >= state.flags.wallAt) state.flags.wallAt = null;
       out.push({ k: 'clear', n: f, stage: state.stage, first });
     }
@@ -337,10 +370,17 @@ export function tickBattle() {
   return { events, rewards };
 }
 function pickNextStage(won) {
-  if (won && state.autoPush && state.stage === state.best && state.stage < pushCap()) state.stage++;
+  const Z = zoneOf(state.stage);
+  if (Z.dungeon) {
+    // a dungeon is run start to boss and then again from the top; a defeat steps back a stage
+    if (!won) state.stage = Math.max(Z.start, state.stage - 1);
+    else if (state.autoPush) state.stage = isBoss(state.stage) ? Z.start : state.stage + 1;
+    return;
+  }
+  if (won && state.autoPush && state.stage === state.best && state.stage < LAST_STAGE) state.stage++;
   else if (!won) { state.flags.wallPower = partyPower(); state.stage = Math.max(0, state.best); state.flags.wallAt = state.best + 1; }
   // after a wall, try again once the party has grown 8%
-  if (state.autoPush && state.flags.wallAt != null && state.stage === state.best && partyPower() >= state.flags.wallPower * 1.08 && state.best < pushCap()) { state.stage = state.best + 1; state.flags.wallAt = null; }
+  if (state.autoPush && state.flags.wallAt != null && state.stage === state.best && partyPower() >= state.flags.wallPower * 1.08 && state.best < LAST_STAGE) { state.stage = state.best + 1; state.flags.wallAt = null; }
 }
 /** Called by the UI once a finished battle's last effects have played. */
 /** Called by the UI after the party has fallen and the defeat has played out: regroup a stage back. */
@@ -350,8 +390,7 @@ export function nextBattle() {
   save();
 }
 export function goToStage(s) {
-  if (s < 0 || s > Math.min(state.best + 1, endgameOpen() ? END_STAGE : LAST_STAGE)) return;
-  if (isEndgame(s)) state.flags.endgame = true;
+  if (!canEnter(s)) return;
   state.stage = s; state.flags.wallAt = null; startBattle(); changed('stage');
 }
 export function setAutoPush(on) { state.autoPush = on; changed('auto'); }
@@ -374,19 +413,20 @@ export function collectOffline(now = Date.now()) {
   const raw = (now - state.lastSeen) / 1000, away = Math.min(raw, offlineCapH() * 3600);
   state.lastSeen = now;
   if (away < 60 || !state.party.length) return null;
-  const stage = Math.max(0, state.best);
+  // the party keeps farming where it is if that's a dungeon, else the Realm's furthest stage
+  const stage = zoneOf(state.stage).dungeon ? state.stage : Math.max(0, state.best);
   const r = farmRate(stage), eff = offlineEff();
   const fights = (away / r.secPerFight) * eff;
   const clears = fights * r.winRate;
   const fame = clears * (clearFame(stage) + r.kills * killFame(stage)) + (fights - clears) * r.kills * 0.5 * killFame(stage);
   gainFame(fame); state.stats.clears += Math.floor(clears); state.stats.kills += Math.floor(fights * r.kills);
   const salvaged = 0;
-  // Uniques: one roll per boss kill (or per wave on other stages), at most three
-  const uniques = [];
-  const zone = Math.min(ZONES.length - 1, Math.floor(stage / STAGES_PER_ZONE));
-  const expect = clears * ((isBoss(stage) ? uniqueChance(zone, true) : 0) + BAL.stageKills * uniqueChance(zone, false));
+  // Uniques: the rolls the fights would have made (a dungeon run meets its boss once per lap), at most three
+  const uniques = [], Z = zoneOf(stage);
+  const bossShare = isBoss(stage) ? 1 : Z.dungeon && state.autoPush ? 1 / Z.len : 0;
+  const expect = clears * (bossShare * uniqueChance(Z, true) + BAL.stageKills * uniqueChance(Z, false));
   const n = Math.min(3, Math.floor(expect) + (rng.next() < expect % 1 ? 1 : 0));
-  for (let i = 0; i < n; i++) uniques.push(rollUnique(stage, isBoss(stage), true));
+  for (let i = 0; i < n; i++) { const u = rollUnique(stage, bossShare > 0, true); if (u) uniques.push(u); }
   save(); changed('offline');
   return { away, capped: raw > away, fame, clears: Math.floor(clears), drops: uniques.map((u) => u.it), uniques, salvaged, stage };
 }
@@ -394,7 +434,9 @@ export function collectOffline(now = Date.now()) {
 // ---------- Ascension ----------
 export function ascendPreview() {
   const n = state.ascensions + 1, g = BAL.ascendGain(n);
-  return { n, gain: g, realm: state.realm + 1, levels: Object.fromEntries(Object.entries(state.classes).map(([c, C]) => [c, Math.max(BAL.realmStartLevel(state.realm + 1), Math.floor(C.lv * BAL.keepLevels))])) };
+  // every class starts again at level 1, keeping a share of the potions it drank
+  const keep = (C) => Object.fromEntries(Object.entries(C.pots || {}).map(([k, v]) => [k, Math.floor(v * BAL.keepPotions)]));
+  return { n, gain: g, realm: state.realm + 1, pots: Object.fromEntries(Object.entries(state.classes).map(([c, C]) => [c, keep(C)])) };
 }
 export function ascend() {
   if (!canAscend()) return false;
@@ -403,9 +445,9 @@ export function ascend() {
   state.mult.offline += P.gain * 0.15; state.mult.drops += P.gain * 0.3;
   state.ascensions = P.n; state.realm = P.realm;
   // Uniques are kept (worn ones stay on) but lose their upgrades; everything else is gone
-  for (const [c, C] of Object.entries(state.classes)) { C.lv = P.levels[c]; C.pots = {}; C.gear = Object.fromEntries(Object.entries(C.gear).filter(([, it]) => it?.u)); }
+  for (const [c, C] of Object.entries(state.classes)) { C.lv = 1; C.pots = P.pots[c]; C.gear = Object.fromEntries(Object.entries(C.gear).filter(([, it]) => it?.u)); }
   state.inv = state.inv.filter((it) => it.u); state.fame = 0;
-  for (const it of [...state.inv, ...Object.values(state.classes).flatMap((C) => Object.values(C.gear))]) if (it) it.up = 0; state.stage = 0; state.best = -1; state.flags.wallAt = null; state.flags.endgame = false;
+  for (const it of [...state.inv, ...Object.values(state.classes).flatMap((C) => Object.values(C.gear))]) if (it) it.up = 0; state.stage = 0; state.best = -1; state.flags.wallAt = null;
   syncUniques();
   rateCache.clear();
   startBattle(); save(); changed('ascend');

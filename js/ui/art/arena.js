@@ -179,7 +179,73 @@ const ZONE = {
       g.fillStyle = '#6a0a1e'; g.fillRect(140, 0, 80, AH); g.fillStyle = '#d8a830'; g.fillRect(140, 0, 4, AH); g.fillRect(216, 0, 4, AH);
       return [['pillar', 40, 140, 1.2, '#3a2e48'], ['pillar', 320, 140, 1.2, '#3a2e48'], ['pillar', 40, 330, 1.3, '#3a2e48'], ['pillar', 320, 330, 1.3, '#3a2e48'], ['brazier', 100, 80, 1, '#ff5a2a'], ['brazier', 260, 80, 1, '#ff5a2a'], ['brazier', 100, 250, 1, '#b05cff'], ['brazier', 260, 250, 1, '#b05cff'], ['banner', 76, 420, 1.1, '#6a0a1e'], ['banner', 268, 420, 1.1, '#6a0a1e']];
     } },
-  // ---- endgame dungeons ----
+  // ---- dungeon themes ----
+  cave: { ground: '#2a2420', lane: '#4a3e34', dark: 0.5, tint: '#0a0806',
+    paint(g, r) {
+      speckle(g, r, 300, '#1a1410', [1, 3]); speckle(g, r, 60, '#6a5a48', [1, 2]);
+      return [['rock', 30, 140, 1.4, '#4a4038'], ['rock', 330, 120, 1.3, '#4a4038'], ['rock', 26, 330, 1.5, '#4a4038'], ['rock', 334, 320, 1.4, '#4a4038'], ['crystal', 80, 230, 0.8, '#b05cff'], ['crystal', 290, 200, 0.7, '#5de0ff'], ['bones', 120, 400], ['bones', 260, 120], ['brazier', 70, 90, 1, '#ff9a3a'], ['brazier', 290, 380, 1, '#ff9a3a']];
+    } },
+  crypt: { ground: '#24262a', lane: '#3a3c44', dark: 0.52, tint: '#06080e',
+    paint(g, r) {
+      tiles(g, r, '#2c2e34', 'rgba(0,0,0,.45)');
+      return [['pillar', 30, 170, 1.1, '#4a4c54'], ['pillar', 330, 170, 1.1, '#4a4c54'], ['pillar', 30, 420, 1.2, '#4a4c54'], ['pillar', 330, 420, 1.2, '#4a4c54'], ['brazier', 90, 110, 1, '#5affc8'], ['brazier', 270, 110, 1, '#5affc8'], ['brazier', 76, 300, 1, '#5affc8'], ['brazier', 284, 300, 1, '#5affc8'], ['bones', 140, 220], ['bones', 230, 360], ['bones', 60, 240], ['ruin', 300, 250, 0.8, '#4a4c54']];
+    } },
+  abyss: { ground: '#2a1210', lane: '#4a1c14', dark: 0.42, tint: '#140404',
+    paint(g, r) {
+      tiles(g, r, '#301614', 'rgba(0,0,0,.4)');
+      for (let i = 0; i < 6; i++) { let x = r() * AW, y = r() * AH; g.strokeStyle = '#ff5a1a'; g.lineWidth = 2.6; g.shadowColor = '#ff8a3a'; g.shadowBlur = 8; g.beginPath(); g.moveTo(x, y); for (let k = 0; k < 5; k++) { x += (r() - 0.5) * 46; y += (r() - 0.3) * 30; g.lineTo(x, y); } g.stroke(); g.shadowBlur = 0; }
+      return [['pillar', 30, 180, 1.1, '#3a2220'], ['pillar', 330, 180, 1.1, '#3a2220'], ['rock', 40, 380, 1.3, '#3a2220'], ['rock', 320, 400, 1.2, '#3a2220'], ['brazier', 96, 120, 1, '#ff5a1a'], ['brazier', 264, 120, 1, '#ff5a1a'], ['brazier', 70, 300, 1.1, '#ff5a1a'], ['brazier', 290, 300, 1.1, '#ff5a1a'], ['bones', 150, 380]];
+    } },
+  lab: { ground: '#262c30', lane: '#3e484e', dark: 0.42, tint: '#060c0e',
+    paint(g, r) {
+      tiles(g, r, '#2e363c', 'rgba(120,255,160,.12)');
+      return [['crate', 40, 150, 1.1, '#5a6a72'], ['barrel', 320, 140, 1, '#4a7a5a'], ['crate', 34, 380, 1.2, '#5a6a72'], ['barrel', 326, 390, 1.1, '#4a7a5a'], ['lamp', 92, 110, 1, '#7aff8a'], ['lamp', 268, 110, 1, '#7aff8a'], ['lamp', 80, 300, 1, '#7ad0ff'], ['lamp', 280, 300, 1, '#7ad0ff'], ['crystal', 300, 250, 0.6, '#7aff8a']];
+    } },
+  sewer: { ground: '#22281c', lane: '#3a4230', dark: 0.48, tint: '#060a04',
+    paint(g, r) {
+      tiles(g, r, '#283020', 'rgba(0,0,0,.4)', 0, 110); tiles(g, r, '#283020', 'rgba(0,0,0,.4)', 250, AW);
+      const w = g.createLinearGradient(110, 0, 250, 0); w.addColorStop(0, '#2a4a14'); w.addColorStop(0.5, '#5a8a24'); w.addColorStop(1, '#2a4a14');
+      g.globalAlpha = 0.55; g.fillStyle = w; g.fillRect(118, 0, 124, AH); g.globalAlpha = 1;
+      speckle(g, r, 80, '#b0e06a', [1, 2.4], [120, 0, 120, AH]);
+      return [['barrel', 50, 160, 1, '#4a5a2a'], ['barrel', 310, 150, 1, '#4a5a2a'], ['bones', 60, 330], ['bones', 300, 360], ['lamp', 80, 90, 1, '#c0ff4a'], ['lamp', 280, 90, 1, '#c0ff4a'], ['rock', 40, 410, 1, '#3a4230'], ['rock', 320, 420, 1, '#3a4230']];
+    } },
+  docks: { ground: '#3a2c20', lane: '#5a4430', dark: 0.48, tint: '#08101a',
+    paint(g, r) {
+      // dark sea along the sides, wet planks down the middle
+      g.fillStyle = '#0e2a34'; g.fillRect(0, 0, 60, AH); g.fillRect(300, 0, 60, AH);
+      for (let y = 0; y < AH; y += 18) { g.fillStyle = y % 36 ? '#4a3626' : '#523c2a'; g.fillRect(60, y, 240, 17); g.fillStyle = 'rgba(0,0,0,.35)'; g.fillRect(60, y + 17, 240, 1); }
+      speckle(g, r, 90, '#7affd8', [0.6, 1.4], [0, 0, 60, AH]); speckle(g, r, 90, '#7affd8', [0.6, 1.4], [300, 0, 60, AH]);
+      return [['barrel', 80, 150, 1, '#5a4030'], ['crate', 280, 160], ['crate', 76, 380, 1.1], ['barrel', 286, 390, 1, '#5a4030'], ['lamp', 66, 260, 1, '#7affd8'], ['lamp', 294, 260, 1, '#7affd8'], ['banner', 100, 430, 1, '#1a3a4a']];
+    } },
+  sprite: { ground: '#1e3a34', lane: '#3a5a48', dark: 0.4, tint: '#04140e',
+    paint(g, r) {
+      speckle(g, r, 260, '#2a6a4a', [1, 2.6]); speckle(g, r, 70, '#ff9ad8', [1, 1.8]);
+      for (let i = 0; i < 40; i++) P.tuft(g, r() * AW, r() * AH, 1, '#3a8a5a');
+      return [['tree', 30, 140, 1.1, '#2a7a5a'], ['tree', 332, 120, 1, '#3a8a6a'], ['tree', 26, 330, 1.2, '#2a7a5a'], ['tree', 334, 320, 1.1, '#3a8a6a'], ['crystal', 90, 240, 0.8, '#5affc8'], ['crystal', 280, 230, 0.8, '#ff8ad8'], ['crystal', 180, 420, 0.6, '#5ae0ff'], ['rock', 300, 420, 0.9, '#3a5a4a']];
+    } },
+  ice: { ground: '#9ab8cc', lane: '#c8dce8', dark: 0.36, tint: '#081420',
+    paint(g, r) {
+      speckle(g, r, 260, '#e8f4ff', [1, 2.6]); speckle(g, r, 100, '#6a8aa8', [1, 2]);
+      return [['crystal', 40, 160, 1.3, '#8ad8ff'], ['crystal', 322, 140, 1.2, '#bfefff'], ['crystal', 34, 360, 1.4, '#8ad8ff'], ['crystal', 330, 350, 1.2, '#bfefff'], ['rock', 300, 420, 1, '#8aa8c0'], ['rock', 60, 420, 1, '#8aa8c0'], ['pine', 26, 260, 1, '#3a5a6a'], ['pine', 336, 250, 1, '#3a5a6a']];
+    } },
+  tomb: { ground: '#a08050', lane: '#c8a870', dark: 0.42, tint: '#140c04',
+    paint(g, r) {
+      tiles(g, r, '#a8885a', 'rgba(60,30,10,.35)');
+      speckle(g, r, 200, '#7a5a30', [0.8, 2]);
+      return [['pillar', 30, 170, 1.1, '#b8985a'], ['pillar', 330, 170, 1.1, '#b8985a'], ['pillar', 30, 420, 1.2, '#b8985a'], ['pillar', 330, 420, 1.2, '#b8985a'], ['brazier', 90, 110, 1, '#5de0ff'], ['brazier', 270, 110, 1, '#5de0ff'], ['ruin', 60, 300, 0.9, '#a88a5a'], ['ruin', 300, 290, 0.9, '#a88a5a'], ['bones', 180, 400]];
+    } },
+  trench: { ground: '#0e3040', lane: '#1a4a5a', dark: 0.38, tint: '#020c18',
+    paint(g, r) {
+      speckle(g, r, 260, '#08202c', [1, 3]); speckle(g, r, 80, '#5ad0e0', [0.6, 1.4]);
+      return [['rock', 34, 150, 1.3, '#2a4a5a'], ['rock', 326, 130, 1.2, '#2a4a5a'], ['crystal', 40, 330, 1.1, '#ff8ab0'], ['crystal', 320, 320, 1.1, '#ff8ab0'], ['crystal', 100, 230, 0.7, '#5ae0ff'], ['crystal', 270, 240, 0.7, '#5ae0ff'], ['rock', 300, 420, 1, '#2a4a5a'], ['rock', 60, 420, 1, '#2a4a5a']];
+    } },
+  temple: { ground: '#2a3a30', lane: '#4a5a4a', dark: 0.44, tint: '#060e08',
+    paint(g, r) {
+      tiles(g, r, '#304236', 'rgba(0,0,0,.35)', 80, 280);
+      speckle(g, r, 200, '#1a2a20', [1, 3]);
+      return [['pine', 24, 140, 1.2, '#2a5a3a'], ['pine', 336, 130, 1.2, '#2a5a3a'], ['pillar', 70, 330, 1.1, '#5a8a6a'], ['pillar', 290, 330, 1.1, '#5a8a6a'], ['brazier', 96, 110, 1, '#ffde3d'], ['brazier', 264, 110, 1, '#ffde3d'], ['banner', 40, 430, 1, '#8a1a1a'], ['banner', 316, 430, 1, '#8a1a1a'], ['rock', 330, 240, 1, '#4a5a4a']];
+    } },
+  // ---- the Lost Halls and the Shatters ----
   halls: { ground: '#6e6878', lane: '#b8b2c4', dark: 0.46, tint: '#0a0c22',
     paint(g, r) {
       // polished marble: big pale tiles with gold seams

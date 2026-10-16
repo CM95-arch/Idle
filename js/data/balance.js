@@ -23,9 +23,7 @@ export const BAL = {
   aoeRadius: 75, splashRadius: 60, // reach of area abilities and of splashing Unique weapons
   powerScale: 13,          // stage power requirement = this × √(enemy HP × ATK), calibrated with the fight sim
   bossHp: 60, bossAtk: 4, // boss multipliers over a normal enemy of its stage
-  // the endgame dungeons: each one multiplies enemy HP/ATK on top of the usual growth, so a party fresh from
-  // Oryx has to farm (levels, Unique upgrades) to get through them
-  dungeonHard: [4, 6], endgameKillLuck: 3, // Lost Halls ×4, the Shatters ×6
+  realmRamp: 30,          // a new Realm's extra strength phases in over its first 30 stages (dungeons: in full)
   realmGrowth: 2,          // each Realm (after an Ascension) multiplies enemy HP/ATK
   realmIlvl: 3,            // and adds this many item levels to drops
   // ---- rewards ----
@@ -48,9 +46,10 @@ export const BAL = {
   upgradeStep: 0.12,       // each upgrade adds 12% of a Unique's base bonus
   // Unique upgrades cost about as much as a few class levels at your stage (item level follows your best stage)
   upgradeCost: (ilvl, up) => Math.round(30 * 1.27 ** ilvl * 1.3 ** up),
-  salvage: (ilvl) => Math.round(25 * 1.27 ** ilvl),
-  uniqueBoss: 0.2,         // chance a zone boss drops one of its Uniques (Oryx: double)
-  uniqueKill: 0.00018,     // chance any other kill in the zone does (elites get a second roll)
+  salvage: (ilvl) => Math.round(3 * BAL.fameGrowth ** ilvl), // about half a stage clear: Uniques are for wearing, not selling
+  uniqueRealmBoss: 0.05,   // a Realm boss with real drops (the Grand Sphinx, the Keyper) drops one 1 time in 20
+  uniqueDungeonBoss: 0.06, // a dungeon boss drops one of its Uniques about 1 time in 16
+  uniqueKill: 0.00004,     // any other dungeon enemy, very rarely (Realm enemies never)
   utWeapon: 1.2,           // a Unique weapon hits this much harder than the tiered weapon its stats are measured against
   dupeUpgrades: 2,         // a Unique you already own melts into your copy as this many free upgrades
   exaltedWeight: 0.06,     // an Exalted Unique is this likely next to an ordinary one from the same boss
@@ -63,7 +62,5 @@ export const BAL = {
   // later. At the 0.4 floor the gains just about match a Realm's extra difficulty, so later runs hold steady.
   ascendFirst: 1.5, ascendDecay: 0.8, ascendDmg: 0.3,
   ascendGain: (n) => Math.max(0.4, BAL.ascendFirst * BAL.ascendDecay ** (n - 1)),
-  keepLevels: 0.25,        // classes keep a quarter of their levels when you Ascend,
-  // but never fewer than it takes to start the new Realm
-  realmStartLevel: (realm) => 3 + Math.ceil((realm * Math.log(BAL.realmGrowth)) / Math.log(BAL.levelGrowth.atk)),
+  keepPotions: 0.2,        // Ascending puts every class back to level 1; they keep a fifth of their potions
 };

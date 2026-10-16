@@ -5,7 +5,7 @@ import * as G from '../js/core/game.js';
 import { BAL } from '../js/data/balance.js';
 import { CLASSES } from '../js/data/classes.js';
 import { SLOTS } from '../js/data/gear.js';
-import { ZONES, STAGES_PER_ZONE, stageLabel } from '../js/data/zones.js';
+import { zoneOf, isBoss, stageLabel } from '../js/data/zones.js';
 import { TICK } from '../js/core/battle.js';
 import { STATS, potionsToMax } from '../js/data/stats.js';
 import { itemScore, slotOf, upgradeCost, canUpgrade, fits } from '../js/core/items.js';
@@ -13,7 +13,7 @@ import { itemScore, slotOf, upgradeCost, canUpgrade, fits } from '../js/core/ite
 // extra args like levelCostGrowth=1.13 override numbers in js/data/balance.js for this run
 const args = process.argv.slice(2).filter((a) => !a.includes('='));
 for (const a of process.argv.slice(2).filter((x) => x.includes('='))) { const [k, v] = a.split('='); BAL[k] = Number(v); }
-const POT = Number(process.env.POT || 1), ENDGAME = !!process.env.ENDGAME;
+const POT = Number(process.env.POT || 1);
 const HOURS = Number(args[0] || 24), ACTIVE = Number(args[1] || 20), AWAY = Number(args[2] || 120);
 G.resetAll();
 const S = () => G.state;
@@ -63,13 +63,11 @@ while (simT < HOURS * 3600) {
     if (G.battle.state !== 'fight') { G.nextBattle(); }
     if (mt > 20) {
       mt = 0; manage();
-      // ENDGAME=1: after Oryx, go into the Lost Halls and the Shatters, and only Ascend once the Forgotten King falls
-      if (ENDGAME && G.endgameOpen() && !S().flags.endgame) { G.goToStage(G.LAST_STAGE + 1); log('entering the Lost Halls'); }
-      if (G.canAscend() && (!ENDGAME || S().best >= G.END_STAGE)) { G.ascend(); log(`ASCENDED → Realm ${S().realm + 1}`); }
+      if (G.canAscend()) { G.ascend(); log(`ASCENDED → Realm ${S().realm + 1} (dungeon tier ${G.dungeonTier()})`); }
     }
     if ((S().stats.uniques || 0) !== lastU) { lastU = S().stats.uniques; const it = [...S().inv].reverse().find((x) => x.u); log(`UNIQUE #${lastU}: ${it?.name}`); }
     if (S().best !== lastBest) {
-      if (S().best >= 0 && (S().best + 1) % STAGES_PER_ZONE === 0 && (!process.env.QUIET || S().best >= 69)) log(`beat ${ZONES[Math.floor(S().best / STAGES_PER_ZONE)].boss[0]} (${stageLabel(S().best)}, realm ${S().realm + 1})  power ${G.partyPower()}  lv ${S().party.map((c) => `${c}:${S().classes[c].lv} ${G.maxedCount(c)}/8`).join(' ')}`);
+      if (S().best >= 0 && isBoss(S().best) && (!process.env.QUIET || S().best >= 69)) log(`beat ${zoneOf(S().best).boss[0]} (${stageLabel(S().best)}, realm ${S().realm + 1})  power ${G.partyPower()}  lv ${S().party.map((c) => `${c}:${S().classes[c].lv} ${G.maxedCount(c)}/8`).join(' ')}`);
       lastBest = S().best;
     }
   }

@@ -29,6 +29,12 @@ const AMBIENT = {
   halls: { n: 16, twinkle: 2, spawn: (f) => ({ x: rnd(0, 360), y: f ? rnd(0, 430) : 440, vx: rnd(-3, 3), vy: rnd(-12, -5), r: rnd(1.4, 2.6), c: '#8ad8ff', core: '#ffffff', a: 0.6, t: 0, life: rnd(8, 16), ph: rnd(0, 6) }) },
   shatters: { n: 22, wander: true, twinkle: 3, spawn: (f) => ({ x: rnd(0, 360), y: f ? rnd(0, 430) : 440, vx: rnd(-5, 5), vy: rnd(-16, -6), r: rnd(1.4, 3), c: '#a05aff', core: '#f0e0ff', a: 0.7, t: 0, life: rnd(6, 12), ph: rnd(0, 6) }) },
 };
+// the dungeons' air: snow, bubbles, and the Realm's own styles where they fit
+Object.assign(AMBIENT, {
+  ice: { n: 26, spawn: (f) => ({ x: rnd(-20, 360), y: f ? rnd(0, 430) : -10, vx: rnd(4, 12), vy: rnd(14, 30), r: rnd(1, 2.4), c: '#ffffff', a: 0.7, t: 0, life: rnd(10, 20), ph: rnd(0, 6) }) },
+  trench: { n: 18, spawn: (f) => ({ x: rnd(0, 360), y: f ? rnd(0, 430) : 440, vx: rnd(-3, 3), vy: rnd(-24, -10), r: rnd(1.2, 3), c: '#9ae8ff', core: '#ffffff', a: 0.45, t: 0, life: rnd(8, 16), ph: rnd(0, 6) }) },
+});
+Object.assign(AMBIENT, { cave: AMBIENT.highlands, crypt: AMBIENT.midlands, abyss: AMBIENT.approach, lab: AMBIENT.halls, sewer: AMBIENT.lowlands, docks: AMBIENT.trench, sprite: AMBIENT.godlands, tomb: AMBIENT.highlands, temple: AMBIENT.lowlands });
 const sizeOf = (e) => (e.boss ? 120 : e.elite ? 54 : 42);
 
 // soft round glow sprites, cached per color
@@ -250,7 +256,7 @@ export class BattleView {
     this.shake = Math.max(0, this.shake - dt * 30);
     g.setTransform(this.dpr * this.scale, 0, 0, this.dpr * this.scale, this.dpr * (this.ox + sx), this.dpr * (this.oy + sy));
     g.imageSmoothingEnabled = true;
-    g.drawImage(arena(zoneOf(B.stage).id), 0, 0, VW, VH);
+    { const Z = zoneOf(B.stage); g.drawImage(arena(Z.arena || Z.id), 0, 0, VW, VH); }
 
     // splats on the ground, fading
     this.decals = this.decals.filter((d) => (d.t += dt) < d.life);
@@ -365,7 +371,7 @@ export class BattleView {
       g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.85)'; g.strokeText(n.text, n.x, y); g.fillStyle = n.c; g.fillText(n.text, n.x, y);
     }
     g.globalAlpha = 1;
-    this.ambience(g, zoneOf(B.stage).id, dt);
+    this.ambience(g, zoneOf(B.stage).arena || zoneOf(B.stage).id, dt);
     this.hud(g, B);
     // banners
     this.banners = this.banners.filter((b) => (b.t += dt) < b.life);

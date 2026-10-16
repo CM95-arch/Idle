@@ -6,7 +6,7 @@ import * as G from '../core/game.js';
 import { itemStats, slotOf, fits, itemScore, upgradeCost, canUpgrade, salvageValue, uniqueOf } from '../core/items.js';
 import { h, openSheet, toast } from './dom.js';
 import { UNIQUES } from '../data/uniques.js';
-import { ZONES } from '../data/zones.js';
+import { ZONES, ZONE_BY_ID } from '../data/zones.js';
 import { itemImage } from './art/items.js';
 import { artImg } from './art/core.js';
 import { coin, fmt, itemTile, itemIcon, portrait, tap } from './common.js';
@@ -39,7 +39,7 @@ export function openItemSheet(id, onChange) {
         h('div', { class: `itile r${it.rarity}${uniqueOf(it)?.exalted ? ' ex' : ''}`, style: { '--rc': R.color, width: '72px' } }, itemIcon(it, 56)),
         h('div', { class: 'grow' },
           h('div', { style: { fontWeight: 900, fontSize: '18px', color: uniqueOf(it)?.exalted ? '#ffe08a' : R.color } }, `${it.name}${it.up ? ` +${it.up}` : ''}`),
-          h('div', { class: 'muted', style: { fontWeight: 800, fontSize: '12px' } }, `${uniqueOf(it)?.exalted ? 'Exalted Unique' : 'Unique'} ${SLOT_NAME[slot]} · from ${ZONES[uniqueOf(it)?.zone ?? 0].boss[0]}`),
+          h('div', { class: 'muted', style: { fontWeight: 800, fontSize: '12px' } }, `${uniqueOf(it)?.exalted ? 'Exalted Unique' : 'Unique'} ${SLOT_NAME[slot]} · from ${ZONE_BY_ID[uniqueOf(it)?.src]?.boss[0] || 'a boss'}`),
           wornBy ? h('div', { class: 'gold', style: { fontWeight: 800, fontSize: '12px' } }, `Worn by ${CLASSES[wornBy].name}`) : null)),
       uniqueOf(it) ? h('div', { class: 'panel ufx' }, h('b', {}, '✦ Unique effect'), h('div', { style: { fontSize: '14px', fontWeight: 700, marginTop: '2px' } }, uniqueOf(it).desc), h('div', { class: 'dim', style: { fontSize: '11px', fontWeight: 800, marginTop: '4px' } }, 'Its bonuses are percentages, so it grows with your heroes and never goes stale. Kept when you Ascend (upgrades reset).')) : null,
       h('div', { class: 'panel stats', style: { gridTemplateColumns: '1fr' } }, statRows(it)),
@@ -105,7 +105,7 @@ export function createGearScreen(root, { onChange }) {
       h('div', { class: 'row between', style: { margin: '14px 2px 8px' } }, h('div', { class: 'h2', style: { margin: 0 } }, sel ? 'Tap Uniques to salvage them' : `Vault · ${items.length}`),
         !sel && items.length ? h('small', { class: 'dim', style: { fontWeight: 800, fontSize: '11px' } }, h('span', { class: 'delta-up' }, '▲'), ' better for your party') : null),
       items.length ? h('div', { class: 'igrid' }, items.map(tile))
-        : h('div', { class: 'panel center muted' }, s.inv.length ? 'Nothing in this category.' : 'No spare Uniques. Bosses guard them, and the horde drops them very rarely. Worn ones live on your heroes.'),
+        : h('div', { class: 'panel center muted' }, s.inv.length ? 'Nothing in this category.' : 'No spare Uniques. A few Realm bosses and every dungeon boss guard them. Worn ones live on your heroes.'),
       sel ? salvageBar(items) : h('div', {},
         h('div', { class: 'row', style: { marginTop: '14px' } },
           h('button', { class: 'btn grow sm', disabled: !G.bestUpgrades(), onclick: () => { let n = 0; for (const c of s.party) n += G.equipBest(c); tap('equip'); toast({ title: n ? `Equipped ${n} Unique${n === 1 ? '' : 's'}` : 'Nothing better to equip', kind: n ? 'gold' : '' }); render(); onChange?.(); } }, 'Equip best for party'),
@@ -125,10 +125,10 @@ export function openCollection() {
     const found = G.state.uniques;
     return [
       h('div', { class: 'pixel center', style: { fontSize: '22px' } }, 'Uniques'),
-      h('div', { class: 'muted center', style: { fontSize: '13px', fontWeight: 700 } }, `${Object.keys(found).length} of ${UNIQUES.length} found. Each zone boss guards its own; its other enemies drop them very rarely. Exalted Uniques are rarer still.`),
-      ...ZONES.map((Z, zi) => h('div', {},
-        h('div', { class: 'h2' }, `${Z.name} · ${Z.boss[0]}`),
-        ...UNIQUES.filter((U) => U.zone === zi).map((U) => {
+      h('div', { class: 'muted center', style: { fontSize: '13px', fontWeight: 700 } }, `${Object.keys(found).length} of ${UNIQUES.length} found. Each drops only where it does in the real game: a few from Realm bosses, the rest from dungeon bosses. Exalted Uniques are rarer still.`),
+      ...ZONES.filter((Z) => UNIQUES.some((U) => U.src === Z.id)).map((Z) => h('div', {},
+        h('div', { class: 'h2' }, `${Z.dungeon ? `Tier ${Z.tier} · ` : ''}${Z.name} · ${Z.boss[0]}`),
+        ...UNIQUES.filter((U) => U.src === Z.id).map((U) => {
           const has = found[U.id];
           const icon = artImg(itemImage(U.kind, 6, U.pal)); icon.style.width = '44px';
           return h('div', { class: 'panel row', style: { marginBottom: '6px', padding: '8px 10px', alignItems: 'flex-start' } },

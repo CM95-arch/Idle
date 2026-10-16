@@ -5,7 +5,7 @@
 // that ui/battleView.js turns into visuals.
 import { BAL } from '../data/balance.js';
 import { CLASSES } from '../data/classes.js';
-import { zoneOf, isBoss, MAIN_ZONES, STAGES_PER_ZONE } from '../data/zones.js';
+import { zoneOf, isBoss, isDungeon, levelOf } from '../data/zones.js';
 import { makeRng } from './rng.js';
 
 export const TICK = 0.05;
@@ -18,11 +18,12 @@ const RANGED = new Set(['beholder', 'ghost', 'lich', 'sphinx', 'oryx', 'kraken']
 
 /** Enemy strength at a stage in a Realm (one enemy of the horde). */
 export function enemyStats(stage, realm) {
-  // the first zones are gentler, easing up to full strength by stage 30, so a new party gets going fast
-  // the endgame dungeons are each far harder again
-  const dun = Math.floor(stage / STAGES_PER_ZONE) - MAIN_ZONES;
-  const g = BAL.stageGrowth ** stage * BAL.realmGrowth ** realm * (dun >= 0 ? BAL.dungeonHard[Math.min(dun, BAL.dungeonHard.length - 1)] : 1) * (0.55 + 0.45 * Math.min(1, stage / 30)), E = BAL.enemyBase;
-  return { hp: E.hp * g, atk: E.atk * g, def: Math.min(0.4, E.armor * Math.floor(stage / 10)) };
+  // stages are counted in Realm difficulty (a dungeon's start at its level). A new Realm's extra strength phases
+  // in over its first stages, so a party back at level 1 can find its feet; dungeons have it in full.
+  const lvl = levelOf(stage), ramp = isDungeon(stage) ? 1 : Math.min(1, stage / BAL.realmRamp);
+  // the first zones are gentler too, easing up to full strength by stage 30, so a new party gets going fast
+  const g = BAL.stageGrowth ** lvl * BAL.realmGrowth ** (realm * ramp) * (0.55 + 0.45 * Math.min(1, lvl / 30)), E = BAL.enemyBase;
+  return { hp: E.hp * g, atk: E.atk * g, def: Math.min(0.4, E.armor * Math.floor(lvl / 10)) };
 }
 // Armor is a share of damage: enemies have a flat armor share per zone (def is 0..0.4); heroes' DEF is weighed
 // against the attacker's ATK, so it stays useful at every stage without ever making anyone immune.
