@@ -166,6 +166,7 @@ export class BattleView {
           sound?.('zap');
           break;
         }
+        case 'proc': this.proc(B, ev, byId, sound); break;
         case 'ignite': case 'chill': {
           if (this.fx.some((f) => f.k === 'burn' && f.id === ev.id && f.life - f.t > 0.5)) break;
           this.fx.push({ k: 'burn', id: ev.id, t: 0, life: ev.k === 'chill' ? ev.dur : 3, c: ev.k === 'chill' ? '#9ad8ff' : '#ff8a2a' });
@@ -210,6 +211,76 @@ export class BattleView {
         } else sound?.(r.it.rarity >= 3 ? 'lootRare' : 'loot');
       }
     }
+  }
+  /** A Unique's visible effect going off (see runProc in core/battle.js). */
+  proc(B, ev, byId, sound) {
+    const h = B.heroes[ev.hero], c = ev.c || '#ffffff';
+    if (!h) return;
+    const burst = (x, y, n, sp, life, col = c, g = 0) => { for (let i = 0; i < n; i++) { const a = rand(0, TAU), s = rand(sp * 0.4, sp); this.parts.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.7, t: 0, life: rand(life * 0.6, life), c: col, s: rand(1.8, 3.2), add: true, g }); } };
+    switch (ev.kind) {
+      case 'nova':
+        this.fx.push({ k: 'groundring', x: h.x, y: h.y, t: 0, life: 0.55, c, r: ev.r * 1.25 }, { k: 'groundring', x: h.x, y: h.y, t: -0.1, life: 0.55, c: '#ffffff', r: ev.r });
+        burst(h.x, h.y - 10, 22, 220, 0.5); this.hv[ev.hero].aura = 0.35; this.hv[ev.hero].auraColor = c; this.shake = Math.max(this.shake, 3); sound?.('blast'); break;
+      case 'orbit': {
+        const e = byId(ev.id); if (!e) break;
+        const o = this.orbPos(h, ev.n || 2, (ev.slot * 7) % (ev.n || 2), ev.slot);
+        this.fx.push({ k: 'zap', x0: o.x, y0: o.y, x1: e.x, y1: e.y - 14, t: 0, life: 0.18, c });
+        burst(e.x, e.y - 14, 5, 100, 0.25); break;
+      }
+      case 'meteor': {
+        // falls from the sky onto the pack, then bursts (a flask arcs in from the hero instead)
+        const flask = ev.look === 'flask';
+        this.fx.push({ k: 'meteor', x0: flask ? h.x : ev.x + 60, y0: flask ? h.y - 40 : ev.y - 260, x1: ev.x, y1: ev.y - 6, t: 0, life: 0.32, c, flask, r: ev.r, burst: true });
+        break;
+      }
+      case 'bubble': this.hv[ev.hero].bubbleIn = 0.35; burst(h.x, h.y - 26, 10, 80, 0.5); sound?.('ability'); break;
+      case 'halo': case 'frost': {
+        for (const id of ev.ids || []) { const e = byId(id); if (e && Math.random() < 0.4) burst(e.x, e.y - 10, 2, 50, 0.35, c, ev.kind === 'frost' ? 30 : -30); }
+        break;
+      }
+      case 'healwave':
+        for (const i of ev.heroes || []) { const o = B.heroes[i]; this.fx.push({ k: 'groundring', x: o.x, y: o.y, t: 0, life: 0.7, c, r: 40 }); for (let n = 0; n < 8; n++) this.parts.push({ x: o.x + rand(-14, 14), y: o.y - rand(0, 30), vx: 0, vy: rand(-70, -40), t: 0, life: rand(0.6, 1), c, s: 2.6, add: true }); }
+        sound?.('drink'); break;
+      case 'thornburst':
+        for (let n = 0; n < 12; n++) { const a = (n / 12) * TAU; this.fx.push({ k: 'shard', x: h.x, y: h.y - 22, a, t: 0, life: 0.35, c, r: ev.r }); }
+        this.hv[ev.hero].aura = 0.25; this.hv[ev.hero].auraColor = c; break;
+      case 'lightning':
+        this.fx.push({ k: 'bolt', x: ev.x, y: ev.y, t: 0, life: 0.3, c });
+        this.fx.push({ k: 'groundring', x: ev.x, y: ev.y, t: 0, life: 0.4, c, r: ev.r });
+        burst(ev.x, ev.y - 12, 12, 160, 0.35, '#ffffff'); this.flash = Math.max(this.flash || 0, 0.06); this.flashColor = c; this.shake = Math.max(this.shake, 3); sound?.('zap'); break;
+      case 'spirit': { const e = byId(ev.id); if (e) this.fx.push({ k: 'wisp', x0: ev.x, y0: ev.y - 16, id: ev.id, t: 0, life: ev.flight, c }); break; }
+      case 'vamp': this.fx.push({ k: 'orbfly', x0: ev.x, y0: ev.y - 12, hero: ev.hero, t: 0, life: 0.5, c }); break;
+      default: break;
+    }
+  }
+  /** Where an orbiting mote is now: `n` motes evenly spaced, circling the hero. */
+  orbPos(h, n, k, set = 0) {
+    const a = this.t * (2.2 - set * 0.4) + (k / n) * TAU + set;
+    return { x: h.x + Math.cos(a) * 26, y: h.y - 24 + Math.sin(a) * 11 };
+  }
+  /** Effects that stay on a hero while the Unique is worn: orbiting motes, halos, frost, a shield bubble. */
+  drawAuras(g, h) {
+    if (h.dead) return;
+    g.globalCompositeOperation = 'lighter';
+    (h.procs || []).forEach((P, k) => {
+      if (P.kind === 'orbit') for (let i = 0; i < P.n; i++) { const o = this.orbPos(h, P.n, i, k); g.globalAlpha = 0.95; g.drawImage(glow(P.c, 9), o.x - 9, o.y - 9); g.fillStyle = '#ffffff'; g.beginPath(); g.arc(o.x, o.y, 2, 0, TAU); g.fill(); }
+      if (P.kind === 'halo' || P.kind === 'frost') {
+        g.save(); g.translate(h.x, h.y + 2); g.scale(1, 0.42);
+        g.globalAlpha = 0.18 + 0.06 * Math.sin(this.t * 3 + k); g.fillStyle = P.c; g.beginPath(); g.arc(0, 0, P.r, 0, TAU); g.fill();
+        g.globalAlpha = 0.55; g.strokeStyle = P.c; g.lineWidth = 2; g.setLineDash(P.kind === 'frost' ? [3, 6] : [10, 6]); g.lineDashOffset = -this.t * (P.kind === 'frost' ? 10 : 30);
+        g.beginPath(); g.arc(0, 0, P.r, 0, TAU); g.stroke(); g.setLineDash([]); g.restore();
+        if (Math.random() < 0.15) { const a = rand(0, TAU); this.parts.push({ x: h.x + Math.cos(a) * P.r * 0.9, y: h.y + Math.sin(a) * P.r * 0.38, vx: 0, vy: P.kind === 'frost' ? 10 : -30, t: 0, life: 0.8, c: P.c, s: 2, add: true }); }
+      }
+    });
+    if (h.shield > 0 && (h.procs || []).some((P) => P.kind === 'bubble')) {
+      const P = h.procs.find((x) => x.kind === 'bubble'), v = this.hv[h.i], grow = 1 - Math.max(0, v.bubbleIn || 0) / 0.35;
+      v.bubbleIn = Math.max(0, (v.bubbleIn || 0) - 1 / 60);
+      const r = 30 * (0.6 + 0.4 * grow);
+      g.globalAlpha = 0.22; g.fillStyle = P.c; g.beginPath(); g.ellipse(h.x, h.y - 26, r, r * 1.15, 0, 0, TAU); g.fill();
+      g.globalAlpha = 0.7; g.strokeStyle = P.c; g.lineWidth = 1.6; g.stroke();
+      g.globalAlpha = 0.6; g.fillStyle = '#ffffff'; g.beginPath(); g.ellipse(h.x - r * 0.4, h.y - 26 - r * 0.55, r * 0.22, r * 0.12, -0.6, 0, TAU); g.fill();
+    }
+    g.globalAlpha = 1; g.globalCompositeOperation = 'source-over';
   }
   ability(B, ev, byId, sound) {
     const h = B.heroes[ev.hero], C = CLASSES[h.cls];
@@ -291,7 +362,7 @@ export class BattleView {
     things.sort((a, b) => a.y - b.y);
     for (const it of things) {
       if (it.e) this.drawEnemy(g, it.e, dt, stunned.has(it.e.id));
-      else if (it.h) this.drawHero(g, it.h, dt);
+      else if (it.h) { this.drawHero(g, it.h, dt); this.drawAuras(g, it.h); }
       else {
         const c = it.c, q = c.t / 0.35;
         if (!ready(c.img)) continue;
@@ -518,6 +589,42 @@ export class BattleView {
       case 'ringwave': {
         g.globalAlpha = 1 - p; g.strokeStyle = f.c; g.lineWidth = 3;
         g.beginPath(); g.arc(f.x, f.y, 16 + p * 110, 0, TAU); g.stroke();
+        break;
+      }
+      case 'meteor': {
+        const q = Math.min(1, p * 1.0), x = f.x0 + (f.x1 - f.x0) * q, y = f.y0 + (f.y1 - f.y0) * q - (f.flask ? Math.sin(q * Math.PI) * 60 : 0);
+        g.globalCompositeOperation = 'lighter';
+        if (!f.flask) { g.globalAlpha = 0.6; g.strokeStyle = f.c; g.lineWidth = 6; g.beginPath(); g.moveTo(x - (f.x1 - f.x0) * 0.25, y - (f.y1 - f.y0) * 0.25); g.lineTo(x, y); g.stroke(); }
+        g.globalAlpha = 1; g.drawImage(glow(f.c, f.flask ? 10 : 16), x - (f.flask ? 10 : 16), y - (f.flask ? 10 : 16));
+        g.fillStyle = '#ffffff'; g.beginPath(); g.arc(x, y, f.flask ? 3 : 5, 0, TAU); g.fill();
+        g.globalCompositeOperation = 'source-over';
+        if (f.burst && p > 0.95) {
+          f.burst = false;
+          this.fx.push({ k: 'boom', x: f.x1, y: f.y1 - 4, t: 0, life: 0.55, c: f.c, big: true }, { k: 'groundring', x: f.x1, y: f.y1 + 6, t: 0, life: 0.5, c: f.c, r: f.r });
+          for (let i = 0; i < 18; i++) { const a = rand(0, TAU), s = rand(60, 200); this.parts.push({ x: f.x1, y: f.y1, vx: Math.cos(a) * s, vy: Math.sin(a) * s * 0.6 - 40, t: 0, life: rand(0.3, 0.6), c: i % 2 ? f.c : '#ffffff', s: rand(2, 3.4), add: true, g: 200 }); }
+          this.shake = Math.max(this.shake, 4);
+        }
+        break;
+      }
+      case 'shard': {
+        const d = 10 + p * f.r, x = f.x + Math.cos(f.a) * d, y = f.y + Math.sin(f.a) * d * 0.55;
+        g.globalAlpha = 1 - p; g.strokeStyle = f.c; g.lineWidth = 3; g.beginPath(); g.moveTo(x - Math.cos(f.a) * 8, y - Math.sin(f.a) * 4.4); g.lineTo(x, y); g.stroke();
+        break;
+      }
+      case 'bolt': {
+        // a jagged lightning bolt from the sky
+        g.globalCompositeOperation = 'lighter'; g.globalAlpha = 1 - p;
+        for (const [w, c] of [[7, f.c], [2.4, '#ffffff']]) { g.strokeStyle = c; g.lineWidth = w * (1 - p * 0.5); g.beginPath(); let x = f.x + rand(-20, 20), y = -10; g.moveTo(x, y); while (y < f.y - 12) { y += rand(18, 34); x += rand(-14, 14); g.lineTo(Math.abs(y - f.y) < 40 ? f.x + (x - f.x) * 0.3 : x, Math.min(y, f.y - 12)); } g.stroke(); }
+        g.globalCompositeOperation = 'source-over';
+        break;
+      }
+      case 'wisp': case 'orbfly': {
+        const to = f.k === 'wisp' ? (B.enemies.find((e) => e.id === f.id) || { x: f.x0, y: f.y0 + 16 }) : B.heroes[f.hero];
+        const q = p * p, x = f.x0 + (to.x - f.x0) * q + Math.sin(p * 9) * 10 * (1 - p), y = f.y0 + (to.y - 18 - f.y0) * q - Math.sin(p * Math.PI) * 30;
+        g.globalCompositeOperation = 'lighter'; g.globalAlpha = 0.95;
+        g.drawImage(glow(f.c, 11), x - 11, y - 11); g.fillStyle = '#ffffff'; g.beginPath(); g.arc(x, y, 2.4, 0, TAU); g.fill();
+        if (Math.random() < 0.6) this.parts.push({ x, y, vx: rand(-15, 15), vy: rand(-15, 15), t: 0, life: 0.3, c: f.c, s: 2, add: true });
+        g.globalCompositeOperation = 'source-over';
         break;
       }
       case 'groundring': {

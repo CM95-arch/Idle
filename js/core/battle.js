@@ -47,8 +47,8 @@ function placeHeroes(stats) {
   return pos;
 }
 function makeHero(s, i, pos, keep) {
-  const h = { ...s, fx: s.fx || {}, i, x: pos.x, y: pos.y, hx: pos.x, hy: pos.y, maxHp: s.hp, hp: s.hp, atkT: 0.15 * i, cd: abilityCd(s) * (0.35 + 0.15 * i), buff: {}, dead: false, shield: 0, shots: 0, rampId: 0, ramp: 0 };
-  if (keep) { h.x = keep.x; h.y = keep.y; h.hp = keep.dead ? 0 : Math.max(1, (keep.hp / keep.maxHp) * h.maxHp); h.dead = keep.dead; h.cd = Math.min(h.cd, keep.cd); h.shield = keep.shield; h.revived = keep.revived; }
+  const h = { ...s, fx: s.fx || {}, procs: s.procs || [], procT: [], thornT: 0, i, x: pos.x, y: pos.y, hx: pos.x, hy: pos.y, maxHp: s.hp, hp: s.hp, atkT: 0.15 * i, cd: abilityCd(s) * (0.35 + 0.15 * i), buff: {}, dead: false, shield: 0, shots: 0, rampId: 0, ramp: 0 };
+  if (keep) { h.x = keep.x; h.y = keep.y; h.hp = keep.dead ? 0 : Math.max(1, (keep.hp / keep.maxHp) * h.maxHp); h.dead = keep.dead; h.cd = Math.min(h.cd, keep.cd); h.shield = keep.shield; h.revived = keep.revived; h.procT = keep.procT; h.thornT = keep.thornT; }
   return h;
 }
 
@@ -136,6 +136,8 @@ function damageEnemy(B, e, d, src) {
   e.hp = 0; B.kills++; B.stageKills++;
   if (e.boss) B.bossKilled = true;
   B.events.push({ k: 'die', id: e.id, boss: e.boss, elite: e.elite, x: e.x, y: e.y });
+  const killer = src.hero != null ? B.heroes[src.hero] : null;
+  if (killer && !killer.dead && !src.spirit) onKillProcs(B, killer, e);
   // any kill: frenzied heroes speed up, and a corpse-burster makes the body explode (which can set off the next)
   let bomber = null;
   for (const h of alive(B.heroes)) {
@@ -160,6 +162,13 @@ function hurtHero(B, h, dmg, raw, from, big) {
   const absorbed = Math.min(h.shield, dmg); h.shield -= absorbed;
   h.hp -= dmg - absorbed;
   B.events.push({ k: 'ehit', hero: h.i, dmg: dmg - absorbed, big, shield: absorbed > 0 });
+  const thorn = h.procs.find((P) => P.kind === 'thornburst');
+  if (thorn && !(h.thornT > B.t)) {
+    h.thornT = B.t + thorn.cd;
+    const list = within(alive(B.enemies), h, thorn.r);
+    for (const o of list) damageEnemy(B, o, hit(procDmg(B, h, thorn), o.def), { hero: h.i, ab: true });
+    B.events.push({ k: 'proc', kind: 'thornburst', hero: h.i, c: thorn.c, r: thorn.r, look: thorn.look });
+  }
   if (from && h.fx.thorns && from.hp > 0) damageEnemy(B, from, raw * h.fx.thorns, { hero: h.i, thorns: true });
   if (from && h.buff.retaliateUntil > B.t && from.hp > 0) { damageEnemy(B, from, h.atk * h.buff.retaliate, { hero: h.i, thorns: true }); h.hp = Math.min(h.maxHp, h.hp + h.maxHp * 0.01); } // Crystal Shield
   if (h.hp <= 0 && h.fx.revive && !h.revived) { h.revived = true; h.hp = h.maxHp * h.fx.revive; B.events.push({ k: 'revive', hero: h.i }); }
@@ -178,6 +187,68 @@ function cluster(es) {
   return best;
 }
 
+// ---------- Unique effects you can see ----------
+// Each Unique may carry `proc` effects: timed ones fire every `every` seconds (nova, orbit, meteor, bubble, halo,
+// frost, healwave); others answer an event (thornburst when hit, lightning on a crit, spirit and vamp on a kill).
+// Damage is `pow` × the hero's ATK (one second of its fire).
+const procDmg = (B, h, P) => h.atk * P.pow * dmgMult(B, h);
+function runProc(B, h, P, k, es) {
+  const ev = { k: 'proc', kind: P.kind, hero: h.i, c: P.c, r: P.r, look: P.look, slot: k };
+  switch (P.kind) {
+    case 'nova': {
+      const list = within(es, h, P.r);
+      for (const o of list) { damageEnemy(B, o, hit(procDmg(B, h, P), o.def), { hero: h.i, ab: true }); if (P.slow) o.slowUntil = Math.max(o.slowUntil, B.t + P.slow); if (P.stun) o.stunUntil = Math.max(o.stunUntil, B.t + P.stun * (o.boss ? 0.3 : 1)); }
+      ev.x = h.x; ev.y = h.y; break;
+    }
+    case 'orbit': {
+      const t = nearest(es.filter((o) => d2(o, h) < (P.r + o.r) ** 2), h);
+      if (!t) return;
+      damageEnemy(B, t, hit(procDmg(B, h, P), t.def), { hero: h.i, ab: true });
+      ev.id = t.id; ev.n = P.n; break;
+    }
+    case 'meteor': {
+      if (!es.length) return;
+      const c = cluster(es);
+      for (const o of within(es, c, P.r)) { damageEnemy(B, o, hit(procDmg(B, h, P), o.def), { hero: h.i, ab: true }); if (P.slow) o.slowUntil = Math.max(o.slowUntil, B.t + P.slow); }
+      ev.x = c.x; ev.y = c.y; break;
+    }
+    case 'bubble': {
+      const sh = h.maxHp * P.pow;
+      if (h.shield >= sh) return;
+      h.shield = sh; break;
+    }
+    case 'halo': case 'frost': {
+      const list = within(es, h, P.r);
+      if (!list.length) return;
+      for (const o of list) { if (P.pow) damageEnemy(B, o, hit(procDmg(B, h, P), o.def), { hero: h.i, ab: true }); if (P.slow) o.slowUntil = Math.max(o.slowUntil, B.t + P.slow); }
+      ev.ids = list.map((o) => o.id); break;
+    }
+    case 'healwave': {
+      const hs = alive(B.heroes);
+      if (!hs.some((o) => o.hp < o.maxHp * 0.95)) return;
+      for (const o of hs) heal(B, o, o.maxHp * P.pow);
+      ev.heroes = hs.map((o) => o.i); break;
+    }
+    default: return;
+  }
+  B.events.push(ev);
+}
+function onKillProcs(B, h, e) {
+  for (const P of h.procs) {
+    if (P.kind === 'spirit' && B.rng.next() < P.chance) {
+      const t = nearest(alive(B.enemies).filter((o) => o !== e && d2(o, e) < 200 * 200), e);
+      if (!t) continue;
+      const flight = 0.25 + Math.sqrt(d2(t, e)) / 420;
+      B.pending.push({ side: 'hero', to: t.id, dmg: hit(procDmg(B, h, P), t.def), hero: h.i, spirit: true, ab: true, at: B.t + flight });
+      B.events.push({ k: 'proc', kind: 'spirit', hero: h.i, x: e.x, y: e.y, id: t.id, flight, c: P.c });
+    }
+    if (P.kind === 'vamp' && B.rng.next() < P.chance) {
+      heal(B, h, h.maxHp * P.pow);
+      B.events.push({ k: 'proc', kind: 'vamp', hero: h.i, x: e.x, y: e.y, c: P.c });
+    }
+  }
+}
+
 // ---------- abilities ----------
 const ECHOES = new Set(['aoe', 'heal', 'pierce', 'execute', 'stun', 'dot', 'drain', 'poison', 'chain']);
 function useAbility(B, h, scale = 1) {
@@ -192,19 +263,19 @@ function useAbility(B, h, scale = 1) {
   ev.mode = M.mode;
   if (h.fx.sourceHeal) heal(B, h, h.maxHp * h.fx.sourceHeal);
   switch (M.mode) {
-    case 'snipe': { // Quiver of Thunder: one enormous arrow into the toughest enemy, Dazing it
+    case 'snipe': { // Stormcaller Quiver: one enormous arrow into the toughest enemy, Dazing it
       const t = es.reduce((a, b) => (b.hp > a.hp ? b : a)); ev.x = t.x; ev.y = t.y;
       strike([t], M.pow); t.stunUntil = Math.max(t.stunUntil, B.t + M.daze * (t.boss ? 0.4 : 1)); B.events.push(ev); return;
     }
-    case 'armorBreak': { // Shield of Ogmur: Armor Broken instead of Stunned
+    case 'armorBreak': { // Bastion of the Keyper: Armor Broken instead of Stunned
       const list = within(es, h, 120); ev.x = h.x; ev.y = h.y;
       for (const e of list) e.breakUntil = B.t + M.dur; strike(list, M.pow); B.events.push(ev); return;
     }
-    case 'paralyze': { // Coral Venom Trap: a burst that Paralyzes
+    case 'paralyze': { // Siren's Snare: a burst that Paralyzes
       const c = cluster(es), list = within(es, c, BAL.aoeRadius); ev.x = c.x; ev.y = c.y;
       for (const e of list) e.stunUntil = Math.max(e.stunUntil, B.t + M.dur * (e.boss ? 0.3 : 1)); strike(list, M.pow); B.events.push(ev); return;
     }
-    case 'portals': { // Genesis Spell: portals that keep zapping the area for seconds
+    case 'portals': { // Spell of First Light: portals that keep zapping the area for seconds
       const c = cluster(es); ev.x = c.x; ev.y = c.y;
       B.zones.push({ x: c.x, y: c.y, r: BAL.aoeRadius * 1.15, until: B.t + M.dur, next: B.t, every: 0.4, dmg: (dmg * p * M.pow) / (M.dur / 0.4), hero: h.i });
       B.events.push(ev); return;
@@ -355,13 +426,17 @@ function fire(B, h, e, delay) {
   h.shots++;
   const charged = fx.charge && h.shots % fx.charge === 0;
   const crit = charged || B.rng.next() < h.crit;
+  if (crit) for (const P of h.procs) if (P.kind === 'lightning' && B.rng.next() < P.chance) {
+    for (const o of within(alive(B.enemies), e, P.r)) damageEnemy(B, o, hit(procDmg(B, h, P), o.def), { hero: h.i, ab: true });
+    B.events.push({ k: 'proc', kind: 'lightning', hero: h.i, x: e.x, y: e.y, c: P.c, r: P.r });
+  }
   if (fx.ramp) { if (h.rampId === e.id) h.ramp = Math.min(10, h.ramp + 1); else { h.rampId = e.id; h.ramp = 0; } }
   // the shot's damage is shared between its projectiles, so a full hit lands the hero's whole ATK
   const base = h.hit * (S.per ?? 1 / S.n) * dmgMult(B, h) * (crit ? 2 + (fx.critDmg || 0) : 1) * (charged ? fx.chargeX / 2 : 1) * (1 + (fx.ramp || 0) * h.ramp);
   const vs = (t) => hit(base * (t.boss ? 1 + (fx.bossDmg || 0) : 1) * (t.hp < t.maxHp * 0.3 ? 1 + (fx.execute || 0) : 1), S.ignoreDef ? 0 : t.def);
   const mods = MODS.some((k) => fx[k]) || S.onHit ? { ...fx, ...S.onHit } : null;
   const mod = fx.splash ? 'blast' : fx.chain ? 'chain' : fx.burn ? 'burn' : fx.chill ? 'chill' : null;
-  const heavy = (S.per ?? 1 / S.n) > 1.4; // one huge projectile (Doom Bow, Wand of the Bulwark)
+  const heavy = (S.per ?? 1 / S.n) > 1.4; // one huge projectile (Gravecaller Longbow, Mirewood Wand)
   const range = S.range * TILE, speed = S.speed * TILE, es = alive(B.enemies);
   const aim = Math.atan2(e.y - (h.y - 20), e.x - h.x);
   for (let k = 0; k < S.n; k++) {
@@ -470,7 +545,7 @@ export function stepBattle(B) {
     if (alive(B.heroes).length) { h.dead = false; h.hp = h.maxHp * B.rez.v; B.events.push({ k: 'revive', hero: h.i, by: B.rez.by }); }
     B.rez = null;
   }
-  // lingering ability zones (Genesis Spell portals)
+  // lingering ability zones (Spell of First Light's portals)
   B.zones = B.zones.filter((z) => z.until > B.t);
   for (const z of B.zones) if (B.t >= z.next) {
     z.next += z.every;
@@ -488,10 +563,18 @@ export function stepBattle(B) {
     // walking to a new spot in the formation
     if (h.x !== h.hx || h.y !== h.hy) { const dx = h.hx - h.x, dy = h.hy - h.y, L = Math.hypot(dx, dy), st = 140 * dt; if (L <= st) { h.x = h.hx; h.y = h.hy; } else { h.x += (dx / L) * st; h.y += (dy / L) * st; } }
     h.cd -= dt;
+    for (let k = 0; k < h.procs.length; k++) {
+      const P = h.procs[k];
+      if (!P.every) continue;
+      h.procT[k] = (h.procT[k] ?? P.every * (0.3 + 0.2 * k)) - dt;
+      if (h.procT[k] > 0) continue;
+      h.procT[k] += P.every;
+      runProc(B, h, P, k, es);
+    }
     const A = CLASSES[h.cls].ability;
     const needHeal = A.fx === 'heal' ? alive(B.heroes).some((o) => o.hp < o.maxHp * 0.8) : true;
     if (h.cd <= 0 && es.length && needHeal) { h.cd = abilityCd(h); useAbility(B, h); }
-    // Divinity's Exalted Beam: every second, a blast at the end of the sword's reach that ignores armor
+    // Dawnbreaker's beam: every second, a blast at the end of the sword's reach that ignores armor
     if (h.shot.beam && (h.beamT = (h.beamT ?? 0.5) - dt) <= 0) {
       const Bm = h.shot.beam, t = nearest(es, h);
       if (t && d2(t, h) < (Bm.reach * TILE) ** 2) {

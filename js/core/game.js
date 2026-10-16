@@ -72,6 +72,8 @@ export function load() {
   rng = makeRng(state.seed);
   syncUniques();
   retireOldGear();
+  // Uniques carry their catalog name, which can change (they got their own names): refresh it
+  for (const it of [...state.inv, ...Object.values(state.classes).flatMap((C) => Object.values(C.gear))]) if (it?.u && UNIQUE[it.u]) it.name = UNIQUE[it.u].name;
   // the progression rework: old endgame stages (the Lost Halls and the Shatters were stages 70-89) are now
   // dungeons; every Oryx you've beaten counts toward the dungeon tiers
   if (!state.flags.prog2) {
@@ -353,7 +355,7 @@ function settle(events) {
 }
 /** Advance the live battle by one tick. Returns that tick's battle events and the rewards they paid. */
 let statSig = '', statT = 0;
-const sigOf = (st) => JSON.stringify(st.map((s) => [s.cls, s.slot, Math.round(s.atk), Math.round(s.hp), Math.round(s.def), +s.spd.toFixed(2), s.crit, +s.pow.toFixed(2), s.fx]));
+const sigOf = (st) => JSON.stringify(st.map((s) => [s.cls, s.slot, (s.procs || []).map((P) => P.src).join(), Math.round(s.atk), Math.round(s.hp), Math.round(s.def), +s.spd.toFixed(2), s.crit, +s.pow.toFixed(2), s.fx]));
 export function tickBattle() {
   if (!battle) startBattle();
   // level-ups and new gear reach the fighting party within a second; a new line-up starts a fresh fight

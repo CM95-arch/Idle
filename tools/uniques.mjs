@@ -17,7 +17,9 @@ function reach(st) {
   let lo = -4, hi = 6; for (let i = 0; i < 13; i++) { const m = (lo + hi) / 2; if (ok(m)) lo = m; else hi = m; }
   return (lo * Math.log(2)) / Math.log(1.16);
 }
-for (const U of UNIQUES) {
+// ONLY=id1,id2 limits the report to those Uniques
+const ONLY = process.env.ONLY?.split(',');
+for (const U of UNIQUES.filter((u) => !ONLY || ONLY.includes(u.id))) {
   const wearers = CLASS_IDS.filter((c) => fits(c, { kind: U.kind }));
   let sum = 0, n = 0;
   for (const w of wearers.slice(0, 3)) {
@@ -29,5 +31,5 @@ for (const U of UNIQUES) {
       sum += withU - base; n++;
     }
   }
-  console.log(`${U.name.padEnd(26)} ${(U.exalted ? '★ ' : '') + [U.shot && `${U.shot.n}×shot`, U.abil?.mode, ...Object.keys(U.fx || {}), U.rot && 'stats'].filter(Boolean).join('+').padEnd(26)} ${(sum / n >= 0 ? '+' : '') + (sum / n).toFixed(2)} stages`);
+  console.log(`${U.name.padEnd(26)} ${(U.exalted ? '★ ' : '') + [U.shot && `${U.shot.n}×shot`, U.abil?.mode, U.proc?.kind, ...Object.keys(U.fx || {}), U.rot && 'stats'].filter(Boolean).join('+').padEnd(26)} ${(sum / n >= 0 ? '+' : '') + (sum / n).toFixed(2)} stages`);
 }

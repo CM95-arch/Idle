@@ -22,6 +22,7 @@ export function heroStats(cls, C, mult = {}) {
   const flat = { hp: 0, atk: 0, def: 0, pow: 0 }, pct = { atkPct: 0, hpPct: 0, defPct: 0, spdPct: 0, crit: 0, famePct: 0 };
   const fx = {};
   let rof = 1, abil = null;
+  const procs = []; // visible effects Uniques add to the fight (see runProc in core/battle.js)
   let shot = { ...BASE_SHOT[K.weapon] };
   for (const slot of SLOTS) {
     const it = C.gear?.[slot];
@@ -33,6 +34,7 @@ export function heroStats(cls, C, mult = {}) {
       // damage is set relative to a tiered weapon's whole volley (per)
       if (U.shot) { shot = { ...shot, per: undefined, ...U.shot, per: U.shot.per && U.shot.per * BAL.utWeapon }; rof *= U.shot.rate || 1; }
       if (U.abil) abil = { ...U.abil };
+      for (const P of [].concat(U.proc || [])) procs.push({ ...P, src: U.id });
     }
     for (const [k, v] of Object.entries(itemStats(it))) { if (k in flat) flat[k] += v; else pct[k] += v; }
   }
@@ -56,7 +58,7 @@ export function heroStats(cls, C, mult = {}) {
     crit: Math.min(0.6, 0.05 + pct.crit / 100),
     pow: 1 + flat.pow + sp.pow,
     fame: pct.famePct / 100,
-    fx, shot, abil,
+    fx, shot, abil, procs,
   };
 }
 
