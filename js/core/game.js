@@ -101,7 +101,9 @@ export const partyStats = () => state.party.filter(Boolean).map((c) => {
 });
 export const partyPower = () => powerOf(partyStats());
 export const offlineCapH = () => BAL.offlineCapHours + state.extra.offlineHours;
-const fameMult = () => state.mult.fame * (1 + Math.max(0, ...partyStats().map((s) => s.fame), 0)) * BAL.realmFame ** state.realm;
+/** Realm I pays extra Fame (before any Ascension), so a new player reaches Oryx and the first dungeons quickly. */
+const firstRealm = () => (state.ascensions ? 1 : BAL.firstRealmFame);
+const fameMult = () => state.mult.fame * (1 + Math.max(0, ...partyStats().map((s) => s.fame), 0)) * BAL.realmFame ** state.realm * firstRealm();
 // luck (a Unique effect) and the drop bonus from Ascending both make Uniques turn up more often
 const luck = () => Math.max(0, ...partyStats().map((s) => s.fx.luck || 0)) + state.mult.drops;
 export const ilvlFor = (stage) => stage + BAL.realmIlvl * state.realm;
@@ -152,7 +154,7 @@ export function affordableLevels(cls) {
 
 // ---------- stat potions ----------
 // Prices scale with the Realm and the Ascension Fame bonus, so every run reaches 8/8 near the Castle.
-const potScale = () => BAL.realmFame ** state.realm * state.mult.fame;
+const potScale = () => BAL.realmFame ** state.realm * state.mult.fame * firstRealm();
 const potsOf = (cls) => (state.classes[cls].pots ||= {});
 export const potions = (cls, s) => state.classes[cls]?.pots?.[s] || 0;
 /** A stat's cap, raised with every Ascension. */

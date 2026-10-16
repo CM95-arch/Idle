@@ -41,7 +41,7 @@ export const BAL = {
     { id: 'legendary', name: 'Legendary', color: '#ffb02e', mult: 2.9, stats: 3, maxUp: 25, weight: 0.7 },
     { id: 'mythic', name: 'Mythic', color: '#ff4f7a', mult: 3.8, stats: 3, maxUp: 30, weight: 0.1 },
     // never rolled: Uniques are named boss drops (js/data/uniques.js)
-    { id: 'unique', name: 'Unique', color: '#f4f1ff', mult: 1, stats: 2, maxUp: 10, weight: 0 },
+    { id: 'unique', name: 'Gear', color: '#f4f1ff', mult: 1, stats: 2, maxUp: 10, weight: 0 },
   ],
   upgradeStep: 0.12,       // each upgrade adds 12% of a Unique's base bonus
   // Unique upgrades cost about as much as a few class levels at your stage (item level follows your best stage)
@@ -62,6 +62,8 @@ export const BAL = {
   // later. At the 0.4 floor the gains just about match a Realm's extra difficulty, so later runs hold steady.
   ascendFirst: 1.5, ascendDecay: 0.8, ascendDmg: 0.3,
   ascendGain: (n) => Math.max(0.4, BAL.ascendFirst * BAL.ascendDecay ** (n - 1)),
+  // Fame (and potion prices) ×this in Realm I until the first Ascension: the first Oryx in hours, not a day
+  firstRealmFame: 4,
   keepPotions: 0.2,        // Ascending puts every class back to level 1 with a fifth of its potions; every cap also
                            // rises (CAP_PER_ASCENSION, data/stats.js), so what's kept grows each time
 };

@@ -142,7 +142,7 @@ export function createBattleScreen(root, { onFame, openClass, onDrop, goParty })
         if (visible && view) view.feed(G.battle, events, rewards, play);
         for (const r of rewards) {
           if (r.k === 'fame') onFame(r.n);
-          if (r.k === 'clear') { onFame(r.n); if (r.first && isBoss(r.stage)) toast({ title: `${zoneOf(r.stage).boss[0]} defeated!`, body: r.stage === G.LAST_STAGE ? 'Oryx has fallen. You can Ascend!' : zoneOf(r.stage).dungeon ? 'Its Uniques can drop from it each run.' : `${zoneOf(r.stage + 1).name} is open.`, kind: 'gold' }); }
+          if (r.k === 'clear') { onFame(r.n); if (r.first && isBoss(r.stage)) toast({ title: `${zoneOf(r.stage).boss[0]} defeated!`, body: r.stage === G.LAST_STAGE ? 'Oryx has fallen. You can Ascend!' : zoneOf(r.stage).dungeon ? 'Its gear can drop on every run.' : `${zoneOf(r.stage + 1).name} is open.`, kind: 'gold' }); }
           if (r.k === 'dungeons') toast({ title: `Dungeons unlocked: Tier ${r.tier}`, body: `${r.names.join(' and ')}. Find them on the Map.`, kind: 'gold' });
           if (r.k === 'drop' && r.salvaged) onFame(r.salvaged);
           if (r.k === 'drop' && !r.salvaged) onDrop?.(r.it, r);

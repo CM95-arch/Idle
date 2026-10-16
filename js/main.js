@@ -102,7 +102,7 @@ const TOUR = [
   { target: () => $('.dpots'), title: 'Stat potions', text: 'The eight ROTMG stats, in their potion colors. Each potion raises a stat toward this class’s max. Max all eight (8/8) before Oryx’s Castle.' },
   { target: () => $('.lvmode .chip'), title: 'Buy ×1, ×10, Max', text: 'Tap to switch how many levels or potions each press buys.' },
   { target: tab('party'), title: 'Party', text: 'All your classes. Leveling unlocks new ones: Wizard level 5 unlocks the Priest, and so on. Up to three fight at once, and you can swap them any time.' },
-  { target: tab('gear'), title: 'Gear', text: 'The only loot is Uniques: named items with special powers, guarded by each zone’s boss. Their bonuses are percentages, so they never go stale. Each class wears its own kinds (Wizards: staves, robes, spells, rings). A repeat find upgrades the copy you have.' },
+  { target: tab('gear'), title: 'Gear', text: 'All gear is named and rare, with special powers, guarded by each zone’s boss. Their bonuses are percentages, so they never go stale. Each class wears its own kinds (Wizards: staves, robes, spells, rings). A repeat find upgrades the copy you have.' },
   { target: tab('map'), title: 'Map', text: 'The Realm’s biomes, and the dungeons that open each time you defeat Oryx. Tap any stage you’ve cleared to farm it.' },
   { target: tab('ascend'), title: 'Ascend', text: 'Defeat Oryx the Mad God to Ascend: start over in a harder Realm with permanent bonuses that keep stacking.' },
   { title: 'While you’re away', text: 'Your party keeps fighting for up to 8 hours when the game is closed. Come back to collect what they earned. Good luck, hero.', done: 'Begin' },
@@ -123,7 +123,7 @@ function openSettings() {
       h('div', { class: 'stat' }, h('span', {}, 'Fame earned'), h('b', {}, fmt(G.state.stats.fameEarned))),
       h('div', { class: 'stat' }, h('span', {}, 'Offline limit'), h('b', {}, `${G.offlineCapH()}h`))),
     h('div', { class: 'panel', style: { fontSize: '13px', fontWeight: 700 } },
-      h('div', { class: 'stat' }, h('span', {}, 'Uniques found'), h('b', {}, `${Object.keys(G.state.uniques).length}`)),
+      h('div', { class: 'stat' }, h('span', {}, 'Gear found'), h('b', {}, `${Object.keys(G.state.uniques).length}`)),
       h('div', { class: 'stat' }, h('span', {}, 'Ascensions'), h('b', {}, `${G.state.ascensions}`))),
     h('button', { class: 'btn red block', onclick: async () => { if (await confirmDialog({ title: 'Erase all progress?', body: 'This deletes your save on this device. It cannot be undone.', ok: 'Erase', danger: true })) { G.resetAll(); close(); location.reload(); } } }, 'Erase progress'),
     h('div', { class: 'dim center', style: { fontSize: '11px', fontWeight: 800 } }, `Realm Idle · build ${BUILD} · `,
@@ -153,7 +153,7 @@ function collect() {
   if (r) { showOffline(r, () => { onFame(r.fame); refresh(); }); for (const u of r.uniques) showUnique(u.it, seeItem, u.dupe); }
   // an older save's regular gear was turned into Fame when it loaded
   const old = G.state.flags.retired;
-  if (old) { delete G.state.flags.retired; G.save(); setTimeout(() => toast({ title: 'Regular gear is gone', body: `Only Uniques drop now. Your ${old.n} old items became +${fmt(old.fame)} Fame.`, kind: 'gold' }), 1500); }
+  if (old) { delete G.state.flags.retired; G.save(); setTimeout(() => toast({ title: 'Regular gear is gone', body: `Only named gear drops now. Your ${old.n} old items became +${fmt(old.fame)} Fame.`, kind: 'gold' }), 1500); }
 }
 
 // ---------- loop ----------

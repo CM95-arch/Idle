@@ -205,7 +205,7 @@ export class BattleView {
         this.bags.push({ x: at.x, y: at.y, t: 0, rarity: r.it.rarity, life: r.unique ? (r.exalted ? 3.4 : 2.6) : 1.5, ex: r.exalted });
         if (r.unique) {
           // the white bag: a pillar of light, a flash, and a chime you learn to love
-          if (r.exalted) { this.banner('EXALTED!', '#ffe08a', 3, true); this.flash = 0.7; this.flashColor = '#fff2b0'; this.shake = 10; this.confetti(); } else { this.banner('UNIQUE!', '#ffffff', 2.2, true); this.flash = 0.45; this.flashColor = '#ffffff'; this.shake = 6; }
+          if (r.exalted) { this.banner('EXALTED!', '#ffe08a', 3, true); this.flash = 0.7; this.flashColor = '#fff2b0'; this.shake = 10; this.confetti(); } else { this.banner('LOOT!', '#ffffff', 2.2, true); this.flash = 0.45; this.flashColor = '#ffffff'; this.shake = 6; }
           for (let i = 0; i < 40; i++) { const a = rand(0, TAU), sp = rand(60, 220); this.parts.push({ x: at.x, y: at.y - 10, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 60, t: 0, life: rand(0.8, 1.6), c: i % 3 ? '#ffffff' : '#6ff2ff', s: rand(2, 3.5), g: 80, add: true }); }
           sound?.(r.exalted ? 'exalted' : 'unique');
         } else sound?.(r.it.rarity >= 3 ? 'lootRare' : 'loot');

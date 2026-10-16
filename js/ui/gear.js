@@ -39,9 +39,9 @@ export function openItemSheet(id, onChange) {
         h('div', { class: `itile r${it.rarity}${uniqueOf(it)?.exalted ? ' ex' : ''}`, style: { '--rc': R.color, width: '72px' } }, itemIcon(it, 56)),
         h('div', { class: 'grow' },
           h('div', { style: { fontWeight: 900, fontSize: '18px', color: uniqueOf(it)?.exalted ? '#ffe08a' : R.color } }, `${it.name}${it.up ? ` +${it.up}` : ''}`),
-          h('div', { class: 'muted', style: { fontWeight: 800, fontSize: '12px' } }, `${uniqueOf(it)?.exalted ? 'Exalted Unique' : 'Unique'} ${SLOT_NAME[slot]} · from ${ZONE_BY_ID[uniqueOf(it)?.src]?.boss[0] || 'a boss'}`),
+          h('div', { class: 'muted', style: { fontWeight: 800, fontSize: '12px' } }, `${uniqueOf(it)?.exalted ? 'Exalted ' : ''}${SLOT_NAME[slot]} · from ${ZONE_BY_ID[uniqueOf(it)?.src]?.boss[0] || 'a boss'}`),
           wornBy ? h('div', { class: 'gold', style: { fontWeight: 800, fontSize: '12px' } }, `Worn by ${CLASSES[wornBy].name}`) : null)),
-      uniqueOf(it) ? h('div', { class: 'panel ufx' }, h('b', {}, '✦ Unique effect'), h('div', { style: { fontSize: '14px', fontWeight: 700, marginTop: '2px' } }, uniqueOf(it).desc), null) : null,
+      uniqueOf(it) ? h('div', { class: 'panel ufx' }, h('b', {}, '✦ Special effect'), h('div', { style: { fontSize: '14px', fontWeight: 700, marginTop: '2px' } }, uniqueOf(it).desc), null) : null,
       h('div', { class: 'panel stats', style: { gridTemplateColumns: '1fr' } }, statRows(it)),
       !wornBy && owners.length ? h('div', {}, h('div', { class: 'h2', style: { marginTop: 0 } }, 'Equip on'),
         ...owners.map((c) => {
@@ -98,15 +98,15 @@ export function createGearScreen(root, { onChange }) {
     const s = G.state, found = Object.keys(s.uniques).length;
     const items = s.inv.filter((it) => filter === 'all' || slotOf(it) === filter).sort((a, b) => !!uniqueOf(b)?.exalted - !!uniqueOf(a)?.exalted || b.up - a.up || a.name.localeCompare(b.name));
     root.replaceChildren(
-      h('div', { class: 'row between' }, h('div', { class: 'h1' }, 'Uniques'),
+      h('div', { class: 'row between' }, h('div', { class: 'h1' }, 'Gear'),
         h('button', { class: 'chip', onclick: openCollection }, `✦ ${found} / ${UNIQUES.length} found`)),
       h('div', { class: 'row', style: { overflowX: 'auto', paddingBottom: '4px' } }, FILTERS.map(([k, l]) => h('button', { class: `chip${k === filter ? ' on' : ''}`, onclick: () => { filter = k; tap(); render(); } }, l))),
       h('div', { class: 'row between', style: { margin: '14px 2px 8px' } }, h('div', { class: 'h2', style: { margin: 0 } }, sel ? 'Choose what to salvage' : `Vault · ${items.length}`),
         !sel && items.length ? h('small', { class: 'dim', style: { fontWeight: 800, fontSize: '11px' } }, h('span', { class: 'delta-up' }, '▲'), ' better for your party') : null),
       items.length ? h('div', { class: 'igrid' }, items.map(tile))
-        : h('div', { class: 'panel center muted' }, s.inv.length ? 'Nothing in this category.' : 'No spare Uniques yet. Bosses guard them.'),
+        : h('div', { class: 'panel center muted' }, s.inv.length ? 'Nothing in this category.' : 'No spare gear yet. Bosses guard it.'),
       sel ? salvageBar(items) : h('div', { class: 'row', style: { marginTop: '14px' } },
-          h('button', { class: 'btn grow sm', disabled: !G.bestUpgrades(), onclick: () => { let n = 0; for (const c of s.party) n += G.equipBest(c); tap('equip'); toast({ title: n ? `Equipped ${n} Unique${n === 1 ? '' : 's'}` : 'Nothing better to equip', kind: n ? 'gold' : '' }); render(); onChange?.(); } }, 'Equip best for party'),
+          h('button', { class: 'btn grow sm', disabled: !G.bestUpgrades(), onclick: () => { let n = 0; for (const c of s.party) n += G.equipBest(c); tap('equip'); toast({ title: n ? `Equipped ${n} item${n === 1 ? '' : 's'}` : 'Nothing better to equip', kind: n ? 'gold' : '' }); render(); onChange?.(); } }, 'Equip best for party'),
           h('button', { class: 'btn alt sm', disabled: !s.inv.length, onclick: startSalvage }, 'Salvage')));
   }
   return { render, frame() {} };
@@ -118,7 +118,7 @@ export function openCollection() {
   openSheet(() => {
     const found = G.state.uniques;
     return [
-      h('div', { class: 'pixel center', style: { fontSize: '22px' } }, 'Uniques'),
+      h('div', { class: 'pixel center', style: { fontSize: '22px' } }, 'Collection'),
       h('div', { class: 'muted center', style: { fontSize: '13px', fontWeight: 700 } }, `${Object.keys(found).length} of ${UNIQUES.length} found`),
       ...ZONES.filter((Z) => UNIQUES.some((U) => U.src === Z.id)).map((Z) => h('div', {},
         h('div', { class: 'h2' }, `${Z.dungeon ? `Tier ${Z.tier} · ` : ''}${Z.name} · ${Z.boss[0]}`),
