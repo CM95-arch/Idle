@@ -1,0 +1,2645 @@
+[
+ {
+  "id": "heroes-front",
+  "title": "Heroes, front",
+  "size": "1024\u00d71536 portrait",
+  "rows": 4,
+  "cols": 3,
+  "cells": [
+   {
+    "kind": "hero-front",
+    "id": "wizard"
+   },
+   {
+    "kind": "hero-front",
+    "id": "priest"
+   },
+   {
+    "kind": "hero-front",
+    "id": "archer"
+   },
+   {
+    "kind": "hero-front",
+    "id": "rogue"
+   },
+   {
+    "kind": "hero-front",
+    "id": "warrior"
+   },
+   {
+    "kind": "hero-front",
+    "id": "knight"
+   },
+   {
+    "kind": "hero-front",
+    "id": "huntress"
+   },
+   {
+    "kind": "hero-front",
+    "id": "necromancer"
+   },
+   {
+    "kind": "hero-front",
+    "id": "assassin"
+   },
+   {
+    "kind": "hero-front",
+    "id": "paladin"
+   },
+   {
+    "kind": "hero-front",
+    "id": "sorcerer"
+   },
+   null
+  ]
+ },
+ {
+  "id": "heroes-battle-1",
+  "title": "Heroes in battle 1",
+  "size": "1536\u00d71024 landscape",
+  "rows": 3,
+  "cols": 4,
+  "cells": [
+   {
+    "kind": "hero-back",
+    "id": "wizard",
+    "frame": 0
+   },
+   {
+    "kind": "hero-back",
+    "id": "wizard",
+    "frame": 1
+   },
+   {
+    "kind": "hero-back",
+    "id": "priest",
+    "frame": 0
+   },
+   {
+    "kind": "hero-back",
+    "id": "priest",
+    "frame": 1
+   },
+   {
+    "kind": "hero-back",
+    "id": "archer",
+    "frame": 0
+   },
+   {
+    "kind": "hero-back",
+    "id": "archer",
+    "frame": 1
+   },
+   {
+    "kind": "hero-back",
+    "id": "rogue",
+    "frame": 0
+   },
+   {
+    "kind": "hero-back",
+    "id": "rogue",
+    "frame": 1
+   },
+   {
+    "kind": "hero-back",
+    "id": "warrior",
+    "frame": 0
+   },
+   {
+    "kind": "hero-back",
+    "id": "warrior",
+    "frame": 1
+   },
+   {
+    "kind": "hero-back",
+    "id": "knight",
+    "frame": 0
+   },
+   {
+    "kind": "hero-back",
+    "id": "knight",
+    "frame": 1
+   }
+  ]
+ },
+ {
+  "id": "heroes-battle-2",
+  "title": "Heroes in battle 2",
+  "size": "1536\u00d71024 landscape",
+  "rows": 3,
+  "cols": 4,
+  "cells": [
+   {
+    "kind": "hero-back",
+    "id": "huntress",
+    "frame": 0
+   },
+   {
+    "kind": "hero-back",
+    "id": "huntress",
+    "frame": 1
+   },
+   {
+    "kind": "hero-back",
+    "id": "necromancer",
+    "frame": 0
+   },
+   {
+    "kind": "hero-back",
+    "id": "necromancer",
+    "frame": 1
+   },
+   {
+    "kind": "hero-back",
+    "id": "assassin",
+    "frame": 0
+   },
+   {
+    "kind": "hero-back",
+    "id": "assassin",
+    "frame": 1
+   },
+   {
+    "kind": "hero-back",
+    "id": "paladin",
+    "frame": 0
+   },
+   {
+    "kind": "hero-back",
+    "id": "paladin",
+    "frame": 1
+   },
+   {
+    "kind": "hero-back",
+    "id": "sorcerer",
+    "frame": 0
+   },
+   {
+    "kind": "hero-back",
+    "id": "sorcerer",
+    "frame": 1
+   },
+   null,
+   null
+  ]
+ },
+ {
+  "id": "enemies-1",
+  "title": "Enemies 1",
+  "size": "1536\u00d71024 landscape",
+  "rows": 3,
+  "cols": 4,
+  "cells": [
+   {
+    "kind": "enemy",
+    "id": "pirate",
+    "name": "Pirate",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "pirate",
+    "name": "Pirate",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "giant-crab",
+    "name": "Giant Crab",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "giant-crab",
+    "name": "Giant Crab",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "sand-slime",
+    "name": "Sand Slime",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "sand-slime",
+    "name": "Sand Slime",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "halfling-hexer",
+    "name": "Halfling Hexer",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "halfling-hexer",
+    "name": "Halfling Hexer",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "goblin",
+    "name": "Goblin",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "goblin",
+    "name": "Goblin",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "viper",
+    "name": "Viper",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "viper",
+    "name": "Viper",
+    "frame": 1
+   }
+  ]
+ },
+ {
+  "id": "enemies-2",
+  "title": "Enemies 2",
+  "size": "1536\u00d71024 landscape",
+  "rows": 3,
+  "cols": 4,
+  "cells": [
+   {
+    "kind": "enemy",
+    "id": "orc-warrior",
+    "name": "Orc Warrior",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "orc-warrior",
+    "name": "Orc Warrior",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "dark-elf",
+    "name": "Dark Elf",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "dark-elf",
+    "name": "Dark Elf",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "skeleton",
+    "name": "Skeleton",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "skeleton",
+    "name": "Skeleton",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "ogre",
+    "name": "Ogre",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "ogre",
+    "name": "Ogre",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "stone-golem",
+    "name": "Stone Golem",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "stone-golem",
+    "name": "Stone Golem",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "wraith",
+    "name": "Wraith",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "wraith",
+    "name": "Wraith",
+    "frame": 1
+   }
+  ]
+ },
+ {
+  "id": "enemies-3",
+  "title": "Enemies 3",
+  "size": "1536\u00d71024 landscape",
+  "rows": 3,
+  "cols": 4,
+  "cells": [
+   {
+    "kind": "enemy",
+    "id": "medusa",
+    "name": "Medusa",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "medusa",
+    "name": "Medusa",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "gazer",
+    "name": "Gazer",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "gazer",
+    "name": "Gazer",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "mind-leech",
+    "name": "Mind Leech",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "mind-leech",
+    "name": "Mind Leech",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "spire-sentinel",
+    "name": "Spire Sentinel",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "spire-sentinel",
+    "name": "Spire Sentinel",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "stone-gargoyle",
+    "name": "Stone Gargoyle",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "stone-gargoyle",
+    "name": "Stone Gargoyle",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "scarab",
+    "name": "Scarab",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "scarab",
+    "name": "Scarab",
+    "frame": 1
+   }
+  ]
+ },
+ {
+  "id": "enemies-4",
+  "title": "Enemies 4",
+  "size": "1536\u00d71024 landscape",
+  "rows": 3,
+  "cols": 4,
+  "cells": [
+   {
+    "kind": "enemy",
+    "id": "usurpers-henchman",
+    "name": "Usurper\u2019s Henchman",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "usurpers-henchman",
+    "name": "Usurper\u2019s Henchman",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "royal-golem",
+    "name": "Royal Golem",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "royal-golem",
+    "name": "Royal Golem",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "spire-thrall",
+    "name": "Spire Thrall",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "spire-thrall",
+    "name": "Spire Thrall",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "black-widow",
+    "name": "Black Widow",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "black-widow",
+    "name": "Black Widow",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "spider-hatchling",
+    "name": "Spider Hatchling",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "spider-hatchling",
+    "name": "Spider Hatchling",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "egg-sac",
+    "name": "Egg Sac",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "egg-sac",
+    "name": "Egg Sac",
+    "frame": 1
+   }
+  ]
+ },
+ {
+  "id": "enemies-5",
+  "title": "Enemies 5",
+  "size": "1536\u00d71024 landscape",
+  "rows": 3,
+  "cols": 4,
+  "cells": [
+   {
+    "kind": "enemy",
+    "id": "coil-guard",
+    "name": "Coil Guard",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "coil-guard",
+    "name": "Coil Guard",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "pit-snake",
+    "name": "Pit Snake",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "pit-snake",
+    "name": "Pit Snake",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "pit-viper",
+    "name": "Pit Viper",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "pit-viper",
+    "name": "Pit Viper",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "nature-sprite",
+    "name": "Nature Sprite",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "nature-sprite",
+    "name": "Nature Sprite",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "sprite-imp",
+    "name": "Sprite Imp",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "sprite-imp",
+    "name": "Sprite Imp",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "glimmerling",
+    "name": "Glimmerling",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "glimmerling",
+    "name": "Glimmerling",
+    "frame": 1
+   }
+  ]
+ },
+ {
+  "id": "enemies-6",
+  "title": "Enemies 6",
+  "size": "1536\u00d71024 landscape",
+  "rows": 3,
+  "cols": 4,
+  "cells": [
+   {
+    "kind": "enemy",
+    "id": "crypt-skeleton",
+    "name": "Crypt Skeleton",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "crypt-skeleton",
+    "name": "Crypt Skeleton",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "crypt-ghost",
+    "name": "Crypt Ghost",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "crypt-ghost",
+    "name": "Crypt Ghost",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "crypt-mummy",
+    "name": "Crypt Mummy",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "crypt-mummy",
+    "name": "Crypt Mummy",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "brinewreck-sailor",
+    "name": "Brinewreck Sailor",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "brinewreck-sailor",
+    "name": "Brinewreck Sailor",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "bottled-spirit",
+    "name": "Bottled Spirit",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "bottled-spirit",
+    "name": "Bottled Spirit",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "harbor-crab",
+    "name": "Harbor Crab",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "harbor-crab",
+    "name": "Harbor Crab",
+    "frame": 1
+   }
+  ]
+ },
+ {
+  "id": "enemies-7",
+  "title": "Enemies 7",
+  "size": "1536\u00d71024 landscape",
+  "rows": 3,
+  "cols": 4,
+  "cells": [
+   {
+    "kind": "enemy",
+    "id": "imp",
+    "name": "Imp",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "imp",
+    "name": "Imp",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "demon-warrior",
+    "name": "Demon Warrior",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "demon-warrior",
+    "name": "Demon Warrior",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "pit-brute",
+    "name": "Pit Brute",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "pit-brute",
+    "name": "Pit Brute",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "giant-larva",
+    "name": "Giant Larva",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "giant-larva",
+    "name": "Giant Larva",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "dusk-moth",
+    "name": "Dusk Moth",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "dusk-moth",
+    "name": "Dusk Moth",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "feral-squirrel",
+    "name": "Feral Squirrel",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "feral-squirrel",
+    "name": "Feral Squirrel",
+    "frame": 1
+   }
+  ]
+ },
+ {
+  "id": "enemies-8",
+  "title": "Enemies 8",
+  "size": "1536\u00d71024 landscape",
+  "rows": 3,
+  "cols": 4,
+  "cells": [
+   {
+    "kind": "enemy",
+    "id": "escaped-experiment",
+    "name": "Escaped Experiment",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "escaped-experiment",
+    "name": "Escaped Experiment",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "brass-golem",
+    "name": "Brass Golem",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "brass-golem",
+    "name": "Brass Golem",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "clockwork-eye",
+    "name": "Clockwork Eye",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "clockwork-eye",
+    "name": "Clockwork Eye",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "zombie",
+    "name": "Zombie",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "zombie",
+    "name": "Zombie",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "restless-ghost",
+    "name": "Restless Ghost",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "restless-ghost",
+    "name": "Restless Ghost",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "grave-skeleton",
+    "name": "Grave Skeleton",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "grave-skeleton",
+    "name": "Grave Skeleton",
+    "frame": 1
+   }
+  ]
+ },
+ {
+  "id": "enemies-9",
+  "title": "Enemies 9",
+  "size": "1536\u00d71024 landscape",
+  "rows": 3,
+  "cols": 4,
+  "cells": [
+   {
+    "kind": "enemy",
+    "id": "vampire-bat",
+    "name": "Vampire Bat",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "vampire-bat",
+    "name": "Vampire Bat",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "vampire-servant",
+    "name": "Vampire Servant",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "vampire-servant",
+    "name": "Vampire Servant",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "haunted-armor",
+    "name": "Haunted Armor",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "haunted-armor",
+    "name": "Haunted Armor",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "sewer-rat",
+    "name": "Sewer Rat",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "sewer-rat",
+    "name": "Sewer Rat",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "toxic-slime",
+    "name": "Toxic Slime",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "toxic-slime",
+    "name": "Toxic Slime",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "sewer-bat",
+    "name": "Sewer Bat",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "sewer-bat",
+    "name": "Sewer Bat",
+    "frame": 1
+   }
+  ]
+ },
+ {
+  "id": "enemies-10",
+  "title": "Enemies 10",
+  "size": "1536\u00d71024 landscape",
+  "rows": 3,
+  "cols": 4,
+  "cells": [
+   {
+    "kind": "enemy",
+    "id": "cursed-tome",
+    "name": "Cursed Tome",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "cursed-tome",
+    "name": "Cursed Tome",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "library-spirit",
+    "name": "Library Spirit",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "library-spirit",
+    "name": "Library Spirit",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "mad-scholar",
+    "name": "Mad Scholar",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "mad-scholar",
+    "name": "Mad Scholar",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "ice-golem",
+    "name": "Ice Golem",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "ice-golem",
+    "name": "Ice Golem",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "snow-bat",
+    "name": "Snow Bat",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "snow-bat",
+    "name": "Snow Bat",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "frost-sprite",
+    "name": "Frost Sprite",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "frost-sprite",
+    "name": "Frost Sprite",
+    "frame": 1
+   }
+  ]
+ },
+ {
+  "id": "enemies-11",
+  "title": "Enemies 11",
+  "size": "1536\u00d71024 landscape",
+  "rows": 3,
+  "cols": 4,
+  "cells": [
+   {
+    "kind": "enemy",
+    "id": "ghost-sailor",
+    "name": "Ghost Sailor",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "ghost-sailor",
+    "name": "Ghost Sailor",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "drowned-pirate",
+    "name": "Drowned Pirate",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "drowned-pirate",
+    "name": "Drowned Pirate",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "phantom-crab",
+    "name": "Phantom Crab",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "phantom-crab",
+    "name": "Phantom Crab",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "tomb-mummy",
+    "name": "Tomb Mummy",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "tomb-mummy",
+    "name": "Tomb Mummy",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "tomb-guardian",
+    "name": "Tomb Guardian",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "tomb-guardian",
+    "name": "Tomb Guardian",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "reef-warrior",
+    "name": "Reef Warrior",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "reef-warrior",
+    "name": "Reef Warrior",
+    "frame": 1
+   }
+  ]
+ },
+ {
+  "id": "enemies-12",
+  "title": "Enemies 12",
+  "size": "1536\u00d71024 landscape",
+  "rows": 3,
+  "cols": 4,
+  "cells": [
+   {
+    "kind": "enemy",
+    "id": "pink-jellyfish",
+    "name": "Pink Jellyfish",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "pink-jellyfish",
+    "name": "Pink Jellyfish",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "deep-slime",
+    "name": "Deep Slime",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "deep-slime",
+    "name": "Deep Slime",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "crystal-worm",
+    "name": "Crystal Worm",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "crystal-worm",
+    "name": "Crystal Worm",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "crystal-golem",
+    "name": "Crystal Golem",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "crystal-golem",
+    "name": "Crystal Golem",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "shard-eye",
+    "name": "Shard Eye",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "shard-eye",
+    "name": "Shard Eye",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "temple-monk",
+    "name": "Temple Monk",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "temple-monk",
+    "name": "Temple Monk",
+    "frame": 1
+   }
+  ]
+ },
+ {
+  "id": "enemies-13",
+  "title": "Enemies 13",
+  "size": "1536\u00d71024 landscape",
+  "rows": 3,
+  "cols": 4,
+  "cells": [
+   {
+    "kind": "enemy",
+    "id": "jade-statue",
+    "name": "Jade Statue",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "jade-statue",
+    "name": "Jade Statue",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "stone-dragon",
+    "name": "Stone Dragon",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "stone-dragon",
+    "name": "Stone Dragon",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "dragon-whelp",
+    "name": "Dragon Whelp",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "dragon-whelp",
+    "name": "Dragon Whelp",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "roost-guard",
+    "name": "Roost Guard",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "roost-guard",
+    "name": "Roost Guard",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "dragon-egg",
+    "name": "Dragon Egg",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "dragon-egg",
+    "name": "Dragon Egg",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "parasite",
+    "name": "Parasite",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "parasite",
+    "name": "Parasite",
+    "frame": 1
+   }
+  ]
+ },
+ {
+  "id": "enemies-14",
+  "title": "Enemies 14",
+  "size": "1536\u00d71024 landscape",
+  "rows": 3,
+  "cols": 4,
+  "cells": [
+   {
+    "kind": "enemy",
+    "id": "flesh-blob",
+    "name": "Flesh Blob",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "flesh-blob",
+    "name": "Flesh Blob",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "host",
+    "name": "Host",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "host",
+    "name": "Host",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "fire-imp",
+    "name": "Fire Imp",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "fire-imp",
+    "name": "Fire Imp",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "magma-golem",
+    "name": "Magma Golem",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "magma-golem",
+    "name": "Magma Golem",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "flame-spirit",
+    "name": "Flame Spirit",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "flame-spirit",
+    "name": "Flame Spirit",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "knight-puppet",
+    "name": "Knight Puppet",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "knight-puppet",
+    "name": "Knight Puppet",
+    "frame": 1
+   }
+  ]
+ },
+ {
+  "id": "enemies-15",
+  "title": "Enemies 15",
+  "size": "1536\u00d71024 landscape",
+  "rows": 3,
+  "cols": 4,
+  "cells": [
+   {
+    "kind": "enemy",
+    "id": "archer-puppet",
+    "name": "Archer Puppet",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "archer-puppet",
+    "name": "Archer Puppet",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "priest-puppet",
+    "name": "Priest Puppet",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "priest-puppet",
+    "name": "Priest Puppet",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "gearling",
+    "name": "Gearling",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "gearling",
+    "name": "Gearling",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "steam-golem",
+    "name": "Steam Golem",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "steam-golem",
+    "name": "Steam Golem",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "gear-bot",
+    "name": "Gear Bot",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "gear-bot",
+    "name": "Gear Bot",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "masked-warrior",
+    "name": "Masked Warrior",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "masked-warrior",
+    "name": "Masked Warrior",
+    "frame": 1
+   }
+  ]
+ },
+ {
+  "id": "enemies-16",
+  "title": "Enemies 16",
+  "size": "1536\u00d71024 landscape",
+  "rows": 3,
+  "cols": 4,
+  "cells": [
+   {
+    "kind": "enemy",
+    "id": "jungle-snake",
+    "name": "Jungle Snake",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "jungle-snake",
+    "name": "Jungle Snake",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "totem",
+    "name": "Totem",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "totem",
+    "name": "Totem",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "thorn-vine",
+    "name": "Thorn Vine",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "thorn-vine",
+    "name": "Thorn Vine",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "blooming-golem",
+    "name": "Blooming Golem",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "blooming-golem",
+    "name": "Blooming Golem",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "garden-bee",
+    "name": "Garden Bee",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "garden-bee",
+    "name": "Garden Bee",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "sanctum-guard",
+    "name": "Sanctum Guard",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "sanctum-guard",
+    "name": "Sanctum Guard",
+    "frame": 1
+   }
+  ]
+ },
+ {
+  "id": "enemies-17",
+  "title": "Enemies 17",
+  "size": "1536\u00d71024 landscape",
+  "rows": 3,
+  "cols": 4,
+  "cells": [
+   {
+    "kind": "enemy",
+    "id": "forsaken-sentry",
+    "name": "Forsaken Sentry",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "forsaken-sentry",
+    "name": "Forsaken Sentry",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "cultist",
+    "name": "Cultist",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "cultist",
+    "name": "Cultist",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "void-mite",
+    "name": "Void Mite",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "void-mite",
+    "name": "Void Mite",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "fractured-knight",
+    "name": "Fractured Knight",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "fractured-knight",
+    "name": "Fractured Knight",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "stone-mage",
+    "name": "Stone Mage",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "stone-mage",
+    "name": "Stone Mage",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "twilight-wraith",
+    "name": "Twilight Wraith",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "twilight-wraith",
+    "name": "Twilight Wraith",
+    "frame": 1
+   }
+  ]
+ },
+ {
+  "id": "bosses-1",
+  "title": "Bosses 1",
+  "size": "1536\u00d71024 landscape",
+  "rows": 3,
+  "cols": 4,
+  "cells": [
+   {
+    "kind": "enemy",
+    "id": "kraken-king",
+    "name": "Kraken King",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "kraken-king",
+    "name": "Kraken King",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "dwarf-warlord",
+    "name": "Dwarf Warlord",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "dwarf-warlord",
+    "name": "Dwarf Warlord",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "lich",
+    "name": "Lich",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "lich",
+    "name": "Lich",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "elder-treant",
+    "name": "Elder Treant",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "elder-treant",
+    "name": "Elder Treant",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "sandsworn-sphinx",
+    "name": "Sandsworn Sphinx",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "sandsworn-sphinx",
+    "name": "Sandsworn Sphinx",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "the-gatewarden",
+    "name": "The Gatewarden",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "the-gatewarden",
+    "name": "The Gatewarden",
+    "frame": 1
+   }
+  ]
+ },
+ {
+  "id": "bosses-2",
+  "title": "Bosses 2",
+  "size": "1536\u00d71024 landscape",
+  "rows": 3,
+  "cols": 4,
+  "cells": [
+   {
+    "kind": "enemy",
+    "id": "vexis-the-usurper",
+    "name": "Vexis the Usurper",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "vexis-the-usurper",
+    "name": "Vexis the Usurper",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "silkmother-veyra",
+    "name": "Silkmother Veyra",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "silkmother-veyra",
+    "name": "Silkmother Veyra",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "ssaresh-the-coiled-queen",
+    "name": "Ssaresh the Coiled Queen",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "ssaresh-the-coiled-queen",
+    "name": "Ssaresh the Coiled Queen",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "lumi-the-glade-mother",
+    "name": "Lumi the Glade Mother",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "lumi-the-glade-mother",
+    "name": "Lumi the Glade Mother",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "morvane-the-grave-lord",
+    "name": "Morvane the Grave Lord",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "morvane-the-grave-lord",
+    "name": "Morvane the Grave Lord",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "captain-saltmarrow",
+    "name": "Captain Saltmarrow",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "captain-saltmarrow",
+    "name": "Captain Saltmarrow",
+    "frame": 1
+   }
+  ]
+ },
+ {
+  "id": "bosses-3",
+  "title": "Bosses 3",
+  "size": "1536\u00d71024 landscape",
+  "rows": 3,
+  "cols": 4,
+  "cells": [
+   {
+    "kind": "enemy",
+    "id": "archfiend-korzul",
+    "name": "Archfiend Korzul",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "archfiend-korzul",
+    "name": "Archfiend Korzul",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "the-moth-matriarch",
+    "name": "The Moth Matriarch",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "the-moth-matriarch",
+    "name": "The Moth Matriarch",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "doctor-grimsby",
+    "name": "Doctor Grimsby",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "doctor-grimsby",
+    "name": "Doctor Grimsby",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "the-gravemoor-wraith",
+    "name": "The Gravemoor Wraith",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "the-gravemoor-wraith",
+    "name": "The Gravemoor Wraith",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "count-vasilrei",
+    "name": "Count Vasilrei",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "count-vasilrei",
+    "name": "Count Vasilrei",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "glorb-the-sludge-king",
+    "name": "Glorb the Sludge King",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "glorb-the-sludge-king",
+    "name": "Glorb the Sludge King",
+    "frame": 1
+   }
+  ]
+ },
+ {
+  "id": "bosses-4",
+  "title": "Bosses 4",
+  "size": "1536\u00d71024 landscape",
+  "rows": 3,
+  "cols": 4,
+  "cells": [
+   {
+    "kind": "enemy",
+    "id": "the-ink-bound-archivist",
+    "name": "The Ink-Bound Archivist",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "the-ink-bound-archivist",
+    "name": "The Ink-Bound Archivist",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "hrimvald-the-frozen",
+    "name": "Hrimvald the Frozen",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "hrimvald-the-frozen",
+    "name": "Hrimvald the Frozen",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "the-drowned-captain",
+    "name": "The Drowned Captain",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "the-drowned-captain",
+    "name": "The Drowned Captain",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "the-three-sun-kings",
+    "name": "The Three Sun Kings",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "the-three-sun-kings",
+    "name": "The Three Sun Kings",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "nerissa-of-the-deep",
+    "name": "Nerissa of the Deep",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "nerissa-of-the-deep",
+    "name": "Nerissa of the Deep",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "the-prism-tyrant",
+    "name": "The Prism Tyrant",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "the-prism-tyrant",
+    "name": "The Prism Tyrant",
+    "frame": 1
+   }
+  ]
+ },
+ {
+  "id": "bosses-5",
+  "title": "Bosses 5",
+  "size": "1536\u00d71024 landscape",
+  "rows": 3,
+  "cols": 4,
+  "cells": [
+   {
+    "kind": "enemy",
+    "id": "the-fallen-abbot",
+    "name": "The Fallen Abbot",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "the-fallen-abbot",
+    "name": "The Fallen Abbot",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "viridax-the-green-wyrm",
+    "name": "Viridax the Green Wyrm",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "viridax-the-green-wyrm",
+    "name": "Viridax the Green Wyrm",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "the-hive-heart",
+    "name": "The Hive Heart",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "the-hive-heart",
+    "name": "The Hive Heart",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "ignaroth-the-forgemaster",
+    "name": "Ignaroth the Forgemaster",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "ignaroth-the-forgemaster",
+    "name": "Ignaroth the Forgemaster",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "the-stringmaster",
+    "name": "The Stringmaster",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "the-stringmaster",
+    "name": "The Stringmaster",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "the-iron-overseer",
+    "name": "The Iron Overseer",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "the-iron-overseer",
+    "name": "The Iron Overseer",
+    "frame": 1
+   }
+  ]
+ },
+ {
+  "id": "bosses-6",
+  "title": "Bosses 6",
+  "size": "1536\u00d71024 landscape",
+  "rows": 3,
+  "cols": 4,
+  "cells": [
+   {
+    "kind": "enemy",
+    "id": "tlaxu-the-masked-serpent",
+    "name": "Tlaxu the Masked Serpent",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "tlaxu-the-masked-serpent",
+    "name": "Tlaxu the Masked Serpent",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "the-nightshade-queen",
+    "name": "The Nightshade Queen",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "the-nightshade-queen",
+    "name": "The Nightshade Queen",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "vexis-ascendant",
+    "name": "Vexis Ascendant",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "vexis-ascendant",
+    "name": "Vexis Ascendant",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "the-alabaster-colossus",
+    "name": "The Alabaster Colossus",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "the-alabaster-colossus",
+    "name": "The Alabaster Colossus",
+    "frame": 1
+   },
+   {
+    "kind": "enemy",
+    "id": "the-last-monarch",
+    "name": "The Last Monarch",
+    "frame": 0
+   },
+   {
+    "kind": "enemy",
+    "id": "the-last-monarch",
+    "name": "The Last Monarch",
+    "frame": 1
+   },
+   null,
+   null
+  ]
+ },
+ {
+  "id": "gear-1",
+  "title": "Gear icons 1",
+  "size": "1024\u00d71536 portrait",
+  "rows": 6,
+  "cols": 5,
+  "cells": [
+   {
+    "kind": "icon",
+    "id": "stEmber"
+   },
+   {
+    "kind": "icon",
+    "id": "stTide"
+   },
+   {
+    "kind": "icon",
+    "id": "stGull"
+   },
+   {
+    "kind": "icon",
+    "id": "stSand"
+   },
+   {
+    "kind": "icon",
+    "id": "stCrab"
+   },
+   {
+    "kind": "icon",
+    "id": "stDrift"
+   },
+   {
+    "kind": "icon",
+    "id": "stKelp"
+   },
+   {
+    "kind": "icon",
+    "id": "stWrack"
+   },
+   {
+    "kind": "icon",
+    "id": "stJelly"
+   },
+   {
+    "kind": "icon",
+    "id": "stShore"
+   },
+   {
+    "kind": "icon",
+    "id": "stStorm"
+   },
+   {
+    "kind": "icon",
+    "id": "stStaff"
+   },
+   {
+    "kind": "icon",
+    "id": "stWand"
+   },
+   {
+    "kind": "icon",
+    "id": "stBow"
+   },
+   {
+    "kind": "icon",
+    "id": "stDagger"
+   },
+   {
+    "kind": "icon",
+    "id": "stSword"
+   },
+   {
+    "kind": "icon",
+    "id": "coralBow"
+   },
+   {
+    "kind": "icon",
+    "id": "coralTrap"
+   },
+   {
+    "kind": "icon",
+    "id": "coralSilk"
+   },
+   {
+    "kind": "icon",
+    "id": "bulwark"
+   },
+   {
+    "kind": "icon",
+    "id": "cutlass"
+   },
+   {
+    "kind": "icon",
+    "id": "spiritDagger"
+   },
+   {
+    "kind": "icon",
+    "id": "poisonFang"
+   },
+   {
+    "kind": "icon",
+    "id": "sep"
+   },
+   {
+    "kind": "icon",
+    "id": "leafBow"
+   },
+   {
+    "kind": "icon",
+    "id": "planewalker"
+   },
+   {
+    "kind": "icon",
+    "id": "experimental"
+   },
+   {
+    "kind": "icon",
+    "id": "leafDragon"
+   },
+   {
+    "kind": "icon",
+    "id": "doomBow"
+   },
+   {
+    "kind": "icon",
+    "id": "madScientist"
+   }
+  ]
+ },
+ {
+  "id": "gear-2",
+  "title": "Gear icons 2",
+  "size": "1024\u00d71536 portrait",
+  "rows": 6,
+  "cols": 5,
+  "cells": [
+   {
+    "kind": "icon",
+    "id": "fulmination"
+   },
+   {
+    "kind": "icon",
+    "id": "resWarrior"
+   },
+   {
+    "kind": "icon",
+    "id": "endlessTorment"
+   },
+   {
+    "kind": "icon",
+    "id": "purification"
+   },
+   {
+    "kind": "icon",
+    "id": "esben"
+   },
+   {
+    "kind": "icon",
+    "id": "crystalWand"
+   },
+   {
+    "kind": "icon",
+    "id": "crystalSword"
+   },
+   {
+    "kind": "icon",
+    "id": "murky"
+   },
+   {
+    "kind": "icon",
+    "id": "demonBlade"
+   },
+   {
+    "kind": "icon",
+    "id": "decades"
+   },
+   {
+    "kind": "icon",
+    "id": "pyramid"
+   },
+   {
+    "kind": "icon",
+    "id": "sphinxRing"
+   },
+   {
+    "kind": "icon",
+    "id": "holyProtection"
+   },
+   {
+    "kind": "icon",
+    "id": "juggernaut"
+   },
+   {
+    "kind": "icon",
+    "id": "thunder"
+   },
+   {
+    "kind": "icon",
+    "id": "crystalSerpent"
+   },
+   {
+    "kind": "icon",
+    "id": "ogmur"
+   },
+   {
+    "kind": "icon",
+    "id": "blasphemous"
+   },
+   {
+    "kind": "icon",
+    "id": "devastation"
+   },
+   {
+    "kind": "icon",
+    "id": "bloodySurprises"
+   },
+   {
+    "kind": "icon",
+    "id": "fallen"
+   },
+   {
+    "kind": "icon",
+    "id": "avarice"
+   },
+   {
+    "kind": "icon",
+    "id": "divinity"
+   },
+   {
+    "kind": "icon",
+    "id": "genesis"
+   },
+   {
+    "kind": "icon",
+    "id": "colossus"
+   },
+   {
+    "kind": "icon",
+    "id": "newLife"
+   },
+   {
+    "kind": "icon",
+    "id": "marbleSeal"
+   },
+   {
+    "kind": "icon",
+    "id": "lodestone"
+   },
+   {
+    "kind": "icon",
+    "id": "voidBow"
+   },
+   {
+    "kind": "icon",
+    "id": "quiverShadows"
+   }
+  ]
+ },
+ {
+  "id": "gear-3",
+  "title": "Gear icons 3",
+  "size": "1024\u00d71536 portrait",
+  "rows": 6,
+  "cols": 5,
+  "cells": [
+   {
+    "kind": "icon",
+    "id": "armorNil"
+   },
+   {
+    "kind": "icon",
+    "id": "sourcestone"
+   },
+   {
+    "kind": "icon",
+    "id": "omnipotence"
+   },
+   {
+    "kind": "icon",
+    "id": "unholy"
+   },
+   {
+    "kind": "icon",
+    "id": "corruptedSouls"
+   },
+   {
+    "kind": "icon",
+    "id": "ritualRobe"
+   },
+   {
+    "kind": "icon",
+    "id": "bloodshed"
+   },
+   {
+    "kind": "icon",
+    "id": "marbleTome"
+   },
+   {
+    "kind": "icon",
+    "id": "voidDagger"
+   },
+   {
+    "kind": "icon",
+    "id": "cultistSnare"
+   },
+   {
+    "kind": "icon",
+    "id": "bracer"
+   },
+   {
+    "kind": "icon",
+    "id": "visage"
+   },
+   {
+    "kind": "icon",
+    "id": "duskyCatalyst"
+   },
+   {
+    "kind": "icon",
+    "id": "polarity"
+   },
+   {
+    "kind": "icon",
+    "id": "twilightGem"
+   },
+   {
+    "kind": "icon",
+    "id": "warmonger"
+   },
+   {
+    "kind": "icon",
+    "id": "forgottenCrown"
+   },
+   {
+    "kind": "icon",
+    "id": "monarchy"
+   },
+   {
+    "kind": "icon",
+    "id": "vestShadows"
+   },
+   {
+    "kind": "icon",
+    "id": "royalCuirass"
+   },
+   {
+    "kind": "icon",
+    "id": "starfall"
+   },
+   {
+    "kind": "icon",
+    "id": "twilightCloak"
+   },
+   {
+    "kind": "icon",
+    "id": "sentinelBulwark"
+   },
+   {
+    "kind": "icon",
+    "id": "forgottenScepter"
+   },
+   {
+    "kind": "icon",
+    "id": "vileSpirit"
+   },
+   {
+    "kind": "icon",
+    "id": "archerang"
+   },
+   {
+    "kind": "icon",
+    "id": "wanderingSouls"
+   },
+   {
+    "kind": "icon",
+    "id": "plague"
+   },
+   {
+    "kind": "icon",
+    "id": "crystalShield"
+   },
+   {
+    "kind": "icon",
+    "id": "perennial"
+   }
+  ]
+ },
+ {
+  "id": "gear-4",
+  "title": "Gear icons 4",
+  "size": "1024\u00d71536 portrait",
+  "rows": 6,
+  "cols": 5,
+  "cells": [
+   {
+    "kind": "icon",
+    "id": "nile"
+   },
+   {
+    "kind": "icon",
+    "id": "pain"
+   },
+   {
+    "kind": "icon",
+    "id": "scholar"
+   },
+   {
+    "kind": "icon",
+    "id": "thousandShot"
+   },
+   {
+    "kind": "icon",
+    "id": "webRobe"
+   },
+   {
+    "kind": "icon",
+    "id": "eyeRing"
+   },
+   {
+    "kind": "icon",
+    "id": "snakeskin"
+   },
+   {
+    "kind": "icon",
+    "id": "snakeRing"
+   },
+   {
+    "kind": "icon",
+    "id": "boneplate"
+   },
+   {
+    "kind": "icon",
+    "id": "captainCoat"
+   },
+   {
+    "kind": "icon",
+    "id": "anchorHelm"
+   },
+   {
+    "kind": "icon",
+    "id": "brimSkull"
+   },
+   {
+    "kind": "icon",
+    "id": "demonPlate"
+   },
+   {
+    "kind": "icon",
+    "id": "druidRobe"
+   },
+   {
+    "kind": "icon",
+    "id": "thornTrap"
+   },
+   {
+    "kind": "icon",
+    "id": "ghostWand"
+   },
+   {
+    "kind": "icon",
+    "id": "bloodRing"
+   },
+   {
+    "kind": "icon",
+    "id": "chaliceDagger"
+   },
+   {
+    "kind": "icon",
+    "id": "ratblade"
+   },
+   {
+    "kind": "icon",
+    "id": "sludgeRing"
+   },
+   {
+    "kind": "icon",
+    "id": "cosmicStaff"
+   },
+   {
+    "kind": "icon",
+    "id": "marginsTome"
+   },
+   {
+    "kind": "icon",
+    "id": "frostPlate"
+   },
+   {
+    "kind": "icon",
+    "id": "blackIce"
+   },
+   {
+    "kind": "icon",
+    "id": "ghostRing"
+   },
+   {
+    "kind": "icon",
+    "id": "driftCloak"
+   },
+   {
+    "kind": "icon",
+    "id": "jadeScepter"
+   },
+   {
+    "kind": "icon",
+    "id": "templeLeather"
+   },
+   {
+    "kind": "icon",
+    "id": "dragonFang"
+   },
+   {
+    "kind": "icon",
+    "id": "drakeHelm"
+   }
+  ]
+ },
+ {
+  "id": "gear-5",
+  "title": "Gear icons 5",
+  "size": "1024\u00d71536 portrait",
+  "rows": 6,
+  "cols": 5,
+  "cells": [
+   {
+    "kind": "icon",
+    "id": "bloodbound"
+   },
+   {
+    "kind": "icon",
+    "id": "moltenBlade"
+   },
+   {
+    "kind": "icon",
+    "id": "emberRobe"
+   },
+   {
+    "kind": "icon",
+    "id": "puppetJacket"
+   },
+   {
+    "kind": "icon",
+    "id": "stringQuiver"
+   },
+   {
+    "kind": "icon",
+    "id": "steamPlate"
+   },
+   {
+    "kind": "icon",
+    "id": "gearShield"
+   },
+   {
+    "kind": "icon",
+    "id": "thicketRing"
+   },
+   {
+    "kind": "icon",
+    "id": "quetzalHide"
+   },
+   {
+    "kind": "icon",
+    "id": "nightbloom"
+   },
+   {
+    "kind": "icon",
+    "id": "gardenSeal"
+   },
+   {
+    "kind": "icon",
+    "id": "madBow"
+   },
+   {
+    "kind": "icon",
+    "id": "madStaff"
+   },
+   {
+    "kind": "icon",
+    "id": "madBlade"
+   },
+   {
+    "kind": "icon",
+    "id": "madDagger"
+   },
+   {
+    "kind": "icon",
+    "id": "madWand"
+   },
+   {
+    "kind": "icon",
+    "id": "madRing"
+   },
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null,
+   null
+  ]
+ }
+]
