@@ -453,3 +453,4 @@ img.figure.locked { filter: brightness(0) opacity(.55); }
 /* painted sprites shown in the page: a CSS background on their atlas */
 .figure.sprite { display: inline-block; background-repeat: no-repeat; flex: none; }
 span.figure.locked { filter: brightness(0) opacity(.55); }
+.figure.sprite { image-rendering: pixelated; }

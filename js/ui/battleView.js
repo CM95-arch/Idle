@@ -22,6 +22,8 @@ const POSES = {
 // abilities thrown from the caster's hand to where they land, and their color in flight
 const LOBS = { aoe: '#ff8a3c', dot: '#ffb040', poison: '#7cff4a', drain: '#8fff9f' }, LOB_T = 0.3;
 export const VW = 360, VH = 430;
+// the field is painted at 1/PX resolution and blown up with hard pixels: one art pixel is PX field units
+const PX = 2;
 const MOD_COLOR = { chain: '#7ae8ff', burn: '#ff8a2a', chill: '#bfe8ff' };
 const EXALT_PAL = ['#a07a20', '#fff3c0', '#ffffff'];
 const TAU = Math.PI * 2;
@@ -444,15 +446,20 @@ export class BattleView {
   /** Draw a frame. dt in seconds. coinTarget / bagTarget: world points the Glory coins and loot fly to. */
   render(B, dt, coinTarget, bagTarget) {
     this.t += dt; this.simT = B.t;
-    const g = this.g;
-    g.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    const M = this.g;
+    M.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     const r = this.cv.getBoundingClientRect();
-    g.fillStyle = '#07060a'; g.fillRect(0, 0, r.width, r.height);
+    M.fillStyle = '#07060a'; M.fillRect(0, 0, r.width, r.height);
     const sx = (Math.random() - 0.5) * this.shake, sy = (Math.random() - 0.5) * this.shake;
     this.shake = Math.max(0, this.shake - dt * 30);
-    g.setTransform(this.dpr * this.scale, 0, 0, this.dpr * this.scale, this.dpr * (this.ox + sx), this.dpr * (this.oy + sy));
+    // everything on the field goes onto the small canvas, so sprites, glows and sparks all share one chunky pixel grid;
+    // numbers, the HUD and banners go on the full-size one afterwards so they stay readable
+    if (!this.lo) { this.lo = document.createElement('canvas'); this.lo.width = VW / PX; this.lo.height = VH / PX; this.lg = this.lo.getContext('2d'); }
+    let g = this.lg;
+    g.setTransform(1 / PX, 0, 0, 1 / PX, 0, 0);
     g.imageSmoothingEnabled = true;
     { const Z = zoneOf(B.stage); g.drawImage(arena(Z.arena || Z.id), 0, 0, VW, VH); }
+    g.imageSmoothingEnabled = false;
 
     // splats on the ground, fading
     this.decals = this.decals.filter((d) => (d.t += dt) < d.life);
@@ -556,6 +563,10 @@ export class BattleView {
       g.globalCompositeOperation = 'lighter'; g.globalAlpha = 0.55; g.drawImage(glow('#ffc23a', 8), x - 8, y - 8); g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
       g.fillStyle = '#c88a10'; g.beginPath(); g.arc(x, y, 3.2, 0, TAU); g.fill(); g.fillStyle = '#ffd34d'; g.beginPath(); g.arc(x - 0.4, y - 0.4, 2.4, 0, TAU); g.fill(); g.fillStyle = '#fff6c0'; g.fillRect(x - 1.4, y - 1.8, 1.2, 1.2);
     }
+    this.ambience(g, zoneOf(B.stage).arena || zoneOf(B.stage).id, dt);
+    M.setTransform(this.dpr * this.scale, 0, 0, this.dpr * this.scale, this.dpr * (this.ox + sx), this.dpr * (this.oy + sy));
+    M.imageSmoothingEnabled = false; M.drawImage(this.lo, 0, 0, VW, VH); M.imageSmoothingEnabled = true;
+    g = M;
     // numbers
     this.nums = this.nums.filter((n) => (n.t += dt) < 0.8);
     g.textAlign = 'center';
@@ -567,7 +578,6 @@ export class BattleView {
       g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.85)'; g.strokeText(n.text, n.x, y); g.fillStyle = n.c; g.fillText(n.text, n.x, y);
     }
     g.globalAlpha = 1;
-    this.ambience(g, zoneOf(B.stage).arena || zoneOf(B.stage).id, dt);
     this.hud(g, B);
     // banners
     this.banners = this.banners.filter((b) => (b.t += dt) < b.life);
@@ -634,6 +644,8 @@ export class BattleView {
   heroFrame(h, v) {
     const since = this.t - (v.shotT ?? -9), interval = 1 / Math.max(0.1, h.spd), next = Math.max(0, h.atkT) / Math.max(0.1, h.spd);
     const active = since < interval * 1.6 + 0.15;
+    // firing fast: one steady swing loop rather than restarting on every shot, which would only twitch
+    if (interval < 0.45) return since < 0.6 ? [1, 2, 3, 0][Math.floor(this.t * 7 + h.i * 1.7) % 4] : 0;
     if (since < 0.07) return 2;
     if (active && next < Math.min(0.1, interval * 0.35)) return 1;
     if (since < 0.24) return 3;
@@ -652,8 +664,8 @@ export class BattleView {
     if (rar >= 3 && !h.dead) { g.globalCompositeOperation = 'lighter'; g.globalAlpha = 0.22 + 0.08 * Math.sin(this.t * 2 + h.i); g.drawImage(glow(BAL.rarities[rar].color, 34), h.x - 34, h.y - 56); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; }
     const sp = !h.dead && spriteFrame(`hero:${h.cls}:back`, this.heroFrame(h, v)) || spriteFrame(`hero:${h.cls}:back`, 0);
     if (sp) {
-      // the painted hero, seen from behind: 104px tall including a raised weapon, feet on the spot
-      const dh = 104, dw = (sp.w / sp.h) * dh, breathe = 1 + Math.sin(this.t * 3 + h.i * 1.3) * 0.012;
+      // the pixel hero, seen from behind, one art pixel to one field pixel, feet on the spot
+      const dh = sp.h * PX, dw = sp.w * PX, breathe = 1;
       g.save(); g.translate(h.x + pose.dx, h.y + 6 + v.kick * 0.8 + pose.dy); g.rotate(-v.kick * 0.02 + pose.rot);
       if (h.dead) g.rotate(1.3);
       if (pose.alpha < 1) g.globalAlpha = pose.alpha;
