@@ -3,8 +3,6 @@ import { CLASSES, ROLES } from '../data/classes.js';
 import { realmName } from '../data/zones.js';
 import { h, $, fmtDur } from './dom.js';
 import { portrait, fmt, itemTile } from './common.js';
-import { chibiImage } from './art/chibi.js';
-import { artImg } from './art/core.js';
 import { play } from './sound.js';
 import { abilityText } from './party.js';
 import { UNIQUES, UNIQUE } from '../data/uniques.js';
@@ -37,7 +35,7 @@ function countUp(el, to, ms = 1100) {
 
 export function showWelcome(onStart) {
   enqueue((close) => {
-    const cv = artImg(chibiImage('wizard')); cv.className = 'figure'; cv.style.height = '170px';
+    const cv = portrait('wizard', 170);
     return h('div', { class: 'celebrate violet' }, h('div', { class: 'rays' }),
       h('div', { class: 'kicker', style: { color: '#d6c2ff' } }, 'Realm Idle'),
       h('div', { class: 'por' }, cv),

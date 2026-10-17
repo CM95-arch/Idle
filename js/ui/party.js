@@ -127,7 +127,7 @@ export function createPartyScreen(root) {
       h('div', { class: 'h1' }, 'Party'),
       h('div', { class: 'h2', style: { marginTop: 0 } }, 'Formation'),
       formationEditor({ onChange: render, openClass: (c) => openClassSheet(c, render) }).el,
-      companionCard(render),
+      companionCard(render) || '',
       h('div', { class: 'h2' }, `Classes · ${Object.keys(s.classes).length} / ${CLASS_IDS.length}`),
       h('div', { class: 'grid3' }, cards),
       );

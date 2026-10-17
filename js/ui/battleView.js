@@ -6,6 +6,7 @@ import { zoneOf, stageLabel } from '../data/zones.js';
 import { BAL } from '../data/balance.js';
 import { chibiImage } from './art/chibi.js';
 import { monsterImage } from './art/monsters.js';
+import { spriteFrame, mobKey, hasSprite } from './art/sprites.js';
 import { itemImage, RARITY_SHADES } from './art/items.js';
 import { arena } from './art/arena.js';
 import { ready } from './art/core.js';
@@ -105,7 +106,7 @@ export class BattleView {
         case 'shot': {
           // each projectile flies its own straight line (a fan of arrows, twin wavy orbs, a piercing bolt)
           const h = B.heroes[ev.hero], C = CLASSES[h.cls], v = this.hv[ev.hero];
-          v.kick = Math.max(v.kick, ev.big ? 1.4 : 0.7); v.muzzle = 0.06;
+          v.kick = Math.max(v.kick, ev.big ? 1.4 : 0.7); v.muzzle = 0.06; v.shotT = this.t;
           this.fx.push({ k: 'bolt', x0: ev.x0, y0: ev.y0, ang: ev.ang, len: ev.len, t: 0, life: Math.max(0.05, ev.flight), c: ev.color || MOD_COLOR[ev.mod] || C.shot, crit: ev.crit, look: ev.look, big: ev.big, wavy: ev.wavy, size: ev.size || 1, ph: Math.random() * TAU });
           sound?.(C.weapon);
           break;
@@ -127,8 +128,8 @@ export class BattleView {
         }
         case 'die': {
           const e = byId(ev.id); if (!e) break;
-          const size = sizeOf(e), img = monsterImage(e.sprite, e.pal);
-          this.corpses.push({ img, x: e.x, y: e.y, size, t: 0 });
+          const size = sizeOf(e), look = this.enemyLook(e);
+          this.corpses.push({ img: look.img, x: e.x, y: e.y, size, w: look.w, h: look.h, t: 0 });
           // a splat on the ground in the creature's colors
           this.decals.push({ x: e.x, y: e.y, r: size * 0.45, c: e.pal.a, c2: e.pal.b, t: 0, life: 7, rot: rand(0, TAU) });
           if (this.decals.length > 60) this.decals.shift();
@@ -442,7 +443,7 @@ export class BattleView {
 
   /** Draw a frame. dt in seconds. coinTarget / bagTarget: world points the Glory coins and loot fly to. */
   render(B, dt, coinTarget, bagTarget) {
-    this.t += dt;
+    this.t += dt; this.simT = B.t;
     const g = this.g;
     g.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
     const r = this.cv.getBoundingClientRect();
@@ -489,7 +490,7 @@ export class BattleView {
       else {
         const c = it.c, q = c.t / 0.35;
         if (!ready(c.img)) continue;
-        g.globalAlpha = 1 - q; const w = c.size * (1 + q * 0.5), hh = c.size * (1 - q * 0.6);
+        g.globalAlpha = 1 - q; const w = c.w * (1 + q * 0.5), hh = c.h * (1 - q * 0.6);
         g.drawImage(tinted(c.img, '#ffffff'), c.x - w / 2, c.y - hh * 0.95, w, hh); g.globalAlpha = 1;
       }
     }
@@ -589,10 +590,21 @@ export class BattleView {
     if (this.flash > 0) { g.fillStyle = this.flashColor; g.globalAlpha = Math.min(0.5, this.flash); g.fillRect(-40, -40, VW + 80, VH + 80); g.globalAlpha = 1; this.flash -= dt * 1.6; }
   }
 
+  /** How a creature is drawn: its painted sprite (walk frame `frame`) once loaded, else its drawn art; and how big. */
+  enemyLook(e, frame = 0) {
+    const size = sizeOf(e), key = mobKey(e.name), art = hasSprite(key) && spriteFrame(key, frame);
+    if (art) { const s = (size * 1.25) / Math.max(art.h, art.w * 0.9); return { img: art, w: art.w * s, h: art.h * s, sprite: true }; }
+    return { img: monsterImage(e.sprite, e.pal), w: size, h: size, sprite: false };
+  }
   drawEnemy(g, e, dt, stunned) {
-    const v = this.enemyVis(e), img = monsterImage(e.sprite, e.pal);
+    const v = this.enemyVis(e);
+    // the walk cycle (frames 1-2-3-2) only turns over while the creature is actually moving
+    const moved = v.lx != null && Math.hypot(e.x - v.lx, e.y - v.ly) > 0.15; v.lx = e.x; v.ly = e.y;
+    if (moved && !stunned) v.wp = (v.wp || 0) + dt * (e.boss ? 3 : 5.5) * (e.slowUntil > this.simT ? 0.5 : 1);
+    const look = this.enemyLook(e, [0, 1, 2, 1][Math.floor(v.wp || 0) % 4]), img = look.img;
     v.flash = Math.max(0, v.flash - dt);
     if (!ready(img)) return;
+    if (look.sprite) return this.drawSpriteEnemy(g, e, v, look, stunned);
     const size = sizeOf(e), appear = Math.min(1, (this.t - v.born) / 0.3);
     // a shuffling, bobbing walk
     const step = stunned ? 0 : Math.abs(Math.sin(this.t * (e.boss ? 3 : 7) + v.ph)), bob = step * (e.boss ? 3 : 2.5), lean = stunned ? 0 : Math.sin(this.t * (e.boss ? 3 : 7) + v.ph) * 0.06;
@@ -606,6 +618,27 @@ export class BattleView {
     if ((e.elite || e.boss) && e.hp < e.maxHp && !e.boss) bar(g, e.x - 16, e.y + 4, 32, 3, e.hp / e.maxHp, '#ff9a2e');
     if (stunned) for (let k = 0; k < 3; k++) { const a = this.t * 4 + (k * TAU) / 3; star(g, e.x + Math.cos(a) * size * 0.4, e.y - size * 0.95 + Math.sin(a) * 3, '#ffe08a'); }
   }
+  drawSpriteEnemy(g, e, v, look, stunned) {
+    const size = sizeOf(e), appear = Math.min(1, (this.t - v.born) / 0.3), { img, w, h } = look;
+    g.fillStyle = 'rgba(0,0,0,.38)'; g.beginPath(); g.ellipse(e.x, e.y, Math.min(w * 0.38, size * 0.45), size * 0.11, 0, 0, TAU); g.fill();
+    if (e.boss || e.elite) { g.globalCompositeOperation = 'lighter'; g.globalAlpha = (e.boss ? 0.3 : 0.18) + 0.08 * Math.sin(this.t * 4); const R = e.boss ? 80 : 26; g.drawImage(glow(e.boss ? '#ff3a5a' : '#ffb02e', R), e.x - R, e.y - h * 0.5 - R); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; }
+    g.globalAlpha = appear;
+    g.drawImage(img.bmp, e.x - w / 2, e.y - h + 2, w, h);
+    if (v.flash > 0) { g.globalAlpha = Math.min(1, v.flash * 9) * 0.85; g.drawImage(tinted(img, '#ffffff'), e.x - w / 2, e.y - h + 2, w, h); }
+    g.globalAlpha = 1;
+    if ((e.elite || e.boss) && e.hp < e.maxHp && !e.boss) bar(g, e.x - 16, e.y + 4, 32, 3, e.hp / e.maxHp, '#ff9a2e');
+    if (stunned) for (let k = 0; k < 3; k++) { const a = this.t * 4 + (k * TAU) / 3; star(g, e.x + Math.cos(a) * size * 0.4, e.y - h + Math.sin(a) * 3, '#ffe08a'); }
+  }
+  /** Which of a hero's four battle frames shows now: the wind-up just before a shot, the strike as it leaves, the
+   * follow-through after, and the ready stance between. The timing is uneven on purpose: that reads as motion. */
+  heroFrame(h, v) {
+    const since = this.t - (v.shotT ?? -9), interval = 1 / Math.max(0.1, h.spd), next = Math.max(0, h.atkT) / Math.max(0.1, h.spd);
+    const active = since < interval * 1.6 + 0.15;
+    if (since < 0.07) return 2;
+    if (active && next < Math.min(0.1, interval * 0.35)) return 1;
+    if (since < 0.24) return 3;
+    return 0;
+  }
   drawHero(g, h, dt) {
     const v = this.hv[h.i];
     v.kick = Math.max(0, v.kick - dt * 8); v.hurt = Math.max(0, v.hurt - dt); v.aura = Math.max(0, v.aura - dt); v.muzzle = Math.max(0, v.muzzle - dt);
@@ -617,7 +650,18 @@ export class BattleView {
     const pose = this.pose(v, dt, h);
     const rar = h.gearRarity ?? 0;
     if (rar >= 3 && !h.dead) { g.globalCompositeOperation = 'lighter'; g.globalAlpha = 0.22 + 0.08 * Math.sin(this.t * 2 + h.i); g.drawImage(glow(BAL.rarities[rar].color, 34), h.x - 34, h.y - 56); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; }
-    if (ready(img)) {
+    const sp = !h.dead && spriteFrame(`hero:${h.cls}:back`, this.heroFrame(h, v)) || spriteFrame(`hero:${h.cls}:back`, 0);
+    if (sp) {
+      // the painted hero, seen from behind: 104px tall including a raised weapon, feet on the spot
+      const dh = 104, dw = (sp.w / sp.h) * dh, breathe = 1 + Math.sin(this.t * 3 + h.i * 1.3) * 0.012;
+      g.save(); g.translate(h.x + pose.dx, h.y + 6 + v.kick * 0.8 + pose.dy); g.rotate(-v.kick * 0.02 + pose.rot);
+      if (h.dead) g.rotate(1.3);
+      if (pose.alpha < 1) g.globalAlpha = pose.alpha;
+      g.scale(pose.sx, pose.sy);
+      g.drawImage(sp.bmp, -dw / 2, -dh * breathe, dw, dh * breathe);
+      if (v.hurt > 0) { g.globalAlpha = Math.min(1, v.hurt * 5) * 0.7; g.drawImage(tinted(sp, '#ff2a2a'), -dw / 2, -dh * breathe, dw, dh * breathe); }
+      g.restore();
+    } else if (ready(img)) {
       const breathe = 1 + Math.sin(this.t * 3 + h.i * 1.3) * 0.02;
       g.save(); g.translate(h.x + pose.dx, h.y + 6 + v.kick * 1.5 + pose.dy); g.rotate(-v.kick * 0.04 + pose.rot);
       if (h.dead) g.rotate(1.3);

@@ -8,6 +8,7 @@ import { h, openSheet, toast } from './dom.js';
 import { UNIQUES } from '../data/uniques.js';
 import { ZONES, ZONE_BY_ID, realmName } from '../data/zones.js';
 import { itemImage } from './art/items.js';
+import { spriteEl } from './art/sprites.js';
 import { artImg } from './art/core.js';
 import { coin, fmt, itemTile, itemIcon, portrait, tap } from './common.js';
 
@@ -124,7 +125,7 @@ export function openCollection() {
         h('div', { class: 'h2' }, UNIQUES.some((U) => U.src === Z.id && U.starter) ? `${Z.name} · any enemy` : `${Z.dungeon ? `Tier ${Z.tier} · ` : ''}${Z.name} · ${Z.boss[0]}`),
         ...UNIQUES.filter((U) => U.src === Z.id).map((U) => {
           const has = found[U.id];
-          const icon = artImg(itemImage(U.kind, 6, U.pal)); icon.style.width = '44px';
+          const icon = spriteEl(`icon:${U.id}`, 44, 44) || artImg(itemImage(U.kind, 6, U.pal)); icon.style.width ||= '44px';
           return h('div', { class: 'panel row', style: { marginBottom: '6px', padding: '8px 10px', alignItems: 'flex-start' } },
             h('div', { class: `itile r6${U.exalted ? ' ex' : ''}${has ? '' : ' locked'}`, style: { width: '56px', flex: 'none', '--rc': '#fff' } }, icon),
             h('div', { class: 'grow' },
