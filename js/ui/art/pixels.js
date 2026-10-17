@@ -1,5 +1,5 @@
-// The pixel-art sprites (cut from the sheets in art/pixel/ by tools/pixel_sheets.py, every pixel as drawn). A hero
-// or creature that has one is drawn with it; anything without one keeps its drawn art. The atlases are tiny, so
+// The pixel-art sprites (made from the sheets in art/pixel/ by tools/pixel_sheets.py, one pixel per art pixel). A
+// hero or creature that has one is drawn with it, crisp and unsmoothed; anything without one keeps its drawn art. The atlases are tiny, so
 // they all load at startup.
 import { PIXELS, ATLASES } from '../../data/pixels.js';
 
@@ -10,7 +10,7 @@ const cache = new Map();
 export const mobKey = (name) => `mob:${name.toLowerCase().replace(/[’']/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`;
 export const hasPixel = (key) => !!PIXELS[key];
 
-/** A sprite as { key, bmp, w, h } in stored pixels (the shape the drawn art has, so hit flashes work on it), or null
+/** A sprite as { key, bmp, w, h } in art pixels (the shape the drawn art has, so hit flashes work on it), or null
  * if there is none or its atlas hasn't arrived yet. */
 export function pixelArt(key) {
   const hit = cache.get(key);
@@ -26,7 +26,7 @@ export function pixelArt(key) {
   return art;
 }
 
-/** A sprite as a page element at `scale` screen pixels per stored pixel (a CSS background on its atlas). */
+/** A sprite as a page element at `scale` screen pixels per art pixel (a CSS background on its atlas). */
 export function pixelEl(key, scale, cls = 'figure pixel') {
   const P = PIXELS[key];
   if (!P) return null;
@@ -39,6 +39,6 @@ export function pixelEl(key, scale, cls = 'figure pixel') {
   });
   return el;
 }
-/** The scale for a figure in a box `size` screen pixels tall: the same for every hero (sized for the tallest), so no
- * hero looks bigger than another. */
-export const fitScale = (key, size) => size / 120;
+/** The scale for a figure in a box `size` screen pixels tall: the same for every hero (sized for the tallest), in
+ * whole steps when it's big enough, so each art pixel is a clean square and no hero looks bigger than another. */
+export const fitScale = (key, size) => { const s = size / 25; return s >= 2 ? Math.floor(s) : s; };
