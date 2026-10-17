@@ -268,12 +268,6 @@ const ZONE = {
     } },
 };
 
-/** Lay a zone's light sources over a canvas (additive pools of colored light). */
-export function paintLights(g, lights) { for (const L of lights) light(g, ...L); }
-/** How a zone is lit: the night tint and how dark it is, and its light sources, so whatever stands in it can be lit
- * the same way. */
-export const arenaLight = (zoneId) => arena(zoneId).light;
-
 const cache = new Map();
 /** The zone's battlefield, painted once (2× for sharpness). */
 export function arena(zoneId) {
@@ -292,9 +286,8 @@ export function arena(zoneId) {
   // night falls: darken everything, then let the light sources glow through
   g.fillStyle = Z.tint; g.globalAlpha = Z.dark; g.fillRect(0, 0, AW, AH); g.globalAlpha = 1;
   // a pale pool of light where the party stands
-  lights.unshift([AW / 2, 325, 150, mix(Z.lane, '#fff6d0', 0.5), 0.22]);
-  paintLights(g, lights);
-  cv.light = { tint: Z.tint, dark: Z.dark, lights };
+  light(g, AW / 2, 325, 150, mix(Z.lane, '#fff6d0', 0.5), 0.22);
+  for (const L of lights) light(g, ...L);
   // vignette
   const v = g.createRadialGradient(AW / 2, AH * 0.6, AH * 0.3, AW / 2, AH * 0.55, AH * 0.85);
   v.addColorStop(0, 'rgba(0,0,0,0)'); v.addColorStop(1, 'rgba(0,0,0,.6)');

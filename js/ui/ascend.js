@@ -4,7 +4,6 @@ import { realmName, stageLabel, STAGE_COUNT } from '../data/zones.js';
 import * as G from '../core/game.js';
 import { h } from './dom.js';
 import { monsterImage } from './art/monsters.js';
-import { spriteEl, mobKey } from './art/sprites.js';
 import { artImg } from './art/core.js';
 import { ZONES, MAIN_ZONES, TIERS } from '../data/zones.js';
 import { fmt, tap } from './common.js';
@@ -15,9 +14,7 @@ import { rewardTrack, openAchievements } from './goals.js';
 
 export function createAscendScreen(root, { onAscend }) {
   function oryx(size) {
-    const [name, spec, pal] = ZONES[MAIN_ZONES - 1].boss; // Vexis
-    const sp = spriteEl(mobKey(name), size * 1.2, size);
-    if (sp) { sp.style.margin = '0 auto'; sp.style.display = 'block'; return sp; }
+    const [, spec, pal] = ZONES[MAIN_ZONES - 1].boss; // Vexis
     const out = artImg(monsterImage(spec, pal)); out.className = 'figure'; out.style.cssText = `height:${size}px;width:auto;margin:0 auto;display:block`;
     return out;
   }

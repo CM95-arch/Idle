@@ -6,16 +6,13 @@ import { chibiImage } from './art/chibi.js';
 import { itemImage } from './art/items.js';
 import { uniqueOf } from '../core/items.js';
 import { artImg } from './art/core.js';
-import { spriteEl } from './art/sprites.js';
 import { fmt } from './battleView.js';
 import * as G from '../core/game.js';
 import { play } from './sound.js';
 
 export { fmt };
-/** A class's figure, facing you, `size` px tall: its painted portrait, or its drawn art where there is none. */
+/** A class's figure (the same art as on the battlefield), `size` px tall. */
 export function portrait(cls, size = 64, locked = false) {
-  const sp = spriteEl(`hero:${cls}:front`, size, size);
-  if (sp) { sp.className = `figure sprite${locked ? ' locked' : ''}`; sp.setAttribute('aria-label', locked ? 'Locked class' : CLASSES[cls].name); return sp; }
   const img = artImg(chibiImage(cls));
   img.className = `figure${locked ? ' locked' : ''}`; img.alt = locked ? 'Locked class' : CLASSES[cls].name;
   img.style.height = `${size}px`; img.style.width = 'auto';
@@ -23,8 +20,6 @@ export function portrait(cls, size = 64, locked = false) {
 }
 /** A gear icon, `size` px square. */
 export function itemIcon(it, size = 34) {
-  const sp = uniqueOf(it) && spriteEl(`icon:${uniqueOf(it).id}`, size, size);
-  if (sp) { sp.setAttribute('aria-label', ''); return sp; }
   const img = artImg(itemImage(it.kind, it.rarity, uniqueOf(it)?.pal));
   img.className = 'figure'; img.alt = ''; img.style.width = img.style.height = `${size}px`;
   return img;
