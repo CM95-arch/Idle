@@ -6,6 +6,7 @@ import { chibiImage } from './art/chibi.js';
 import { itemImage } from './art/items.js';
 import { uniqueOf } from '../core/items.js';
 import { artImg } from './art/core.js';
+import { pixelEl, fitScale } from './art/pixels.js';
 import { fmt } from './battleView.js';
 import * as G from '../core/game.js';
 import { play } from './sound.js';
@@ -13,6 +14,8 @@ import { play } from './sound.js';
 export { fmt };
 /** A class's figure (the same art as on the battlefield), `size` px tall. */
 export function portrait(cls, size = 64, locked = false) {
+  const px = pixelEl(`hero:${cls}`, fitScale(`hero:${cls}`, size));
+  if (px) { px.className += locked ? ' locked' : ''; px.setAttribute('aria-label', locked ? 'Locked class' : CLASSES[cls].name); return px; }
   const img = artImg(chibiImage(cls));
   img.className = `figure${locked ? ' locked' : ''}`; img.alt = locked ? 'Locked class' : CLASSES[cls].name;
   img.style.height = `${size}px`; img.style.width = 'auto';

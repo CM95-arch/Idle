@@ -9,6 +9,7 @@ import { monsterImage } from './art/monsters.js';
 import { itemImage, RARITY_SHADES } from './art/items.js';
 import { arena } from './art/arena.js';
 import { ready } from './art/core.js';
+import { pixelArt, mobKey } from './art/pixels.js';
 
 // how each class looks while casting: k = the motion (drawHero), life = how long it takes, wind = the wind-up
 // before a thrown ability leaves the hand
@@ -26,6 +27,9 @@ const EXALT_PAL = ['#a07a20', '#fff3c0', '#ffffff'];
 const TAU = Math.PI * 2;
 const rand = (a, b) => a + Math.random() * (b - a);
 const HERO_W = 70, HERO_H = 76; // the chibi art is a 120×130 box
+// pixel sprites: field units per art pixel, the same for heroes and creatures so they keep their sizes relative to
+// each other (an elite is marked by its glow); bosses are drawn twice the size
+const PXS = 2.2, pxScale = (e) => PXS * (e.boss ? 2 : 1);
 // ambient particles per biome: how many, and how each one starts (`fresh` = anywhere, else at its source)
 const rnd = (a, b) => a + Math.random() * (b - a);
 const AMBIENT = {
@@ -127,8 +131,8 @@ export class BattleView {
         }
         case 'die': {
           const e = byId(ev.id); if (!e) break;
-          const size = sizeOf(e), img = monsterImage(e.sprite, e.pal);
-          this.corpses.push({ img, x: e.x, y: e.y, size, t: 0 });
+          const size = sizeOf(e), px = pixelArt(mobKey(e.name)), img = px || monsterImage(e.sprite, e.pal);
+          this.corpses.push({ img, x: e.x, y: e.y, size, w: px ? px.w * pxScale(e) : size, h: px ? px.h * pxScale(e) : size, t: 0 });
           // a splat on the ground in the creature's colors
           this.decals.push({ x: e.x, y: e.y, r: size * 0.45, c: e.pal.a, c2: e.pal.b, t: 0, life: 7, rot: rand(0, TAU) });
           if (this.decals.length > 60) this.decals.shift();
@@ -489,7 +493,7 @@ export class BattleView {
       else {
         const c = it.c, q = c.t / 0.35;
         if (!ready(c.img)) continue;
-        g.globalAlpha = 1 - q; const w = c.size * (1 + q * 0.5), hh = c.size * (1 - q * 0.6);
+        g.globalAlpha = 1 - q; const w = c.w * (1 + q * 0.5), hh = c.h * (1 - q * 0.6);
         g.drawImage(tinted(c.img, '#ffffff'), c.x - w / 2, c.y - hh * 0.95, w, hh); g.globalAlpha = 1;
       }
     }
@@ -590,8 +594,10 @@ export class BattleView {
   }
 
   drawEnemy(g, e, dt, stunned) {
-    const v = this.enemyVis(e), img = monsterImage(e.sprite, e.pal);
+    const v = this.enemyVis(e), px = pixelArt(mobKey(e.name));
     v.flash = Math.max(0, v.flash - dt);
+    if (px) return this.drawPixelEnemy(g, e, v, px, stunned);
+    const img = monsterImage(e.sprite, e.pal);
     if (!ready(img)) return;
     const size = sizeOf(e), appear = Math.min(1, (this.t - v.born) / 0.3);
     // a shuffling, bobbing walk
@@ -606,6 +612,20 @@ export class BattleView {
     if ((e.elite || e.boss) && e.hp < e.maxHp && !e.boss) bar(g, e.x - 16, e.y + 4, 32, 3, e.hp / e.maxHp, '#ff9a2e');
     if (stunned) for (let k = 0; k < 3; k++) { const a = this.t * 4 + (k * TAU) / 3; star(g, e.x + Math.cos(a) * size * 0.4, e.y - size * 0.95 + Math.sin(a) * 3, '#ffe08a'); }
   }
+  /** A creature in pixel art: still, but it hops along a pixel or two as it walks. */
+  drawPixelEnemy(g, e, v, px, stunned) {
+    const s = pxScale(e), w = px.w * s, h = px.h * s, appear = Math.min(1, (this.t - v.born) / 0.3);
+    const hop = stunned ? 0 : Math.round(Math.abs(Math.sin(this.t * (e.boss ? 3 : 7) + v.ph)) * 1.4) * s;
+    g.fillStyle = 'rgba(0,0,0,.38)'; g.beginPath(); g.ellipse(e.x, e.y, w * 0.36, Math.max(3, w * 0.1), 0, 0, TAU); g.fill();
+    if (e.boss || e.elite) { g.globalCompositeOperation = 'lighter'; g.globalAlpha = (e.boss ? 0.3 : 0.18) + 0.08 * Math.sin(this.t * 4); const R = e.boss ? 80 : 26; g.drawImage(glow(e.boss ? '#ff3a5a' : '#ffb02e', R), e.x - R, e.y - h * 0.5 - R); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; }
+    g.imageSmoothingEnabled = false; g.globalAlpha = appear;
+    const x = e.x - w / 2, y = e.y - h + s - hop;
+    g.drawImage(px.bmp, x, y, w, h);
+    if (v.flash > 0) { g.globalAlpha = Math.min(1, v.flash * 9) * 0.85; g.drawImage(tinted(px, '#ffffff'), x, y, w, h); }
+    g.globalAlpha = 1; g.imageSmoothingEnabled = true;
+    if ((e.elite || e.boss) && e.hp < e.maxHp && !e.boss) bar(g, e.x - 16, e.y + 4, 32, 3, e.hp / e.maxHp, '#ff9a2e');
+    if (stunned) for (let k = 0; k < 3; k++) { const a = this.t * 4 + (k * TAU) / 3; star(g, e.x + Math.cos(a) * w * 0.4, e.y - h + Math.sin(a) * 3, '#ffe08a'); }
+  }
   drawHero(g, h, dt) {
     const v = this.hv[h.i];
     v.kick = Math.max(0, v.kick - dt * 8); v.hurt = Math.max(0, v.hurt - dt); v.aura = Math.max(0, v.aura - dt); v.muzzle = Math.max(0, v.muzzle - dt);
@@ -617,7 +637,18 @@ export class BattleView {
     const pose = this.pose(v, dt, h);
     const rar = h.gearRarity ?? 0;
     if (rar >= 3 && !h.dead) { g.globalCompositeOperation = 'lighter'; g.globalAlpha = 0.22 + 0.08 * Math.sin(this.t * 2 + h.i); g.drawImage(glow(BAL.rarities[rar].color, 34), h.x - 34, h.y - 56); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; }
-    if (ready(img)) {
+    const px = pixelArt(`hero:${h.cls}`);
+    if (px) {
+      // the pixel hero: still, with a little hop back when it fires and the cast poses on top
+      const w = px.w * PXS, ph = px.h * PXS;
+      g.save(); g.translate(h.x + pose.dx, h.y + 6 + Math.round(v.kick * 1.5) + pose.dy); g.rotate(pose.rot);
+      if (h.dead) g.rotate(1.3);
+      if (pose.alpha < 1) g.globalAlpha = pose.alpha;
+      g.scale(pose.sx, pose.sy); g.imageSmoothingEnabled = false;
+      g.drawImage(px.bmp, -w / 2, -ph, w, ph);
+      if (v.hurt > 0) { g.globalAlpha = Math.min(1, v.hurt * 5) * 0.7; g.drawImage(tinted(px, '#ff2a2a'), -w / 2, -ph, w, ph); }
+      g.restore(); g.imageSmoothingEnabled = true;
+    } else if (ready(img)) {
       const breathe = 1 + Math.sin(this.t * 3 + h.i * 1.3) * 0.02;
       g.save(); g.translate(h.x + pose.dx, h.y + 6 + v.kick * 1.5 + pose.dy); g.rotate(-v.kick * 0.04 + pose.rot);
       if (h.dead) g.rotate(1.3);

@@ -1,0 +1,9 @@
+{
+  "sheet-1": [
+    "hero:wizard", "hero:priest", "hero:archer", "hero:rogue", "hero:warrior",
+    "hero:knight", "hero:paladin", "hero:assassin", "hero:necromancer", "hero:huntress",
+    "hero:sorcerer", "mob:pirate", "mob:giant-crab", "mob:sand-slime", "mob:halfling-hexer",
+    "mob:goblin", "mob:viper", "mob:orc-warrior", "mob:dark-elf", "mob:skeleton",
+    "mob:ogre", "mob:stone-golem", "mob:wraith", "mob:medusa", "mob:gazer"
+  ]
+}
