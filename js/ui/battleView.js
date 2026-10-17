@@ -8,7 +8,7 @@ import { chibiImage } from './art/chibi.js';
 import { monsterImage } from './art/monsters.js';
 import { spriteFrame, mobKey, hasSprite } from './art/sprites.js';
 import { itemImage, RARITY_SHADES } from './art/items.js';
-import { arena } from './art/arena.js';
+import { arena, arenaLight, paintLights } from './art/arena.js';
 import { ready } from './art/core.js';
 
 // how each class looks while casting: k = the motion (drawHero), life = how long it takes, wind = the wind-up
@@ -24,6 +24,9 @@ const LOBS = { aoe: '#ff8a3c', dot: '#ffb040', poison: '#7cff4a', drain: '#8fff9
 export const VW = 360, VH = 430;
 // the field is painted at 1/PX resolution and blown up with hard pixels: one art pixel is PX field units
 const PX = 2;
+// heroes stand at the size of a person in the scene (about two crates tall); their auras, wings, crowns and the rest
+// were laid out for a hero 104 tall, so a hero and everything around them is drawn scaled by HS about their feet
+const HS = 0.54;
 const MOD_COLOR = { chain: '#7ae8ff', burn: '#ff8a2a', chill: '#bfe8ff' };
 const EXALT_PAL = ['#a07a20', '#fff3c0', '#ffffff'];
 const TAU = Math.PI * 2;
@@ -92,7 +95,7 @@ export class BattleView {
   /** Where a world point sits on the page (for flying things into DOM counters). */
   toPage(x, y) { const r = this.cv.getBoundingClientRect(); return { x: r.left + this.ox + x * this.scale, y: r.top + this.oy + y * this.scale }; }
   /** A hero's weapon tip, where shots leave from. */
-  muzzle(h) { return { x: h.x + 13, y: h.y - 40 + this.hv[h.i].kick * 2 }; }
+  muzzle(h) { return { x: h.x + 13 * HS, y: h.y - (40 - this.hv[h.i].kick * 2) * HS }; }
   enemyVis(e) {
     let v = this.ev.get(e.id);
     if (!v) { v = { flash: 0, born: this.t, ph: Math.random() * TAU, numAt: 0, acc: 0 }; this.ev.set(e.id, v); }
@@ -142,7 +145,7 @@ export class BattleView {
         case 'eshot': this.fx.push({ k: 'ebolt', x0: ev.x0, y0: ev.y0 - 14, x1: ev.x1, y1: ev.y1 - 18, t: 0, life: ev.flight, c: ev.boss ? '#ff3a5a' : '#ff6a4a', r: ev.boss ? 6 : 4 }); break;
         case 'claw': {
           const h = B.heroes[ev.hero];
-          if (Math.random() < 0.5) this.fx.push({ k: 'scratch', x: h.x + rand(-10, 10), y: h.y - 22 + rand(-8, 8), t: 0, life: 0.25, rot: rand(-0.6, 0.6) });
+          if (Math.random() < 0.5) this.fx.push({ k: 'scratch', x: h.x + rand(-10, 10), y: h.y - 22 * HS + rand(-8, 8), t: 0, life: 0.25, rot: rand(-0.6, 0.6) });
           break;
         }
         case 'pattern': {
@@ -160,12 +163,12 @@ export class BattleView {
         case 'ehit': {
           const h = B.heroes[ev.hero], v = this.hv[ev.hero];
           v.hurt = 0.18;
-          if (ev.big || Math.random() < 0.35) this.num(h.x + rand(-10, 10), h.y - 52, ev.shield && ev.dmg < 1 ? 'blocked' : fmt(ev.dmg), ev.shield ? '#7ad0ff' : '#ff5a4e', ev.big ? 13 : 10);
+          if (ev.big || Math.random() < 0.35) this.num(h.x + rand(-10, 10), h.y - 52 * HS, ev.shield && ev.dmg < 1 ? 'blocked' : fmt(ev.dmg), ev.shield ? '#7ad0ff' : '#ff5a4e', ev.big ? 13 : 10);
           if (ev.big) this.shake = Math.max(this.shake, 6);
           sound?.('hurt');
           break;
         }
-        case 'heal': { const h = B.heroes[ev.hero]; if (ev.amt > h.maxHp * 0.03) this.num(h.x, h.y - 58, `+${fmt(ev.amt)}`, '#6cff8a', 11); for (let i = 0; i < 6; i++) this.parts.push({ x: h.x + rand(-12, 12), y: h.y - rand(0, 30), vx: 0, vy: rand(-60, -30), t: 0, life: rand(0.5, 0.9), c: '#8fff9f', s: 2.4, add: true }); break; }
+        case 'heal': { const h = B.heroes[ev.hero]; if (ev.amt > h.maxHp * 0.03) this.num(h.x, h.y - 58 * HS, `+${fmt(ev.amt)}`, '#6cff8a', 11); for (let i = 0; i < 6; i++) this.parts.push({ x: h.x + rand(-12, 12), y: h.y - rand(0, 30) * HS, vx: 0, vy: rand(-60, -30), t: 0, life: rand(0.5, 0.9), c: '#8fff9f', s: 2.4, add: true }); break; }
         case 'blast': {
           this.fx.push({ k: 'boom', x: ev.x, y: ev.y - 10, t: 0, life: ev.big ? 0.6 : 0.45, c: '#ffb070', big: ev.big });
           this.fx.push({ k: 'groundring', x: ev.x, y: ev.y, t: 0, life: 0.45, c: '#ffd9a0', r: BAL.splashRadius });
@@ -189,11 +192,11 @@ export class BattleView {
         case 'stunned': this.fx.push({ k: 'stars', id: ev.id, t: 0, life: 0.8 }); break;
         case 'status': { const e = byId(ev.id); if (e) this.num(e.x, e.y - sizeOf(e) - 4, ev.s === 'curse' ? 'Cursed' : 'Armor Broken', ev.s === 'curse' ? '#ff6ad8' : '#ffb070', 9); break; }
         case 'zap': for (let k = 0; k < 3; k++) { const a = rand(0, TAU), d = rand(10, ev.r); this.fx.push({ k: 'zap', x0: ev.x + (ev.look === 'portal' ? Math.cos(this.t * 2 + k * 2.1) * ev.r * 0.6 : 0), y0: ev.y - (ev.look === 'plant' ? 10 : 30) + (ev.look === 'portal' ? Math.sin(this.t * 2 + k * 2.1) * ev.r * 0.3 : 0), x1: ev.x + Math.cos(a) * d, y1: ev.y + Math.sin(a) * d * 0.5 - 10, t: 0, life: 0.2, c: ev.look === 'plant' ? '#9aff6a' : ev.look === 'soul' ? '#e0e8ff' : '#c8b8ff' }); } sound?.('zap'); break;
-        case 'beam': { const h = B.heroes[ev.hero]; this.fx.push({ k: 'beam', x0: h.x, y0: h.y - 40, x1: ev.x, y1: ev.y - 20, t: 0, life: 0.3, c: '#fff3b0', w: 9 }); this.fx.push({ k: 'groundring', x: ev.x, y: ev.y, t: 0, life: 0.5, c: '#fff3b0', r: ev.r }); this.fx.push({ k: 'boom', x: ev.x, y: ev.y - 12, t: 0, life: 0.5, c: '#fff3b0', big: true }); this.shake = Math.max(this.shake, 3); sound?.('blast'); break; }
+        case 'beam': { const h = B.heroes[ev.hero]; this.fx.push({ k: 'beam', x0: h.x, y0: h.y - 40 * HS, x1: ev.x, y1: ev.y - 20, t: 0, life: 0.3, c: '#fff3b0', w: 9 }); this.fx.push({ k: 'groundring', x: ev.x, y: ev.y, t: 0, life: 0.5, c: '#fff3b0', r: ev.r }); this.fx.push({ k: 'boom', x: ev.x, y: ev.y - 12, t: 0, life: 0.5, c: '#fff3b0', big: true }); this.shake = Math.max(this.shake, 3); sound?.('blast'); break; }
         case 'barrier': for (const i of ev.heroes) { this.hv[i].aura = 0.8; this.hv[i].auraColor = '#7ad0ff'; } break;
-        case 'dodge': { const h = B.heroes[ev.hero]; if (ev.invuln) { this.hv[ev.hero].aura = 0.3; this.hv[ev.hero].auraColor = '#ffffff'; } else if (Math.random() < 0.5) this.num(h.x + rand(-10, 10), h.y - 52, 'dodge', '#b8c0d8', 10); break; }
-        case 'revive': { const h = B.heroes[ev.hero]; this.num(h.x, h.y - 64, 'Revived!', '#ffffff', 14, true); this.hv[ev.hero].aura = 0.8; this.hv[ev.hero].auraColor = '#ffffff'; for (let i = 0; i < 24; i++) this.parts.push({ x: h.x + rand(-16, 16), y: h.y - rand(0, 40), vx: rand(-20, 20), vy: rand(-140, -60), t: 0, life: rand(0.6, 1.1), c: '#ffffff', s: 3, add: true }); sound?.('levelup'); break; }
-        case 'fall': { const h = B.heroes[ev.hero]; for (let i = 0; i < 18; i++) this.parts.push({ x: h.x, y: h.y - 20, vx: rand(-90, 90), vy: rand(-120, 0), t: 0, life: 0.8, c: '#ff4030', s: 3, g: 200 }); this.shake = 5; sound?.('fall'); break; }
+        case 'dodge': { const h = B.heroes[ev.hero]; if (ev.invuln) { this.hv[ev.hero].aura = 0.3; this.hv[ev.hero].auraColor = '#ffffff'; } else if (Math.random() < 0.5) this.num(h.x + rand(-10, 10), h.y - 52 * HS, 'dodge', '#b8c0d8', 10); break; }
+        case 'revive': { const h = B.heroes[ev.hero]; this.num(h.x, h.y - 64 * HS, 'Revived!', '#ffffff', 14, true); this.hv[ev.hero].aura = 0.8; this.hv[ev.hero].auraColor = '#ffffff'; for (let i = 0; i < 24; i++) this.parts.push({ x: h.x + rand(-16, 16), y: h.y - rand(0, 40) * HS, vx: rand(-20, 20), vy: rand(-140, -60), t: 0, life: rand(0.6, 1.1), c: '#ffffff', s: 3, add: true }); sound?.('levelup'); break; }
+        case 'fall': { const h = B.heroes[ev.hero]; for (let i = 0; i < 18; i++) this.parts.push({ x: h.x, y: h.y - 20 * HS, vx: rand(-90, 90), vy: rand(-120, 0), t: 0, life: 0.8, c: '#ff4030', s: 3, g: 200 }); this.shake = 5; sound?.('fall'); break; }
         case 'ability': this.ability(B, ev, byId, sound); break;
         case 'boss': this.banner('BOSS', '#ff3a5a', 1.8, true); sound?.('bossWarn'); this.flash = 0.25; this.flashColor = '#ff2040'; break;
         case 'stage': this.stageAt = this.t; break;
@@ -240,7 +243,7 @@ export class BattleView {
     switch (ev.kind) {
       case 'nova':
         this.fx.push({ k: 'groundring', x: h.x, y: h.y, t: 0, life: 0.55, c, r: ev.r * 1.25 }, { k: 'groundring', x: h.x, y: h.y, t: -0.1, life: 0.55, c: '#ffffff', r: ev.r });
-        burst(h.x, h.y - 10, 22, 220, 0.5); this.hv[ev.hero].aura = 0.35; this.hv[ev.hero].auraColor = c; this.shake = Math.max(this.shake, 3); sound?.('blast'); break;
+        burst(h.x, h.y - 10 * HS, 22, 220, 0.5); this.hv[ev.hero].aura = 0.35; this.hv[ev.hero].auraColor = c; this.shake = Math.max(this.shake, 3); sound?.('blast'); break;
       case 'orbit': {
         const e = byId(ev.id); if (!e) break;
         const o = this.orbPos(h, ev.n || 2, (ev.slot * 7) % (ev.n || 2), ev.slot);
@@ -250,10 +253,10 @@ export class BattleView {
       case 'meteor': {
         // falls from the sky onto the pack, then bursts (a flask arcs in from the hero instead)
         const flask = ev.look === 'flask';
-        this.fx.push({ k: 'meteor', x0: flask ? h.x : ev.x + 60, y0: flask ? h.y - 40 : ev.y - 260, x1: ev.x, y1: ev.y - 6, t: -(ev.delay || 0), life: 0.32, c, flask, r: ev.r, burst: true });
+        this.fx.push({ k: 'meteor', x0: flask ? h.x : ev.x + 60, y0: flask ? h.y - 40 * HS : ev.y - 260, x1: ev.x, y1: ev.y - 6, t: -(ev.delay || 0), life: 0.32, c, flask, r: ev.r, burst: true });
         break;
       }
-      case 'bubble': this.hv[ev.hero].bubbleIn = 0.35; burst(h.x, h.y - 26, 10, 80, 0.5); sound?.('ability'); break;
+      case 'bubble': this.hv[ev.hero].bubbleIn = 0.35; burst(h.x, h.y - 26 * HS, 10, 80, 0.5); sound?.('ability'); break;
       case 'halo': case 'frost': {
         for (const id of ev.ids || []) { const e = byId(id); if (e && Math.random() < 0.4) burst(e.x, e.y - 10, 2, 50, 0.35, c, ev.kind === 'frost' ? 30 : -30); }
         break;
@@ -262,7 +265,7 @@ export class BattleView {
         for (const i of ev.heroes || []) { const o = B.heroes[i]; this.fx.push({ k: 'groundring', x: o.x, y: o.y, t: 0, life: 0.7, c, r: 40 }); for (let n = 0; n < 8; n++) this.parts.push({ x: o.x + rand(-14, 14), y: o.y - rand(0, 30), vx: 0, vy: rand(-70, -40), t: 0, life: rand(0.6, 1), c, s: 2.6, add: true }); }
         sound?.('drink'); break;
       case 'thornburst':
-        for (let n = 0; n < 12; n++) { const a = (n / 12) * TAU; this.fx.push({ k: 'shard', x: h.x, y: h.y - 22, a, t: 0, life: 0.35, c, r: ev.r }); }
+        for (let n = 0; n < 12; n++) { const a = (n / 12) * TAU; this.fx.push({ k: 'shard', x: h.x, y: h.y - 22 * HS, a, t: 0, life: 0.35, c, r: ev.r }); }
         this.hv[ev.hero].aura = 0.25; this.hv[ev.hero].auraColor = c; break;
       case 'lightning':
         this.fx.push({ k: 'bolt', x: ev.x, y: ev.y, t: 0, life: 0.3, c });
@@ -276,7 +279,7 @@ export class BattleView {
   /** Where an orbiting mote is now: `n` motes evenly spaced, circling the hero. */
   orbPos(h, n, k, set = 0) {
     const a = this.t * (2.2 - set * 0.4) + (k / n) * TAU + set;
-    return { x: h.x + Math.cos(a) * 26, y: h.y - 24 + Math.sin(a) * 11 };
+    return { x: h.x + Math.cos(a) * 26 * HS, y: h.y + (-24 + Math.sin(a) * 11) * HS };
   }
   /** Where the Companion is now: it drifts to and fro above the party. */
   petPos() { return { x: 180 + Math.sin(this.t * 1.1) * 60, y: 196 + Math.sin(this.t * 2.3) * 7 }; }
@@ -406,10 +409,10 @@ export class BattleView {
     switch (k) {
       case 'flourish': sp(m.x, m.y, 10, c, -30, 45); break;
       case 'spark': sp(m.x, m.y, 8, '#bff3ff', -20, 60, 0.3, 1.8); this.fx.push({ k: 'zap', x0: m.x - 6, y0: m.y - 10, x1: m.x + 6, y1: m.y + 4, t: 0, life: 0.15, c }); break;
-      case 'rise': this.fx.push({ k: 'beam', x0: h.x, y0: h.y - 150, x1: h.x, y1: h.y - 10, t: 0, life: 0.45, c: '#fff6c8', w: 14 }); break;
-      case 'hop': sp(h.x, h.y - 80, 8, '#ffe08a', -25, 25, 0.6); break;
+      case 'rise': this.fx.push({ k: 'beam', x0: h.x, y0: h.y - 150 * HS, x1: h.x, y1: h.y - 10 * HS, t: 0, life: 0.45, c: '#fff6c8', w: 14 }); break;
+      case 'hop': sp(h.x, h.y - 80 * HS, 8, '#ffe08a', -25, 25, 0.6); break;
       case 'wisps': for (let i = 0; i < 6; i++) this.parts.push({ x: m.x + rand(-8, 8), y: m.y + 10, vx: rand(-15, 15), vy: rand(-60, -30), t: 0, life: rand(0.6, 0.9), c: '#8fff9f', s: 2.6, add: true }); break;
-      case 'vanish': for (let i = 0; i < 14; i++) this.parts.push({ x: h.x + rand(-14, 14), y: h.y - rand(4, 50), vx: rand(-30, 30), vy: rand(-30, 5), t: 0, life: rand(0.4, 0.7), c: '#8a8098', s: rand(3, 5) }); break;
+      case 'vanish': for (let i = 0; i < 14; i++) this.parts.push({ x: h.x + rand(-14, 14), y: h.y - rand(4, 50) * HS, vx: rand(-30, 30), vy: rand(-30, 5), t: 0, life: rand(0.4, 0.7), c: '#8a8098', s: rand(3, 5) }); break;
       case 'roar': this.fx.push({ k: 'groundring', x: h.x, y: h.y, t: 0, life: 0.45, c: '#ff4a3a', r: 60 }); this.shake = Math.max(this.shake, 3); break;
       default: break;
     }
@@ -426,13 +429,13 @@ export class BattleView {
     }
     switch (ev.fx) {
       case 'aoe': this.fx.push({ k: 'boom', x: ev.x, y: ev.y - 10, t: 0, life: 0.6, c: '#ff8a3c', big: true }); this.fx.push({ k: 'groundring', x: ev.x, y: ev.y, t: 0, life: 0.5, c: '#ffb070', r: BAL.aoeRadius }); this.shake = Math.max(this.shake, 5); this.flash = 0.1; this.flashColor = '#ffb070'; break;
-      case 'pierce': this.fx.push({ k: 'beam', x0: h.x, y0: h.y - 30, x1: ev.x, y1: ev.y - 30, t: 0, life: 0.35, c: '#ffe08a', w: 7 }); break;
-      case 'execute': for (const e of ts) { this.fx.push({ k: 'zap', x0: h.x, y0: h.y - 24, x1: e.x, y1: e.y - 16, t: 0, life: 0.25, c: '#b8a8ff' }); this.fx.push({ k: 'slash', x: e.x, y: e.y - 16, t: 0, life: 0.4, c: '#e6e6f5' }); } this.shake = Math.max(this.shake, 3); break;
+      case 'pierce': this.fx.push({ k: 'beam', x0: h.x, y0: h.y - 30 * HS, x1: ev.x, y1: ev.y - 30, t: 0, life: 0.35, c: '#ffe08a', w: 7 }); break;
+      case 'execute': for (const e of ts) { this.fx.push({ k: 'zap', x0: h.x, y0: h.y - 24 * HS, x1: e.x, y1: e.y - 16, t: 0, life: 0.25, c: '#b8a8ff' }); this.fx.push({ k: 'slash', x: e.x, y: e.y - 16, t: 0, life: 0.4, c: '#e6e6f5' }); } this.shake = Math.max(this.shake, 3); break;
       case 'berserk': this.hv[ev.hero].aura = 0.5; this.hv[ev.hero].auraColor = '#ff4a3a'; break; // then the Berserk aura (drawBuffs)
       case 'stun': this.fx.push({ k: 'groundring', x: h.x, y: h.y, t: 0, life: 0.6, c: '#9ec2ff', r: 120 }); for (const e of ts) this.fx.push({ k: 'stars', id: e.id, t: 0, life: 1.2 }); this.shake = Math.max(this.shake, 6); break;
       case 'dot': this.fx.push({ k: 'groundring', x: ev.x, y: ev.y, t: 0, life: 0.6, c: '#ffa040', r: BAL.aoeRadius }); for (const e of ts) this.fx.push({ k: 'burn', id: e.id, t: 0, life: 4, c: '#ffa040' }); break;
       case 'poison': for (const e of ts) this.fx.push({ k: 'burn', id: e.id, t: 0, life: 5, c: '#7cff4a' }); break;
-      case 'drain': this.fx.push({ k: 'groundring', x: ev.x, y: ev.y, t: 0, life: 0.6, c: '#8fff9f', r: BAL.aoeRadius }); for (const e of ts.slice(0, 8)) for (const hi of ev.heroes || []) { const q = B.heroes[hi]; this.fx.push({ k: 'stream', x0: e.x, y0: e.y - 12, x1: q.x, y1: q.y - 24, t: 0, life: 0.6, c: '#8fff9f' }); } break;
+      case 'drain': this.fx.push({ k: 'groundring', x: ev.x, y: ev.y, t: 0, life: 0.6, c: '#8fff9f', r: BAL.aoeRadius }); for (const e of ts.slice(0, 8)) for (const hi of ev.heroes || []) { const q = B.heroes[hi]; this.fx.push({ k: 'stream', x0: e.x, y0: e.y - 12, x1: q.x, y1: q.y - 24 * HS, t: 0, life: 0.6, c: '#8fff9f' }); } break;
       case 'heal': for (const hi of ev.heroes || []) { this.hv[hi].aura = 0.8; this.hv[hi].auraColor = '#8fff9f'; } break;
       case 'buff': for (const hi of ev.heroes || []) { this.hv[hi].aura = 0.6; this.hv[hi].auraColor = '#ffd34d'; } this.flash = 0.1; this.flashColor = '#ffe08a'; break;
       case 'chain': { let from = this.muzzle(h); for (const e of ts) { const to = { x: e.x, y: e.y - 14 }; this.fx.push({ k: 'zap', x0: from.x, y0: from.y, x1: to.x, y1: to.y, t: 0, life: 0.35, c: '#5de0ff' }); from = to; } this.flash = 0.08; this.flashColor = '#bff3ff'; break; }
@@ -475,10 +478,10 @@ export class BattleView {
     // rings under the heroes: their spot on the field, with the ability charge around the edge
     for (const h of B.heroes) {
       const C = CLASSES[h.cls];
-      g.save(); g.translate(h.x, h.y + 4); g.scale(1, 0.45);
+      g.save(); g.translate(h.x, h.y + 2); g.scale(HS * 1.2, 0.45 * HS * 1.2);
       g.globalCompositeOperation = 'lighter';
-      g.globalAlpha = h.dead ? 0.15 : 0.32 + 0.1 * Math.sin(this.t * 3 + h.i); g.drawImage(glow(C.shot, 30), -30, -30);
-      g.globalAlpha = h.dead ? 0.2 : 0.85; g.strokeStyle = C.shot; g.lineWidth = 2.4; g.beginPath(); g.arc(0, 0, 22, 0, TAU); g.stroke();
+      g.globalAlpha = h.dead ? 0.1 : 0.2 + 0.06 * Math.sin(this.t * 3 + h.i); g.drawImage(glow(C.shot, 30), -30, -30);
+      g.globalAlpha = h.dead ? 0.15 : 0.55; g.strokeStyle = C.shot; g.lineWidth = 2.4; g.beginPath(); g.arc(0, 0, 22, 0, TAU); g.stroke();
       if (!h.dead) { const cd = 1 - Math.max(0, h.cd) / C.ability.cd; g.strokeStyle = cd >= 0.98 ? '#ffffff' : '#ffd34d'; g.lineWidth = 4; g.beginPath(); g.arc(0, 0, 22, -Math.PI / 2, -Math.PI / 2 + cd * TAU); g.stroke(); }
       g.restore();
     }
@@ -491,10 +494,19 @@ export class BattleView {
     this.corpses = this.corpses.filter((c) => (c.t += dt) < 0.35);
     for (const c of this.corpses) things.push({ y: c.y, c });
     things.sort((a, b) => a.y - b.y);
+    // the creatures and heroes go on a layer of their own first, so the scene's night and lamplight can fall on them
+    // the way it falls on the ground, instead of them shining out of it
+    const ground = g;
+    if (!this.act) { this.act = document.createElement('canvas'); this.act.width = VW / PX; this.act.height = VH / PX; this.ag = this.act.getContext('2d'); this.lit = document.createElement('canvas'); this.lit.width = VW / PX; this.lit.height = VH / PX; }
+    g = this.ag; g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, VW / PX, VH / PX); g.setTransform(1 / PX, 0, 0, 1 / PX, 0, 0); g.imageSmoothingEnabled = false;
+    this.barQ = [];
     for (const it of things) {
       if (it.e) this.drawEnemy(g, it.e, dt, stunned.has(it.e.id));
-      else if (it.h) { this.drawCosmetics(g, it.h, B, false); this.drawBuffs(g, it.h, B); this.drawHero(g, it.h, dt); this.drawAuras(g, it.h); this.drawCosmetics(g, it.h, B, true); }
-      else {
+      else if (it.h) {
+        const h = it.h; g.save(); g.translate(h.x, h.y); g.scale(HS, HS); g.translate(-h.x, -h.y);
+        this.drawCosmetics(g, h, B, false); this.drawBuffs(g, h, B); this.drawHero(g, h, dt); this.drawAuras(g, h); this.drawCosmetics(g, h, B, true);
+        g.restore();
+      } else {
         const c = it.c, q = c.t / 0.35;
         if (!ready(c.img)) continue;
         g.globalAlpha = 1 - q; const w = c.w * (1 + q * 0.5), hh = c.h * (1 - q * 0.6);
@@ -502,6 +514,10 @@ export class BattleView {
       }
     }
     for (const id of [...this.ev.keys()]) if (!B.enemies.some((e) => e.id === id)) this.ev.delete(id);
+    this.lightActors(zoneOf(B.stage));
+    g = ground;
+    g.setTransform(1, 0, 0, 1, 0, 0); g.drawImage(this.act, 0, 0); g.setTransform(1 / PX, 0, 0, 1 / PX, 0, 0);
+    for (const q of this.barQ) bar(g, ...q);
 
     // Genesis portals hovering over their area
     g.globalCompositeOperation = 'lighter';
@@ -600,10 +616,22 @@ export class BattleView {
     if (this.flash > 0) { g.fillStyle = this.flashColor; g.globalAlpha = Math.min(0.5, this.flash); g.fillRect(-40, -40, VW + 80, VH + 80); g.globalAlpha = 1; this.flash -= dt * 1.6; }
   }
 
+  /** Darken the actor layer the way the zone's night darkens the ground, then let its lamps and the pool of light
+   * round the party fall on them. */
+  lightActors(Z) {
+    const L = arenaLight(Z.arena || Z.id), a = this.ag, w = VW / PX, hh = VH / PX;
+    a.setTransform(1, 0, 0, 1, 0, 0);
+    a.globalCompositeOperation = 'source-atop'; a.globalAlpha = L.dark * 0.6; a.fillStyle = L.tint; a.fillRect(0, 0, w, hh); a.globalAlpha = 1;
+    const l = this.lit.getContext('2d');
+    l.globalCompositeOperation = 'source-over'; l.setTransform(1, 0, 0, 1, 0, 0); l.clearRect(0, 0, w, hh);
+    l.setTransform(1 / PX, 0, 0, 1 / PX, 0, 0); paintLights(l, L.lights); l.setTransform(1, 0, 0, 1, 0, 0);
+    l.globalCompositeOperation = 'destination-in'; l.drawImage(this.act, 0, 0); l.globalCompositeOperation = 'source-over';
+    a.globalCompositeOperation = 'lighter'; a.drawImage(this.lit, 0, 0); a.globalCompositeOperation = 'source-over';
+  }
   /** How a creature is drawn: its painted sprite (walk frame `frame`) once loaded, else its drawn art; and how big. */
   enemyLook(e, frame = 0) {
     const size = sizeOf(e), key = mobKey(e.name), art = hasSprite(key) && spriteFrame(key, frame);
-    if (art) { const s = (size * 1.25) / Math.max(art.h, art.w * 0.9); return { img: art, w: art.w * s, h: art.h * s, sprite: true }; }
+    if (art) { const s = PX * (e.elite && !e.boss ? 1.25 : 1); return { img: art, w: art.w * s, h: art.h * s, sprite: true }; }
     return { img: monsterImage(e.sprite, e.pal), w: size, h: size, sprite: false };
   }
   drawEnemy(g, e, dt, stunned) {
@@ -625,18 +653,18 @@ export class BattleView {
     g.drawImage(img.bmp, -size / 2, -size * 0.95, size, size);
     if (v.flash > 0) { g.globalAlpha = Math.min(1, v.flash * 9) * 0.85; g.drawImage(tinted(img, '#ffffff'), -size / 2, -size * 0.95, size, size); }
     g.restore(); g.globalAlpha = 1;
-    if ((e.elite || e.boss) && e.hp < e.maxHp && !e.boss) bar(g, e.x - 16, e.y + 4, 32, 3, e.hp / e.maxHp, '#ff9a2e');
+    if ((e.elite || e.boss) && e.hp < e.maxHp && !e.boss) this.barQ.push([e.x - 14, e.y + 3, 28, 3, e.hp / e.maxHp, '#ff9a2e']);
     if (stunned) for (let k = 0; k < 3; k++) { const a = this.t * 4 + (k * TAU) / 3; star(g, e.x + Math.cos(a) * size * 0.4, e.y - size * 0.95 + Math.sin(a) * 3, '#ffe08a'); }
   }
   drawSpriteEnemy(g, e, v, look, stunned) {
     const size = sizeOf(e), appear = Math.min(1, (this.t - v.born) / 0.3), { img, w, h } = look;
-    g.fillStyle = 'rgba(0,0,0,.38)'; g.beginPath(); g.ellipse(e.x, e.y, Math.min(w * 0.38, size * 0.45), size * 0.11, 0, 0, TAU); g.fill();
-    if (e.boss || e.elite) { g.globalCompositeOperation = 'lighter'; g.globalAlpha = (e.boss ? 0.3 : 0.18) + 0.08 * Math.sin(this.t * 4); const R = e.boss ? 80 : 26; g.drawImage(glow(e.boss ? '#ff3a5a' : '#ffb02e', R), e.x - R, e.y - h * 0.5 - R); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; }
+    g.fillStyle = 'rgba(0,0,0,.38)'; g.beginPath(); g.ellipse(e.x, e.y, w * 0.36, Math.max(3, w * 0.1), 0, 0, TAU); g.fill();
+    if (e.boss || e.elite) { g.globalCompositeOperation = 'lighter'; g.globalAlpha = (e.boss ? 0.3 : 0.18) + 0.08 * Math.sin(this.t * 4); const R = e.boss ? 56 : 20; g.drawImage(glow(e.boss ? '#ff3a5a' : '#ffb02e', R), e.x - R, e.y - h * 0.5 - R); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; }
     g.globalAlpha = appear;
     g.drawImage(img.bmp, e.x - w / 2, e.y - h + 2, w, h);
     if (v.flash > 0) { g.globalAlpha = Math.min(1, v.flash * 9) * 0.85; g.drawImage(tinted(img, '#ffffff'), e.x - w / 2, e.y - h + 2, w, h); }
     g.globalAlpha = 1;
-    if ((e.elite || e.boss) && e.hp < e.maxHp && !e.boss) bar(g, e.x - 16, e.y + 4, 32, 3, e.hp / e.maxHp, '#ff9a2e');
+    if ((e.elite || e.boss) && e.hp < e.maxHp && !e.boss) this.barQ.push([e.x - 14, e.y + 3, 28, 3, e.hp / e.maxHp, '#ff9a2e']);
     if (stunned) for (let k = 0; k < 3; k++) { const a = this.t * 4 + (k * TAU) / 3; star(g, e.x + Math.cos(a) * size * 0.4, e.y - h + Math.sin(a) * 3, '#ffe08a'); }
   }
   /** Which of a hero's four battle frames shows now: the wind-up just before a shot, the strike as it leaves, the
@@ -665,7 +693,7 @@ export class BattleView {
     const sp = !h.dead && spriteFrame(`hero:${h.cls}:back`, this.heroFrame(h, v)) || spriteFrame(`hero:${h.cls}:back`, 0);
     if (sp) {
       // the pixel hero, seen from behind, one art pixel to one field pixel, feet on the spot
-      const dh = sp.h * PX, dw = sp.w * PX, breathe = 1;
+      const dh = (sp.h * PX) / HS, dw = (sp.w * PX) / HS, breathe = 1;
       g.save(); g.translate(h.x + pose.dx, h.y + 6 + v.kick * 0.8 + pose.dy); g.rotate(-v.kick * 0.02 + pose.rot);
       if (h.dead) g.rotate(1.3);
       if (pose.alpha < 1) g.globalAlpha = pose.alpha;
@@ -686,8 +714,8 @@ export class BattleView {
     g.globalAlpha = 1;
     if (v.muzzle > 0 && !h.dead) { const m = this.muzzle(h); g.globalCompositeOperation = 'lighter'; g.drawImage(glow('#fff2b0', 12), m.x - 12, m.y - 12); g.globalCompositeOperation = 'source-over'; }
     if (!h.dead) {
-      if (h.shield > 0) bar(g, h.x - 16, h.y + 12, 32, 2, Math.min(1, h.shield / h.maxHp / 0.3), '#7ad0ff');
-      bar(g, h.x - 16, h.y + 15, 32, 4, h.hp / h.maxHp, h.hp / h.maxHp > 0.5 ? '#3fdf6c' : h.hp / h.maxHp > 0.25 ? '#e8b928' : '#e0483e');
+      if (h.shield > 0) this.barQ.push([h.x - 12, h.y + 6, 24, 2, Math.min(1, h.shield / h.maxHp / 0.3), '#7ad0ff']);
+      this.barQ.push([h.x - 12, h.y + 8, 24, 3, h.hp / h.maxHp, h.hp / h.maxHp > 0.5 ? '#3fdf6c' : h.hp / h.maxHp > 0.25 ? '#e8b928' : '#e0483e']);
     }
   }
   /** Where a hero's cast pose is at this moment: an offset, a tilt, a squash and stretch, a fade. */

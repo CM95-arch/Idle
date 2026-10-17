@@ -11,9 +11,11 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CUT, OUT = os.path.join(ROOT, 'art', 'cut'), os.path.join(ROOT, 'assets', 'sprites')
 # the box each kind fits in, in art pixels: heroes by height, creatures by max(height, 0.9 × width) to match how the
 # battle sizes them, icons by their longer side
-BOX = {'hero-back': 52, 'hero-front': 52, 'enemy': 26, 'boss': 75, 'icon': 24}
+BOX = {'hero-back': 28, 'hero-front': 52, 'enemy': 24, 'boss': 50, 'icon': 24}
 COLORS = {'hero-back': 20, 'hero-front': 20, 'enemy': 16, 'boss': 24, 'icon': 16}
 INK = (24, 20, 32)
+# the outline is a little see-through, so at small sizes it reads as an edge, not a black border
+INK_A = 190
 
 
 def fit(kind, w, h):
@@ -39,7 +41,7 @@ def pixelate(frames, kind):
         rgb.putalpha(a)
         p = Image.new('RGBA', (size[0] + 2, size[1] + 2), (0, 0, 0, 0)); p.paste(rgb, (1, 1))
         ring = p.split()[3].filter(ImageFilter.MaxFilter(3))
-        ink = Image.new('RGBA', p.size, INK + (0,)); ink.putalpha(ring)
+        ink = Image.new('RGBA', p.size, INK + (0,)); ink.putalpha(ring.point(lambda v: v * INK_A // 255))
         out.append(Image.alpha_composite(ink, p))
     return out
 
