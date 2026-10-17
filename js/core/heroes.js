@@ -11,7 +11,7 @@ import { STATS, STAT_FX, potionsToMax } from '../data/stats.js';
 export const BASE_SHOT = {
   staff: { n: 2, arc: 0, wavy: true, range: 8.5, speed: 14, look: 'orb' },
   wand: { n: 1, arc: 0, range: 9, speed: 16, look: 'bolt' },
-  bow: { n: 1, arc: 0, range: 7.5, speed: 18, look: 'arrow' },
+  bow: { n: 1, arc: 0, range: 7.5, speed: 18, look: 'arrow', pierce: true }, // arrows go through the pack
   dagger: { n: 1, arc: 0, range: 5.5, speed: 15, look: 'blade' },
   sword: { n: 1, arc: 0, range: 4.5, speed: 12, look: 'slash' },
 };

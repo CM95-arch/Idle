@@ -2,14 +2,14 @@
 // when all eight are maxed). Life and Mana rise 5 per potion, the rest 1.
 export const STATS = ['hp', 'mp', 'att', 'def', 'spd', 'dex', 'vit', 'wis'];
 export const STAT_INFO = {
-  hp: { name: 'Life', abbr: 'HP', color: '#ff5d73', ink: '#ffffff', step: 5, does: 'Max HP' },
-  mp: { name: 'Mana', abbr: 'MP', color: '#4f9bff', ink: '#ffffff', step: 5, does: 'Ability power' },
-  att: { name: 'Attack', abbr: 'ATT', color: '#ff8f3d', ink: '#2a1400', step: 1, does: 'Damage' },
-  def: { name: 'Defense', abbr: 'DEF', color: '#a7b1c2', ink: '#141a24', step: 1, does: 'Armor' },
-  spd: { name: 'Speed', abbr: 'SPD', color: '#58e08a', ink: '#04240f', step: 1, does: 'Dodging' },
-  dex: { name: 'Dexterity', abbr: 'DEX', color: '#ffd34d', ink: '#2a2000', step: 1, does: 'Fire rate' },
-  vit: { name: 'Vitality', abbr: 'VIT', color: '#c86bff', ink: '#ffffff', step: 1, does: 'Regeneration' },
-  wis: { name: 'Wisdom', abbr: 'WIS', color: '#40d6e6', ink: '#032a2e', step: 1, does: 'Ability recharge' },
+  hp: { name: 'Life', abbr: 'HP', color: '#42dee4', ink: '#04282a', step: 5, does: 'Max HP' },
+  mp: { name: 'Mana', abbr: 'MP', color: '#efd05d', ink: '#2a2000', step: 5, does: 'Ability power' },
+  att: { name: 'Attack', abbr: 'ATT', color: '#dd5af0', ink: '#ffffff', step: 1, does: 'Damage' },
+  def: { name: 'Defense', abbr: 'DEF', color: '#3a3a3e', ink: '#ffffff', step: 1, does: 'Armor' },
+  spd: { name: 'Speed', abbr: 'SPD', color: '#41e480', ink: '#03240f', step: 1, does: 'Dodging' },
+  dex: { name: 'Dexterity', abbr: 'DEX', color: '#eb8931', ink: '#1a0e00', step: 1, does: 'Fire rate' },
+  vit: { name: 'Vitality', abbr: 'VIT', color: '#ff2a3c', ink: '#ffffff', step: 1, does: 'Regeneration' },
+  wis: { name: 'Wisdom', abbr: 'WIS', color: '#4a93fe', ink: '#ffffff', step: 1, does: 'Ability recharge' },
 };
 // base and max per class
 const S = (hp, mp, att, def, spd, dex, vit, wis) => ({ hp, mp, att, def, spd, dex, vit, wis });
