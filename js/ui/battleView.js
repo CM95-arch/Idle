@@ -27,9 +27,9 @@ const EXALT_PAL = ['#a07a20', '#fff3c0', '#ffffff'];
 const TAU = Math.PI * 2;
 const rand = (a, b) => a + Math.random() * (b - a);
 const HERO_W = 70, HERO_H = 76; // the chibi art is a 120×130 box
-// pixel sprites: field units per art pixel, the same for heroes and creatures so they keep their sizes relative to
+// pixel sprites: field units per stored pixel, the same for heroes and creatures so they keep their sizes relative to
 // each other (an elite is marked by its glow); bosses are drawn twice the size
-const PXS = 2.2, pxScale = (e) => PXS * (e.boss ? 2 : 1);
+const PXS = 0.64, pxScale = (e) => PXS * (e.boss ? 2 : 1);
 // ambient particles per biome: how many, and how each one starts (`fresh` = anywhere, else at its source)
 const rnd = (a, b) => a + Math.random() * (b - a);
 const AMBIENT = {
@@ -615,14 +615,14 @@ export class BattleView {
   /** A creature in pixel art: still, but it hops along a pixel or two as it walks. */
   drawPixelEnemy(g, e, v, px, stunned) {
     const s = pxScale(e), w = px.w * s, h = px.h * s, appear = Math.min(1, (this.t - v.born) / 0.3);
-    const hop = stunned ? 0 : Math.round(Math.abs(Math.sin(this.t * (e.boss ? 3 : 7) + v.ph)) * 1.4) * s;
+    const hop = stunned ? 0 : Math.round(Math.abs(Math.sin(this.t * (e.boss ? 3 : 7) + v.ph)) * 1.4) * 2.4;
     g.fillStyle = 'rgba(0,0,0,.38)'; g.beginPath(); g.ellipse(e.x, e.y, w * 0.36, Math.max(3, w * 0.1), 0, 0, TAU); g.fill();
     if (e.boss || e.elite) { g.globalCompositeOperation = 'lighter'; g.globalAlpha = (e.boss ? 0.3 : 0.18) + 0.08 * Math.sin(this.t * 4); const R = e.boss ? 80 : 26; g.drawImage(glow(e.boss ? '#ff3a5a' : '#ffb02e', R), e.x - R, e.y - h * 0.5 - R); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; }
-    g.imageSmoothingEnabled = false; g.globalAlpha = appear;
-    const x = e.x - w / 2, y = e.y - h + s - hop;
+    g.imageSmoothingQuality = 'high'; g.globalAlpha = appear;
+    const x = e.x - w / 2, y = e.y - h + 2 - hop;
     g.drawImage(px.bmp, x, y, w, h);
     if (v.flash > 0) { g.globalAlpha = Math.min(1, v.flash * 9) * 0.85; g.drawImage(tinted(px, '#ffffff'), x, y, w, h); }
-    g.globalAlpha = 1; g.imageSmoothingEnabled = true;
+    g.globalAlpha = 1;
     if ((e.elite || e.boss) && e.hp < e.maxHp && !e.boss) bar(g, e.x - 16, e.y + 4, 32, 3, e.hp / e.maxHp, '#ff9a2e');
     if (stunned) for (let k = 0; k < 3; k++) { const a = this.t * 4 + (k * TAU) / 3; star(g, e.x + Math.cos(a) * w * 0.4, e.y - h + Math.sin(a) * 3, '#ffe08a'); }
   }
@@ -644,10 +644,10 @@ export class BattleView {
       g.save(); g.translate(h.x + pose.dx, h.y + 6 + Math.round(v.kick * 1.5) + pose.dy); g.rotate(pose.rot);
       if (h.dead) g.rotate(1.3);
       if (pose.alpha < 1) g.globalAlpha = pose.alpha;
-      g.scale(pose.sx, pose.sy); g.imageSmoothingEnabled = false;
+      g.scale(pose.sx, pose.sy); g.imageSmoothingQuality = 'high';
       g.drawImage(px.bmp, -w / 2, -ph, w, ph);
       if (v.hurt > 0) { g.globalAlpha = Math.min(1, v.hurt * 5) * 0.7; g.drawImage(tinted(px, '#ff2a2a'), -w / 2, -ph, w, ph); }
-      g.restore(); g.imageSmoothingEnabled = true;
+      g.restore();
     } else if (ready(img)) {
       const breathe = 1 + Math.sin(this.t * 3 + h.i * 1.3) * 0.02;
       g.save(); g.translate(h.x + pose.dx, h.y + 6 + v.kick * 1.5 + pose.dy); g.rotate(-v.kick * 0.04 + pose.rot);
