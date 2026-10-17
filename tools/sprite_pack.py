@@ -1,6 +1,6 @@
 # Sprite prompt pack: `python3 tools/sprite_pack.py <out.html>`
 # Plans every sprite sheet for the art overhaul from the game's own data: heroes (front portrait, plus a rear view
-# standing and attacking for battle), every enemy and boss (two walk frames), every piece of gear (one icon).
+# in four attack frames for battle), every enemy and boss (three walk frames), every piece of gear (one icon).
 # Writes tools/sprites/sheets.json (which cell of which sheet is which sprite; tools/slice_sheets.py reads it)
 # and a page with one ready-to-paste image prompt per sheet.
 import colorsys, html, json, os, re, subprocess, sys
@@ -66,36 +66,39 @@ for i in range(len(H), 12):
 add('heroes-front', 'Heroes, front', '1024×1536 portrait', 4, 3,
     'Eleven fantasy heroes, each facing the viewer. Cells in reading order (left to right, top to bottom):', cells, lines)
 
-# heroes in battle: seen from behind, standing (frame A) and attacking (frame B), two heroes per row
-for n, group in enumerate([H[:6], H[6:]]):
+# heroes in battle: seen from behind, one hero per row in four frames (ready, wind-up, strike, follow-through)
+for n in range(0, len(H), 3):
+    group = H[n:n + 3]
     lines, cells = [], []
     for i, c in enumerate(group):
-        name, look, attack = HEROES[c]
-        lines.append(f'{i + 1}. {name} ({look}): left cell standing ready; right cell {attack}.')
-        cells += [{'kind': 'hero-back', 'id': c, 'frame': 0}, {'kind': 'hero-back', 'id': c, 'frame': 1}]
+        name, look, (wind, strike, follow) = HEROES[c]
+        lines.append(f'Row {i + 1}: {name} ({look}). Frame 1 standing ready; frame 2 {wind}; frame 3 {strike}; frame 4 {follow}.')
+        cells += [{'kind': 'hero-back', 'id': c, 'frame': f} for f in range(4)]
     while len(cells) < 12: cells.append(None)
-    if len(group) < 6: lines.append('Leave the last pair of cells empty (plain magenta).')
-    add(f'heroes-battle-{n + 1}', f'Heroes in battle {n + 1}', '1536×1024 landscape', 3, 4,
+    if len(group) < 3: lines.append('Leave the remaining rows empty (plain magenta).')
+    add(f'heroes-battle-{n // 3 + 1}', f'Heroes in battle {n // 3 + 1}', '1536×1024 landscape', 3, 4,
         'Fantasy heroes seen from behind and slightly above (three-quarter rear view), facing away from the viewer toward the '
-        'top of the image, as if facing an oncoming horde. Each row holds two heroes, each as a pair of cells: the left cell '
-        'is the hero standing ready, the right cell the same hero attacking toward the top of the image (same size, colors '
-        'and spot). Heroes in reading order:', cells, lines)
+        'top of the image, as if facing an oncoming horde. Each row is ONE hero shown in four animation frames of a single '
+        'attack, left to right; every frame shows the same hero at the same size, colors and position, only the pose changes, '
+        'so the frames play as smooth motion. Rows:', cells, lines)
 
 
+# creatures: one per row in three walk frames (left step, passing, right step; played 1-2-3-2)
 def creature_sheets(prefix, title, items, extra):
-    for n in range(0, len(items), 6):
-        group = items[n:n + 6]
+    for n in range(0, len(items), 4):
+        group = items[n:n + 4]
         cells, lines = [], []
         for i, e in enumerate(group):
-            lines.append(f'{i + 1}. {e["name"]} ({e["zone"]}): {ENEMIES[e["name"]]}.')
-            cells += [{'kind': 'enemy', 'id': slug(e['name']), 'name': e['name'], 'frame': 0}, {'kind': 'enemy', 'id': slug(e['name']), 'name': e['name'], 'frame': 1}]
+            lines.append(f'Row {i + 1}: {e["name"]} ({e["zone"]}): {ENEMIES[e["name"]]}.')
+            cells += [{'kind': 'enemy', 'id': slug(e['name']), 'name': e['name'], 'frame': f} for f in range(3)]
         while len(cells) < 12: cells.append(None)
-        if len(group) < 6: lines.append('Leave the remaining cells empty (plain magenta).')
-        add(f'{prefix}-{n // 6 + 1}', f'{title} {n // 6 + 1}', '1536×1024 landscape', 3, 4,
-            'Fantasy creatures facing the viewer, walking toward the viewer. Each row holds two creatures, each as a pair of '
-            'cells: left cell walk frame A, right cell walk frame B (the same creature, same size, colors and spot, with the legs '
-            'in the opposite step; a creature without legs sways or squashes slightly instead). ' + (extra + ' ' if extra else '')
-            + 'Creatures in reading order:', cells, lines)
+        if len(group) < 4: lines.append('Leave the remaining rows empty (plain magenta).')
+        add(f'{prefix}-{n // 4 + 1}', f'{title} {n // 4 + 1}', '1024×1536 portrait', 4, 3,
+            'Fantasy creatures facing the viewer, walking toward the viewer. Each row is ONE creature shown in three frames of a '
+            'walk cycle, left to right: frame 1 left foot forward, frame 2 passing (feet together, body slightly higher), '
+            'frame 3 right foot forward. Every frame shows the same creature at the same size, colors and position, only the pose '
+            'changes. A creature without legs sways or squashes instead: leaning left, upright and stretched, leaning right. '
+            + (extra + ' ' if extra else '') + 'Rows:', cells, lines)
 
 
 creature_sheets('enemies', 'Enemies', data['enemies'], '')
@@ -182,7 +185,7 @@ button:focus-visible, input:focus-visible {{ outline: 2px solid var(--sage); out
     <ol class="steps">
       <li><b>Start with “Heroes, front”.</b> Paste its prompt into ChatGPT and regenerate until the style is exactly right.</li>
       <li><b>Lock the style.</b> For every later sheet, attach that approved hero image and add “Match the art style of the attached image exactly.”</li>
-      <li><b>Check each sheet:</b> the right number of figures, one per cell, flat magenta background, nothing touching the cell edges.</li>
+      <li><b>Check each sheet:</b> one character per row, its frames the same size and spot with only the pose changing, a flat magenta background, nothing touching the cell edges.</li>
       <li><b>Upload sheets here in chat</b> with their name (the <code>upload as</code> label). Slicing, background removal and wiring into the game happen on my side, and anything not drawn yet keeps today’s art.</li>
     </ol>
   </section>

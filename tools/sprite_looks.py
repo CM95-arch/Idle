@@ -1,29 +1,29 @@
 # What every hero and enemy looks like, written for an image generator (see tools/sprite_pack.py).
-# Heroes: outfit, weapon, colors, and how they attack. Enemies: a short description in the game's art style.
+# Heroes: outfit, weapon, colors, and the three beats of their attack (wind-up, strike, follow-through). Enemies: a short description in the game's art style.
 
 HEROES = {
     'wizard': ('Wizard', 'a tall pointed wide-brimmed wizard hat, a long deep-blue robe with gold trim, a wooden staff topped with a glowing amber orb',
-               'thrusting the staff forward overhead, the orb flaring bright'),
+               ('drawing the staff back over one shoulder, the orb gathering light', 'thrusting the staff forward overhead, the orb blazing', 'the staff lowering, a wisp of light trailing from the orb')),
     'priest': ('Priest', 'white and cream hooded robes with gold trim, a slender golden wand, a small holy book at the hip',
-               'raising the wand high, a soft golden glow at its tip'),
+               ('lifting the wand, light gathering at its tip', 'the wand raised high, a bright golden glow', 'the wand lowering, the glow fading')),
     'archer': ('Archer', 'a forest-green hooded leather tunic, brown leather bracers and boots, a longbow, a quiver of arrows on the back',
-               'drawing the bow to full draw, aiming forward'),
+               ('nocking an arrow, the bow coming up', 'the bow at full draw, aiming forward', 'the arrow just loosed, bow arm still forward, string hand pulled back past the ear')),
     'rogue': ('Rogue', 'charcoal and dusk-purple hooded leathers, a short ragged cloak, a dagger in each hand',
-              'lunging forward, one dagger thrust out'),
+              ('crouching low, a dagger drawn back', 'lunging forward, the dagger thrust out', 'recovering from the lunge, both blades low')),
     'warrior': ('Warrior', 'crimson-red heavy plate armor with steel trim, an open steel helm with a red plume, a broad longsword',
-                'mid-swing with the longsword, body twisted into the blow'),
+                ('raising the longsword high overhead', 'mid-swing, the sword slashing down and across', 'the sword low after the swing, body twisted through')),
     'knight': ('Knight', 'steel-blue full plate armor, a closed great helm, a longsword and a kite shield with a blue field',
-               'bashing forward with the shield raised, sword drawn back'),
+               ('shield raised and braced, sword drawn back', 'bashing forward behind the shield', 'stepping back into guard, shield up')),
     'huntress': ('Huntress', 'tan and olive hooded leathers, a longbow, an iron snare trap hanging from the belt',
-                 'drawing the bow to full draw, aiming forward'),
+                 ('nocking an arrow, the bow coming up', 'the bow at full draw, aiming forward', 'the arrow just loosed, bow arm still forward, string hand pulled back past the ear')),
     'necromancer': ('Necromancer', 'a dark-green hooded robe with bone ornaments, a bone staff, a small skull glowing green at the belt',
-                    'raising the bone staff, green light curling from the skull'),
+                    ('drawing the bone staff back, the skull beginning to glow', 'the staff raised high, green light pouring from the skull', 'the staff lowering, green wisps drifting away')),
     'assassin': ('Assassin', 'deep-violet hooded leathers, two curved daggers, green poison vials on a bandolier',
-                 'throwing a green poison vial forward, arm outstretched'),
+                 ('reaching for a poison vial, body coiled', 'throwing the vial forward, arm outstretched', 'the throwing arm following through, body turned')),
     'paladin': ('Paladin', 'ivory-and-gold plate armor, a great helm, a longsword, a blue holy seal emblem on the chest',
-                'holding the longsword high, the holy seal glowing'),
+                ('gripping the longsword in both hands, the seal glowing', 'the sword raised high overhead, the seal blazing', 'the sword lowered into guard')),
     'sorcerer': ('Sorcerer', 'a violet robe with a tall pointed hood, a slender wand crackling with cyan light, a short scepter at the belt',
-                 'pointing the wand forward, cyan lightning crackling from it'),
+                 ('drawing the wand back, sparks gathering', 'pointing the wand forward, cyan lightning crackling from it', 'the wand lowering, sparks fading')),
 }
 
 # enemy name -> appearance
