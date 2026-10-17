@@ -8,7 +8,8 @@ import { artImg } from './art/core.js';
 import { play } from './sound.js';
 import { abilityText } from './party.js';
 import { UNIQUES, UNIQUE } from '../data/uniques.js';
-import { ZONE_BY_ID } from '../data/zones.js';
+import { ZONE_BY_ID, DUNGEONS, ROMAN } from '../data/zones.js';
+import { arena } from './art/arena.js';
 import * as G from '../core/game.js';
 
 const queue = [];
@@ -77,6 +78,23 @@ export function showUnlock(cls, joined, onSee) {
   });
 }
 
+/** New dungeons are open (beating Vexis in a Realm opens the next tier): what they are, who guards them. */
+export function showDungeons(tier, onMap) {
+  enqueue((close) => {
+    play('unlock');
+    const list = DUNGEONS.filter((d) => d.tier === tier);
+    return h('div', { class: 'celebrate' }, h('div', { class: 'rays' }),
+      h('div', { class: 'kicker' }, tier === 1 ? 'Dungeons unlocked' : 'New dungeons unlocked'),
+      h('div', { class: 'big', style: { fontSize: '34px' } }, `Tier ${ROMAN[tier - 1]}`),
+      ...list.map((d) => h('div', { class: 'panel dunpanel', style: { backgroundImage: `url(${arena(d.arena || d.id).toDataURL('image/jpeg', 0.6)})` } },
+        h('b', {}, d.name), h('div', {}, `☠ ${d.boss[0]}`))),
+      h('div', { class: 'muted', style: { fontWeight: 800, fontSize: '13px' } }, tier === 1
+        ? 'Each dungeon is five rooms ending in its boss, who guards its gear. Run them again and again from the Map.'
+        : 'Find them on the Map, under Dungeons.'),
+      h('div', { class: 'row' }, h('button', { class: 'btn alt grow', onclick: () => { close(); onMap?.(); } }, 'Open Map'), h('button', { class: 'btn grow', onclick: close }, 'OK')));
+  });
+}
+
 export function showAscended(P) {
   enqueue((close) => h('div', { class: 'celebrate violet' }, h('div', { class: 'rays' }),
     h('div', { class: 'kicker', style: { color: '#d6c2ff' } }, `Ascension ${P.n}`),
@@ -100,7 +118,7 @@ export function showUnique(it, onSee, dupe = null) {
       h('div', { class: 'kicker', style: { color: ex ? '#ffe08a' : '#ffffff' } }, `${ex ? 'Mythic gear' : 'Gear'}${dupe ? ' · found again' : ' found!'}`),
       h('div', { class: 'por' }, icon),
       h('div', { class: 'big', style: { fontSize: '30px', color: ex ? '#fff3c0' : '#ffffff', textShadow: ex ? '0 0 28px rgba(255,210,90,.9), 0 3px 0 #5a3a0a' : '0 0 24px rgba(111,242,255,.8), 0 3px 0 #2a3050' } }, U.name),
-      h('div', { class: 'muted', style: { fontWeight: 800, fontSize: '13px' } }, U.starter ? 'Dropped on the Sunken Shore' : `Dropped by ${ZONE_BY_ID[U.src]?.boss[0] || 'a boss'}`),
+      h('div', { class: 'muted', style: { fontWeight: 800, fontSize: '13px' } }, U.starter ? `Dropped in ${ZONE_BY_ID[U.src]?.name}` : `Dropped by ${ZONE_BY_ID[U.src]?.boss[0] || 'a boss'}`),
       h('div', { class: 'panel', style: { textAlign: 'left' } }, h('b', { style: { color: '#6ff2ff' } }, '✦ Special effect'), h('div', { style: { fontSize: '14px', fontWeight: 700, marginTop: '2px' } }, U.desc)),
       dupe ? h('div', { class: 'gold', style: { fontWeight: 900 } }, dupe.ups ? `Melted into your copy: +${dupe.ups} upgrade${dupe.ups === 1 ? '' : 's'} (now +${it.up})` : '', dupe.fame ? `${dupe.ups ? ' and ' : 'Your copy is maxed: '}+${fmt(dupe.fame)} Glory` : '') : null,
       h('div', { class: 'dim', style: { fontSize: '12px', fontWeight: 800 } }, `Collection ${n} / ${UNIQUES.length}`),

@@ -24,7 +24,8 @@ export const dungeonProgress = (Z) => dBest(Z) + 1;
 export function canEnter(s) {
   const Z = zoneOf(s);
   if (!Z.dungeon) return s >= 0 && s <= Math.min(state.best + 1, LAST_STAGE);
-  return dungeonOpen(Z) && localStage(s) <= dBest(Z) + 1;
+  // a dungeon is always entered at its first room: it has to be run all the way to its boss
+  return dungeonOpen(Z) && localStage(s) === 0;
 }
 
 function fresh() {
@@ -340,7 +341,9 @@ function gainFame(n, earned = true) { state.fame += n; if (earned) state.stats.f
 const owns = (u) => Object.keys(state.classes).some((c) => fits(c, { kind: u.kind }));
 // (and some only drop from a given Realm on)
 const poolOf = (Z) => UNIQUES.filter((u) => u.src === Z.id && (!u.starter || owns(u)) && (state.realm || 0) >= (u.minRealm || 0));
-const starterZone = (Z) => Z.id === 'beach';
+// the Sunken Shore (ability items) and Greenvale (weapons) drop their gear from any enemy
+const STARTER_ZONES = new Set(UNIQUES.filter((u) => u.starter).map((u) => u.src));
+const starterZone = (Z) => STARTER_ZONES.has(Z.id);
 const uniqueChance = (Z, boss) => (!poolOf(Z).length ? 0 : starterZone(Z) ? (boss ? BAL.starterBoss : BAL.starterKill) : boss ? (Z.dungeon ? BAL.uniqueDungeonBoss : BAL.uniqueRealmBoss) : Z.dungeon ? BAL.uniqueKill : 0) * (1 + luck());
 /** Maybe a Unique from this stage's zone. */
 function rollUnique(stage, boss, force = false) {
@@ -444,9 +447,9 @@ export function tickBattle() {
 function pickNextStage(won) {
   const Z = zoneOf(state.stage);
   if (Z.dungeon) {
-    // a dungeon is run start to boss and then again from the top; a defeat steps back a stage
-    if (!won) state.stage = Math.max(Z.start, state.stage - 1);
-    else if (state.autoPush) state.stage = isBoss(state.stage) ? Z.start : state.stage + 1;
+    // a dungeon is run room by room to its boss, then again from the top; a defeat ends the run
+    if (!won) state.stage = Z.start;
+    else state.stage = isBoss(state.stage) ? Z.start : state.stage + 1;
     return;
   }
   if (won && state.autoPush && state.stage === state.best && state.stage < LAST_STAGE) state.stage++;
@@ -495,7 +498,7 @@ export function collectOffline(now = Date.now()) {
   const salvaged = 0;
   // Uniques: the rolls the fights would have made (a dungeon run meets its boss once per lap), at most three
   const uniques = [], Z = zoneOf(stage);
-  const bossShare = isBoss(stage) ? 1 : Z.dungeon && state.autoPush ? 1 / Z.len : 0;
+  const bossShare = Z.dungeon ? 1 / Z.len : isBoss(stage) ? 1 : 0;
   const expect = clears * (bossShare * uniqueChance(Z, true) + BAL.stageKills * uniqueChance(Z, false));
   const n = Math.min(3, Math.floor(expect) + (rng.next() < expect % 1 ? 1 : 0));
   for (let i = 0; i < n; i++) { const u = rollUnique(stage, bossShare > 0, true); if (u) uniques.push(u); }

@@ -195,7 +195,7 @@ export class BattleView {
         case 'boss': this.banner('BOSS', '#ff3a5a', 1.8, true); sound?.('bossWarn'); this.flash = 0.25; this.flashColor = '#ff2040'; break;
         case 'stage': this.stageAt = this.t; break;
         case 'won':
-          if (ev.boss) { this.banner(`${zoneOf(ev.stage).boss[0]} slain!`, '#ffd34d', 2, true); this.confetti(); sound?.('clear'); }
+          if (ev.boss) { this.banner('SLAIN!', '#ffd34d', 2, true, zoneOf(ev.stage).boss[0]); this.confetti(); sound?.('clear'); }
           else { this.banner(`Stage ${stageLabel(ev.stage)} cleared`, '#ffe9a8', 1.1); sound?.('clear'); }
           break;
         case 'lost': this.banner(ev.timeout ? 'Overwhelmed' : 'Defeated', '#ff6b5e', 1.6, true); break;
@@ -437,7 +437,7 @@ export class BattleView {
     }
   }
   num(x, y, text, c, size, pop) { this.nums.push({ x, y, text, c, size, t: 0, pop }); if (this.nums.length > 50) this.nums.shift(); }
-  banner(text, c, life, big) { this.banners = this.banners.filter((b) => b.big || big); this.banners.push({ text, c, t: 0, life, big }); }
+  banner(text, c, life, big, sub) { this.banners = this.banners.filter((b) => b.big || big); this.banners.push({ text, c, t: 0, life, big, sub }); }
   confetti() { const cs = ['#ffd34d', '#ff6b9d', '#5de0ff', '#8fff9f', '#b05cff']; for (let i = 0; i < 70; i++) this.parts.push({ x: rand(40, 320), y: rand(-20, 40), vx: rand(-40, 40), vy: rand(40, 160), t: 0, life: rand(1, 1.8), c: cs[i % 5], s: rand(2, 3.5), rot: rand(0, TAU), conf: true }); }
 
   /** Draw a frame. dt in seconds. coinTarget / bagTarget: world points the Glory coins and loot fly to. */
@@ -573,10 +573,17 @@ export class BattleView {
     for (const b of this.banners) {
       const inT = Math.min(1, b.t / 0.18), out = Math.min(1, (b.life - b.t) / 0.3);
       g.globalAlpha = Math.min(inT, out);
-      const s = (b.big ? 32 : 17) * (1 + (1 - inT) * 0.5);
-      g.font = `900 ${Math.round(s)}px Cinzel, Georgia, serif`; g.textAlign = 'center';
-      const y = b.big ? 170 : 120;
-      g.lineWidth = b.big ? 7 : 5; g.strokeStyle = 'rgba(0,0,0,.85)'; g.strokeText(b.text, VW / 2, y); g.fillStyle = b.c; g.fillText(b.text, VW / 2, y);
+      const pop = 1 + (1 - inT) * 0.5, y = b.big ? 170 : 120;
+      // every line shrinks to fit the field, so a long name never runs off the screen
+      const line = (text, size, yy, c, lw) => {
+        g.font = `900 ${Math.round(size)}px Cinzel, Georgia, serif`;
+        const w = g.measureText(text).width, fit = Math.min(1, (VW - 28) / w);
+        if (fit < 1) g.font = `900 ${Math.floor(size * fit)}px Cinzel, Georgia, serif`;
+        g.lineWidth = lw; g.strokeStyle = 'rgba(0,0,0,.85)'; g.strokeText(text, VW / 2, yy); g.fillStyle = c; g.fillText(text, VW / 2, yy);
+      };
+      g.textAlign = 'center';
+      if (b.sub) line(b.sub, 17 * pop, y - 30, '#ffffff', 5);
+      line(b.text, (b.big ? 32 : 17) * pop, y, b.c, b.big ? 7 : 5);
     }
     g.globalAlpha = 1;
     if (this.flash > 0) { g.fillStyle = this.flashColor; g.globalAlpha = Math.min(0.5, this.flash); g.fillRect(-40, -40, VW + 80, VH + 80); g.globalAlpha = 1; this.flash -= dt * 1.6; }

@@ -39,6 +39,19 @@ export const UNIQUES = [
   { id: 'stStorm', name: 'Stormglass Rod', kind: 'scepter', src: 'beach', starter: true, proc: { on: 'cast', kind: 'lightning', n: 3, pow: 0.15, r: 36, c: '#9ad8ff' },
     pal: ['#2a3a6a', '#9ad8ff', '#ffffff'], desc: 'Every Chain Lightning also cracks three bolts of sea-storm down on scattered foes.' },
 
+  // ---- Greenvale: one weapon of each kind, a rare drop from any enemy there. Half a normal weapon's stats, each
+  // with its own small twist ----
+  { id: 'stStaff', name: 'Emberwood Staff', kind: 'staff', src: 'lowlands', starter: true, shot: { n: 2, arc: 0, per: 0.55, range: 7, speed: 12, look: 'orb', color: '#ff9a4a' },
+    pal: ['#6a3a1a', '#ff9a4a', '#ffe0a0'], desc: 'Carved from a lightning-struck oak. Fires two little embers side by side.' },
+  { id: 'stWand', name: 'Willowwand', kind: 'wand', src: 'lowlands', starter: true, shot: { n: 1, rate: 1.25, per: 0.85, range: 7.5, speed: 14, look: 'bolt', color: '#9aff7a' },
+    pal: ['#3a5a2a', '#9aff7a', '#f0ffd0'], desc: 'Light and quick: green bolts at 125% fire rate.' },
+  { id: 'stBow', name: 'Hunter\'s Shortbow', kind: 'bow', src: 'lowlands', starter: true, shot: { n: 2, arc: 8, per: 0.55, range: 7, speed: 18, look: 'arrow', color: '#e8d8a0' },
+    pal: ['#6a4a2a', '#e8d8a0', '#7ae05a'], desc: 'A poacher\'s bow strung for two: looses a pair of arrows at once.' },
+  { id: 'stDagger', name: 'Goblin Shiv', kind: 'dagger', src: 'lowlands', starter: true, shot: { n: 1, rate: 1.2, per: 0.72, range: 5.2, speed: 15, look: 'blade', color: '#c0ff8a', onHit: { bleed: 0.15 } },
+    pal: ['#3a4a2a', '#c0ff8a', '#a07a5a'], desc: 'Jagged and nasty (120% fire rate). Every hit leaves a small bleeding cut.' },
+  { id: 'stSword', name: 'Dwarven Cleaver', kind: 'sword', src: 'lowlands', starter: true, shot: { n: 1, per: 0.8, range: 4.2, speed: 12, look: 'slash', color: '#ffd38a', onHit: { splash: 0.2 } },
+    pal: ['#5a4a3a', '#c0c0c8', '#ffd38a'], desc: 'Heavy enough to split a log. Each swing knocks a little damage into the foes beside the target.' },
+
   // ---- the dungeons' gear ----
   { id: 'coralBow', name: 'Reefsong Bow', kind: 'bow', src: 'trench', shot: { n: 2, arc: 9, rate: 1.25, per: 0.45, pierce: true, range: 6.4, speed: 18.5, look: 'arrow', color: '#ff7aa8' },
     pal: ['#b8405a', '#ff8a9a', '#ffe0d0'], desc: 'Sings two coral-pink arrows at once, a hair apart, at 125% fire rate. They pass straight through the pack.' },

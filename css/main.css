@@ -444,3 +444,9 @@ img.figure.locked { filter: brightness(0) opacity(.55); }
 .companion .cdesc { font-size: 12px; font-weight: 700; color: var(--ink-2); }
 .hpanel .lvbtn.capped { background: linear-gradient(180deg, #4a3f6a, #2e2846); color: #ffd34d; }
 .gainlist .gain:last-child:nth-child(odd) { grid-column: 1 / -1; }
+/* a boss's name may be long: it wraps to two lines rather than being cut off */
+.stagebar .where .zn.boss { color: #ff8a8a; white-space: normal; overflow: visible; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; line-height: 1.15; }
+/* the dungeons-unlocked pop-up: each new dungeon on its own battlefield */
+.celebrate .dunpanel { position: relative; text-align: left; background-size: cover; background-position: center 40%; box-shadow: inset 0 0 0 999px rgba(10,6,20,.55); }
+.celebrate .dunpanel b { display: block; font-family: var(--pixel); font-size: 18px; color: #fff; }
+.celebrate .dunpanel div { font-size: 13px; font-weight: 800; color: #ff9a9a; }

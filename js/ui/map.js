@@ -14,7 +14,7 @@ export function createMapScreen(root, { goBattle }) {
     const s = G.state, open = Z.dungeon ? G.dungeonOpen(Z) : Z.start <= s.best + 1;
     const cleared = Z.dungeon ? G.dungeonProgress(Z) : Math.max(0, Math.min(Z.len, s.best + 1 - Z.start));
     const nodes = Array.from({ length: Z.len }, (_, k) => {
-      const st = Z.start + k, done = k < cleared, now = st === s.stage, can = open && G.canEnter(st), next = can && !done;
+      const st = Z.start + k, done = k < cleared, now = st === s.stage, can = open && G.canEnter(st), next = can && (Z.dungeon || !done);
       return h('button', { class: `node${done ? ' done' : ''}${now ? ' now' : ''}${next && !now ? ' next' : ''}${isBoss(st) ? ' boss' : ''}`, disabled: !can,
         'aria-label': `${Z.name} stage ${k + 1}`, onclick: () => { G.goToStage(st); tap(); goBattle(); } }, isBoss(st) ? '☠' : `${k + 1}`);
     });

@@ -1,6 +1,6 @@
 // The main screen: the live battle, where you are, and the party's upgrades: levels and stat potions.
 import { CLASSES } from '../data/classes.js';
-import { zoneOf, stageLabel, isBoss } from '../data/zones.js';
+import { zoneOf, stageLabel, isBoss, localStage } from '../data/zones.js';
 import * as G from '../core/game.js';
 import { TICK } from '../core/battle.js';
 import { BattleView, VW, VH } from './battleView.js';
@@ -10,10 +10,11 @@ import { statPips } from './potions.js';
 import { openFormationSheet } from './formation.js';
 import { STATS, STAT_INFO, statValue } from '../data/stats.js';
 import { play } from './sound.js';
+import { showDungeons } from './celebrate.js';
 
 const MODES = [1, 10, 'Max'];
 
-export function createBattleScreen(root, { onFame, openClass, onDrop, goParty }) {
+export function createBattleScreen(root, { onFame, openClass, onDrop, goParty, goMap }) {
   let view = null, cv = null, acc = 0, endT = 0, mode = 0, refs = {}, slow = 0, visible = true;
 
   function levelCount(cls) {
@@ -87,9 +88,10 @@ export function createBattleScreen(root, { onFame, openClass, onDrop, goParty })
     const s = G.state, Z = zoneOf(s.stage), boss = isBoss(s.stage);
     const walled = s.flags.wallAt != null && s.stage === s.best && s.best < G.LAST_STAGE && s.autoPush && !zoneOf(s.stage).dungeon;
     // the zone's name on its own line (it can be long), then the stage and where you stand
-    const sub = walled ? `needs more power` : boss ? Z.boss[0] : Z.dungeon ? `Tier ${Z.tier} · cleared ${G.dungeonProgress(Z)}/${Z.len}` : `Best ${s.best >= 0 ? stageLabel(s.best) : '—'}`;
-    patch(refs.where, Z.name + stageLabel(s.stage) + sub + walled, () => [h('small', { class: 'zn' }, Z.name),
-      h('div', { class: 'st' }, h('b', {}, stageLabel(s.stage), boss ? ' ☠' : ''), h('small', { class: walled ? 'walled' : boss ? 'bossn' : '' }, walled ? `${stageLabel(s.flags.wallAt)} ${sub}` : sub))]);
+    // on a boss stage the boss's name takes the top line (it may wrap) and the stage stands alone below it
+    const sub = walled ? `needs more power` : boss ? '' : Z.dungeon ? `Tier ${Z.tier} · room ${localStage(s.stage) + 1}/${Z.len}` : `Best ${s.best >= 0 ? stageLabel(s.best) : '—'}`;
+    patch(refs.where, Z.name + stageLabel(s.stage) + sub + walled + boss, () => [h('small', { class: `zn${boss ? ' boss' : ''}` }, boss ? `☠ ${Z.boss[0]}` : Z.name),
+      h('div', { class: 'st' }, h('b', {}, stageLabel(s.stage)), sub ? h('small', { class: walled ? 'walled' : '' }, walled ? `${stageLabel(s.flags.wallAt)} ${sub}` : sub) : null)]);
     const pw = fmt(G.partyPower()), need = G.stagePower(s.stage), ok = G.partyPower() >= need;
     patch(refs.power, `${pw}|${need}|${ok}`, () => ['⚔ ', h('span', { class: ok ? 'ok' : 'low' }, pw), h('span', { class: 'dim' }, ` / ${fmt(need)}`)]);
     refs.auto.classList.toggle('on', s.autoPush);
@@ -147,7 +149,7 @@ export function createBattleScreen(root, { onFame, openClass, onDrop, goParty })
           if (r.k === 'fame') onFame(r.n);
           if (r.k === 'clear') { onFame(r.n); if (r.first && isBoss(r.stage)) toast({ title: `${zoneOf(r.stage).boss[0]} defeated!`, body: r.stage === G.LAST_STAGE ? 'Vexis has fallen. You can Ascend!' : zoneOf(r.stage).dungeon ? 'Its gear can drop on every run.' : `${zoneOf(r.stage + 1).name} is open.`, kind: 'gold' }); }
           if (r.k === 'reward') for (const R of r.list) toast({ title: `${R.icon} Realm reward: ${R.name}`, body: R.desc, kind: 'gold' });
-          if (r.k === 'dungeons') toast({ title: `Dungeons unlocked: Tier ${r.tier}`, body: `${r.names.join(' and ')}. Find them on the Map.`, kind: 'gold' });
+          if (r.k === 'dungeons') showDungeons(r.tier, goMap);
           if (r.k === 'drop' && r.salvaged) onFame(r.salvaged);
           if (r.k === 'drop' && !r.salvaged && !r.quiet) onDrop?.(r.it, r);
         }

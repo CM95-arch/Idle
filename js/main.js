@@ -50,7 +50,7 @@ const TABS = [
 ];
 let current = 'battle';
 const screens = {
-  battle: createBattleScreen($('#scr-battle'), { goParty: () => go('party'), onFame, openClass: (c) => openClassSheet(c, refresh), onDrop: (it, r) => setTimeout(() => showUnique(it, seeItem, r?.dupe), 1700) }),
+  battle: createBattleScreen($('#scr-battle'), { goParty: () => go('party'), goMap: () => go('map'), onFame, openClass: (c) => openClassSheet(c, refresh), onDrop: (it, r) => setTimeout(() => showUnique(it, seeItem, r?.dupe), 1700) }),
   party: createPartyScreen($('#scr-party')),
   gear: createGearScreen($('#scr-gear'), { onChange: refresh }),
   map: createMapScreen($('#scr-map'), { goBattle: () => go('battle') }),
