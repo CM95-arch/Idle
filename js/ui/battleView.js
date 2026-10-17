@@ -10,6 +10,14 @@ import { itemImage, RARITY_SHADES } from './art/items.js';
 import { arena } from './art/arena.js';
 import { ready } from './art/core.js';
 
+// how each class looks while casting: k = the motion (drawHero), life = how long it takes, wind = the wind-up
+// before a thrown ability leaves the hand
+const POSES = {
+  wizard: { k: 'flourish', life: 0.4, wind: 0.12 }, sorcerer: { k: 'spark', life: 0.35 }, priest: { k: 'rise', life: 0.5 },
+  paladin: { k: 'hop', life: 0.4 }, necromancer: { k: 'wisps', life: 0.45, wind: 0.08 }, assassin: { k: 'throw', life: 0.4, wind: 0.14 },
+  huntress: { k: 'throw', life: 0.4, wind: 0.14 }, archer: { k: 'draw', life: 0.4 }, rogue: { k: 'vanish', life: 0.7 },
+  warrior: { k: 'roar', life: 0.45 }, knight: { k: 'bash', life: 0.35 },
+};
 // abilities thrown from the caster's hand to where they land, and their color in flight
 const LOBS = { aoe: '#ff8a3c', dot: '#ffb040', poison: '#7cff4a', drain: '#8fff9f' }, LOB_T = 0.3;
 export const VW = 360, VH = 430;
@@ -68,7 +76,7 @@ export class BattleView {
     this.t = 0; this.shake = 0; this.flash = 0; this.flashColor = '#fff';
     this.fx = []; this.parts = []; this.nums = []; this.banners = []; this.bags = []; this.coins = []; this.decals = []; this.corpses = [];
     this.ev = new Map(); // enemy visuals by id
-    this.hv = [0, 1, 2].map(() => ({ hurt: 0, kick: 0, aura: 0, auraColor: '#fff', cast: 0, muzzle: 0 }));
+    this.hv = [0, 1, 2].map(() => ({ hurt: 0, kick: 0, aura: 0, auraColor: '#ffffff', muzzle: 0 }));
     this.motes = Array.from({ length: 22 }, () => ({ x: rand(0, VW), y: rand(0, VH), v: rand(4, 12), s: rand(1, 2.2), p: rand(0, TAU) }));
     this.resize();
   }
@@ -181,7 +189,7 @@ export class BattleView {
         case 'beam': { const h = B.heroes[ev.hero]; this.fx.push({ k: 'beam', x0: h.x, y0: h.y - 40, x1: ev.x, y1: ev.y - 20, t: 0, life: 0.3, c: '#fff3b0', w: 9 }); this.fx.push({ k: 'groundring', x: ev.x, y: ev.y, t: 0, life: 0.5, c: '#fff3b0', r: ev.r }); this.fx.push({ k: 'boom', x: ev.x, y: ev.y - 12, t: 0, life: 0.5, c: '#fff3b0', big: true }); this.shake = Math.max(this.shake, 3); sound?.('blast'); break; }
         case 'barrier': for (const i of ev.heroes) { this.hv[i].aura = 0.8; this.hv[i].auraColor = '#7ad0ff'; } break;
         case 'dodge': { const h = B.heroes[ev.hero]; if (ev.invuln) { this.hv[ev.hero].aura = 0.3; this.hv[ev.hero].auraColor = '#ffffff'; } else if (Math.random() < 0.5) this.num(h.x + rand(-10, 10), h.y - 52, 'dodge', '#b8c0d8', 10); break; }
-        case 'revive': { const h = B.heroes[ev.hero]; this.num(h.x, h.y - 64, 'Revived!', '#ffffff', 14, true); this.hv[ev.hero].cast = 0.8; for (let i = 0; i < 24; i++) this.parts.push({ x: h.x + rand(-16, 16), y: h.y - rand(0, 40), vx: rand(-20, 20), vy: rand(-140, -60), t: 0, life: rand(0.6, 1.1), c: '#ffffff', s: 3, add: true }); sound?.('levelup'); break; }
+        case 'revive': { const h = B.heroes[ev.hero]; this.num(h.x, h.y - 64, 'Revived!', '#ffffff', 14, true); this.hv[ev.hero].aura = 0.8; this.hv[ev.hero].auraColor = '#ffffff'; for (let i = 0; i < 24; i++) this.parts.push({ x: h.x + rand(-16, 16), y: h.y - rand(0, 40), vx: rand(-20, 20), vy: rand(-140, -60), t: 0, life: rand(0.6, 1.1), c: '#ffffff', s: 3, add: true }); sound?.('levelup'); break; }
         case 'fall': { const h = B.heroes[ev.hero]; for (let i = 0; i < 18; i++) this.parts.push({ x: h.x, y: h.y - 20, vx: rand(-90, 90), vy: rand(-120, 0), t: 0, life: 0.8, c: '#ff4030', s: 3, g: 200 }); this.shake = 5; sound?.('fall'); break; }
         case 'ability': this.ability(B, ev, byId, sound); break;
         case 'boss': this.banner('BOSS', '#ff3a5a', 1.8, true); sound?.('bossWarn'); this.flash = 0.25; this.flashColor = '#ff2040'; break;
@@ -372,19 +380,36 @@ export class BattleView {
   }
   ability(B, ev, byId, sound) {
     const h = B.heroes[ev.hero], C = CLASSES[h.cls];
-    this.hv[ev.hero].cast = 0.6;
-    // every cast: a rune circle in the class's color flares under the caster, sparks rising out of it
-    this.fx.push({ k: 'sigil', x: h.x, y: h.y, t: 0, life: 0.9, c: C.shot, a: rand(0, TAU) });
-    for (let n = 0; n < 12; n++) { const a = (n / 12) * TAU; this.parts.push({ x: h.x + Math.cos(a) * 32, y: h.y + Math.sin(a) * 14, vx: 0, vy: rand(-90, -50), t: 0, life: rand(0.5, 0.8), c: C.shot, s: 2.4, add: true }); }
+    // every class casts in its own way (see POSES): a flourish, a throw, a roar, a lunge, a vanishing act
+    const P = POSES[h.cls] || POSES.wizard, v = this.hv[ev.hero];
+    v.pose = { k: P.k, t: 0, life: P.life, c: C.shot };
+    this.castCue(h, P.k, C.shot);
     const ts = (ev.targets || []).map(byId).filter(Boolean);
     sound?.('ability');
     // abilities that land somewhere else are thrown there from the caster's hand first, so you can see who cast
     // them; what happens on impact waits for the throw to land
     const lob = LOBS[ev.fx], at = ev.x != null ? { x: ev.x, y: ev.y } : ts[0];
     const i0 = this.fx.length;
-    if (lob && at) { const m = this.muzzle(h); this.fx.push({ k: 'meteor', x0: m.x, y0: m.y, x1: at.x, y1: at.y - 6, t: 0, life: LOB_T, c: lob, flask: true, trail: true, big: true }); }
+    // (a thrown ability leaves the hand at the end of the wind-up)
+    const wind = P.wind || 0;
+    if (lob && at) { const m = this.muzzle(h); this.fx.push({ k: 'meteor', x0: m.x, y0: m.y, x1: at.x, y1: at.y - 6, t: -wind, life: LOB_T, c: lob, flask: true, trail: true, big: true }); }
     this.impact(B, ev, h, ts, sound);
-    if (lob && at) for (const f of this.fx.slice(i0 + 1)) f.t -= LOB_T;
+    if (lob && at) for (const f of this.fx.slice(i0 + 1)) f.t -= LOB_T + wind;
+  }
+  /** The particles that go with a class's cast pose: embers at the staff tip, a column of light, green wisps,
+   * a puff of smoke, a red shockwave. Small on purpose: the motion is the cue. */
+  castCue(h, k, c) {
+    const m = this.muzzle(h), sp = (x, y, n, col, vy = -40, spread = 30, life = 0.5, s = 2.2) => { for (let i = 0; i < n; i++) this.parts.push({ x: x + rand(-4, 4), y: y + rand(-4, 4), vx: rand(-spread, spread), vy: vy + rand(-20, 20), t: 0, life: rand(life * 0.6, life), c: col, s, add: true }); };
+    switch (k) {
+      case 'flourish': sp(m.x, m.y, 10, c, -30, 45); break;
+      case 'spark': sp(m.x, m.y, 8, '#bff3ff', -20, 60, 0.3, 1.8); this.fx.push({ k: 'zap', x0: m.x - 6, y0: m.y - 10, x1: m.x + 6, y1: m.y + 4, t: 0, life: 0.15, c }); break;
+      case 'rise': this.fx.push({ k: 'beam', x0: h.x, y0: h.y - 150, x1: h.x, y1: h.y - 10, t: 0, life: 0.45, c: '#fff6c8', w: 14 }); break;
+      case 'hop': sp(h.x, h.y - 80, 8, '#ffe08a', -25, 25, 0.6); break;
+      case 'wisps': for (let i = 0; i < 6; i++) this.parts.push({ x: m.x + rand(-8, 8), y: m.y + 10, vx: rand(-15, 15), vy: rand(-60, -30), t: 0, life: rand(0.6, 0.9), c: '#8fff9f', s: 2.6, add: true }); break;
+      case 'vanish': for (let i = 0; i < 14; i++) this.parts.push({ x: h.x + rand(-14, 14), y: h.y - rand(4, 50), vx: rand(-30, 30), vy: rand(-30, 5), t: 0, life: rand(0.4, 0.7), c: '#8a8098', s: rand(3, 5) }); break;
+      case 'roar': this.fx.push({ k: 'groundring', x: h.x, y: h.y, t: 0, life: 0.45, c: '#ff4a3a', r: 60 }); this.shake = Math.max(this.shake, 3); break;
+      default: break;
+    }
   }
   /** What an ability does where it lands. Ability items each have their own look. */
   impact(B, ev, h, ts, sound) {
@@ -441,13 +466,12 @@ export class BattleView {
 
     // rings under the heroes: their spot on the field, with the ability charge around the edge
     for (const h of B.heroes) {
-      const C = CLASSES[h.cls], v = this.hv[h.i];
+      const C = CLASSES[h.cls];
       g.save(); g.translate(h.x, h.y + 4); g.scale(1, 0.45);
       g.globalCompositeOperation = 'lighter';
       g.globalAlpha = h.dead ? 0.15 : 0.32 + 0.1 * Math.sin(this.t * 3 + h.i); g.drawImage(glow(C.shot, 30), -30, -30);
       g.globalAlpha = h.dead ? 0.2 : 0.85; g.strokeStyle = C.shot; g.lineWidth = 2.4; g.beginPath(); g.arc(0, 0, 22, 0, TAU); g.stroke();
       if (!h.dead) { const cd = 1 - Math.max(0, h.cd) / C.ability.cd; g.strokeStyle = cd >= 0.98 ? '#ffffff' : '#ffd34d'; g.lineWidth = 4; g.beginPath(); g.arc(0, 0, 22, -Math.PI / 2, -Math.PI / 2 + cd * TAU); g.stroke(); }
-      if (v.cast > 0) { g.globalAlpha = v.cast; g.lineWidth = 3; g.beginPath(); g.arc(0, 0, 22 + (0.5 - v.cast) * 40, 0, TAU); g.stroke(); }
       g.restore();
     }
 
@@ -577,18 +601,21 @@ export class BattleView {
   }
   drawHero(g, h, dt) {
     const v = this.hv[h.i];
-    v.kick = Math.max(0, v.kick - dt * 8); v.hurt = Math.max(0, v.hurt - dt); v.aura = Math.max(0, v.aura - dt); v.cast = Math.max(0, v.cast - dt); v.muzzle = Math.max(0, v.muzzle - dt);
+    v.kick = Math.max(0, v.kick - dt * 8); v.hurt = Math.max(0, v.hurt - dt); v.aura = Math.max(0, v.aura - dt); v.muzzle = Math.max(0, v.muzzle - dt);
     const gem = h.weaponRarity >= 0 ? RARITY_SHADES[h.weaponRarity][1] : null;
     const img = chibiImage(h.cls, gem);
     g.fillStyle = 'rgba(0,0,0,.4)'; g.beginPath(); g.ellipse(h.x, h.y + 4, 15, 5, 0, 0, TAU); g.fill();
     if (h.dead) g.globalAlpha = 0.35;
-    if ((v.aura > 0 || v.cast > 0) && !h.dead) { g.globalCompositeOperation = 'lighter'; g.globalAlpha = Math.min(1, v.aura + v.cast) * (0.45 + 0.2 * Math.sin(this.t * 10)); g.drawImage(glow(v.cast > 0 ? CLASSES[h.cls].shot : v.auraColor, 36), h.x - 36, h.y - 58); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; }
+    if (v.aura > 0 && !h.dead) { g.globalCompositeOperation = 'lighter'; g.globalAlpha = Math.min(1, v.aura) * (0.45 + 0.2 * Math.sin(this.t * 10)); g.drawImage(glow(v.auraColor, 36), h.x - 36, h.y - 58); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; }
+    const pose = this.pose(v, dt, h);
     const rar = h.gearRarity ?? 0;
     if (rar >= 3 && !h.dead) { g.globalCompositeOperation = 'lighter'; g.globalAlpha = 0.22 + 0.08 * Math.sin(this.t * 2 + h.i); g.drawImage(glow(BAL.rarities[rar].color, 34), h.x - 34, h.y - 56); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; }
     if (ready(img)) {
       const breathe = 1 + Math.sin(this.t * 3 + h.i * 1.3) * 0.02;
-      g.save(); g.translate(h.x, h.y + 6 + v.kick * 1.5); g.rotate(-v.kick * 0.04);
+      g.save(); g.translate(h.x + pose.dx, h.y + 6 + v.kick * 1.5 + pose.dy); g.rotate(-v.kick * 0.04 + pose.rot);
       if (h.dead) g.rotate(1.3);
+      if (pose.alpha < 1) g.globalAlpha = pose.alpha;
+      g.scale(pose.sx, pose.sy);
       g.drawImage(img.bmp, -HERO_W / 2, -HERO_H * breathe, HERO_W, HERO_H * breathe);
       if (v.hurt > 0) { g.globalAlpha = Math.min(1, v.hurt * 5) * 0.7; g.drawImage(tinted(img, '#ff2a2a'), -HERO_W / 2, -HERO_H * breathe, HERO_W, HERO_H * breathe); }
       g.restore();
@@ -599,6 +626,28 @@ export class BattleView {
       if (h.shield > 0) bar(g, h.x - 16, h.y + 12, 32, 2, Math.min(1, h.shield / h.maxHp / 0.3), '#7ad0ff');
       bar(g, h.x - 16, h.y + 15, 32, 4, h.hp / h.maxHp, h.hp / h.maxHp > 0.5 ? '#3fdf6c' : h.hp / h.maxHp > 0.25 ? '#e8b928' : '#e0483e');
     }
+  }
+  /** Where a hero's cast pose is at this moment: an offset, a tilt, a squash and stretch, a fade. */
+  pose(v, dt, h) {
+    const out = { dx: 0, dy: 0, rot: 0, sx: 1, sy: 1, alpha: 1 }, P = v.pose;
+    if (!P || h.dead) return out;
+    P.t += dt;
+    const p = Math.min(1, P.t / P.life), ease = Math.sin(p * Math.PI); // 0 → 1 → 0
+    switch (P.k) {
+      case 'flourish': out.rot = Math.sin(p * Math.PI * 3) * 0.14 * (1 - p); out.dy = -3 * ease; break; // a wave of the staff
+      case 'spark': out.rot = -0.1 * ease; out.dy = -2 * ease; break; // wand raised
+      case 'rise': out.dy = -9 * ease; break; // lifted on the light
+      case 'hop': out.dy = -12 * Math.sin(Math.min(1, p * 1.6) * Math.PI); break;
+      case 'wisps': out.rot = 0.06 * ease; out.dy = -2 * ease; break; // the skull held up
+      case 'throw': out.rot = p < 0.35 ? 0.2 * (p / 0.35) : 0.2 - 0.45 * Math.min(1, (p - 0.35) / 0.25) * (1 - Math.max(0, (p - 0.6) / 0.4)); out.dy = p > 0.35 ? -6 * Math.sin(((p - 0.35) / 0.65) * Math.PI) : 0; break; // wind up, then fling
+      case 'draw': out.rot = p < 0.5 ? 0.12 * (p / 0.5) : 0.12 * (1 - (p - 0.5) / 0.5); out.dy = p < 0.5 ? 2 * (p / 0.5) : 4 * (1 - p); break; // lean back, release
+      case 'vanish': out.alpha = 0.2 + 0.8 * Math.max(0, (p - 0.75) / 0.25); break;
+      case 'roar': out.sx = 1 + 0.12 * ease; out.sy = 1 + 0.16 * ease; break;
+      case 'bash': out.dy = -16 * ease; out.rot = -0.08 * ease; break; // a lunge into the horde
+      default: break;
+    }
+    if (p >= 1) v.pose = null;
+    return out;
   }
   /** Each biome's air: sea spray, fireflies, drifting dust, sparkles, embers and void motes. */
   ambience(g, zone, dt) {
@@ -728,21 +777,6 @@ export class BattleView {
         g.drawImage(glow(f.c, 11), x - 11, y - 11); g.fillStyle = '#ffffff'; g.beginPath(); g.arc(x, y, 2.4, 0, TAU); g.fill();
         if (Math.random() < 0.6) this.parts.push({ x, y, vx: rand(-15, 15), vy: rand(-15, 15), t: 0, life: 0.3, c: f.c, s: 2, add: true });
         g.globalCompositeOperation = 'source-over';
-        break;
-      }
-      case 'sigil': { // two rune rings turning opposite ways, with a glow rising out of them
-        const r = 30 + 12 * Math.min(1, p * 3), fade = p < 0.15 ? p / 0.15 : 1 - (p - 0.15) / 0.85;
-        g.save(); g.translate(f.x, f.y); g.globalCompositeOperation = 'lighter';
-        g.globalAlpha = fade * 0.5; g.drawImage(glow(f.c, r * 1.3), -r * 1.3, -r * 1.3 - 18);
-        g.scale(1, 0.45); g.globalAlpha = fade; g.strokeStyle = f.c; g.lineWidth = 2.5;
-        g.beginPath(); g.arc(0, 0, r, 0, TAU); g.stroke();
-        g.lineWidth = 1.5; g.beginPath(); g.arc(0, 0, r * 0.72, 0, TAU); g.stroke();
-        for (let i = 0; i < 6; i++) { // a hexagram of runes
-          const a = f.a + p * 2.4 + (i / 6) * TAU, b = f.a + p * 2.4 + ((i + 2) / 6) * TAU;
-          g.beginPath(); g.moveTo(Math.cos(a) * r * 0.72, Math.sin(a) * r * 0.72); g.lineTo(Math.cos(b) * r * 0.72, Math.sin(b) * r * 0.72); g.stroke();
-          const c = f.a - p * 3 + (i / 6) * TAU; g.fillStyle = '#ffffff'; g.beginPath(); g.arc(Math.cos(c) * r, Math.sin(c) * r, 3, 0, TAU); g.fill();
-        }
-        g.restore(); g.globalAlpha = 1;
         break;
       }
       case 'groundring': {
